@@ -9,7 +9,14 @@ class Pedido extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'total', 'estado'];
+    protected $fillable = [
+    'user_id',
+    'sucursal_id',
+    'total',
+    'estado',
+    'tipo_pedido',
+];
+
 
     public function productos()
     {
@@ -31,6 +38,10 @@ class Pedido extends Model
     public function historial()
     {
         return $this->hasMany(HistorialPedido::class);
+    }
+    public function sucursal()
+    {
+        return $this->belongsTo(Sucursal::class);
     }
 }
 

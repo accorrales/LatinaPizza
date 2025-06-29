@@ -28,6 +28,11 @@ class Producto extends Model
                     ->withPivot('cantidad')
                     ->withTimestamps();
     }
-
+    public function carritos()
+    {
+        return $this->belongsToMany(Carrito::class, 'carrito_producto')
+            ->withPivot('cantidad')
+            ->withTimestamps();
+    }
 }
 

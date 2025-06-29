@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Sucursal;
+use App\Models\Carrito;
 
 class User extends Authenticatable
 {
@@ -45,5 +47,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+    public function sucursal()
+    {
+        return $this->belongsTo(Sucursal::class);
+    }
+    public function carrito()
+    {
+        return $this->hasOne(Carrito::class);
     }
 }

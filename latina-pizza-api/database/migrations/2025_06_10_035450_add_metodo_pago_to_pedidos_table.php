@@ -12,14 +12,16 @@ return new class extends Migration
     public function up()
     {
         Schema::table('pedidos', function (Blueprint $table) {
-            $table->string('estado')->default('pendiente');
+            $table->string('metodo_pago')->default('efectivo'); // stripe, efectivo, sinpe, datafono
+            $table->string('estado_pago')->default('pendiente'); // pagado o pendiente
         });
     }
 
     public function down()
     {
         Schema::table('pedidos', function (Blueprint $table) {
-            $table->dropColumn('estado');
+            $table->dropColumn('metodo_pago');
+            $table->dropColumn('estado_pago');
         });
     }
 };

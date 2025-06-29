@@ -15,7 +15,6 @@ class CheckRole
                 'message' => 'No autorizado. Rol requerido: ' . $role
             ], 403);
         }
-
         return $next($request);
     }
 }

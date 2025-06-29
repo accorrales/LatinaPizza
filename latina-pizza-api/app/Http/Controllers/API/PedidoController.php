@@ -7,6 +7,15 @@ use Illuminate\Http\Request;
 use App\Models\Pedido;
 use App\Models\Producto;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\EstadoPedidoMailable;
+use App\Mail\PedidoConfirmadoMail;
+use App\Models\Carrito;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use App\Models\PedidoProducto;
+use App\Models\PedidoHistorial;
+use App\Models\Sucursal;
 
 class PedidoController extends Controller
 {
@@ -30,6 +39,7 @@ class PedidoController extends Controller
         // Crear pedido
         $pedido = Pedido::create([
             'user_id' => Auth::id(),
+            'sucursal_id' => Auth::user()->sucursal_id, // 👈 asociación automática
             'total' => $total,
             'estado' => 'pendiente',
             'tipo_pedido' => $request->tipo_pedido,
@@ -73,6 +83,40 @@ class PedidoController extends Controller
             ->findOrFail($id);
 
         return response()->json($pedido);
+    }
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'estado' => 'required|in:pendiente,preparando,listo,entregado,cancelado'
+        ]);
+
+        $pedido = Pedido::findOrFail($id);
+        $pedido->estado = $request->estado;
+        $pedido->save();
+
+        return response()->json([
+            'message' => 'Estado actualizado correctamente',
+            'pedido' => $pedido
+        ]);
+    }
+
+    public function actualizarEstado(Request $request, $id)
+    {
+        $request->validate([
+            'estado' => 'required|in:pendiente,preparando,listo,entregado,cancelado'
+        ]);
+
+        $pedido = Pedido::with('usuario')->findOrFail($id);
+        $pedido->estado = $request->estado;
+        $pedido->save();
+
+        // Enviar notificación por correo
+        Mail::to($pedido->usuario->email)->send(new EstadoPedidoMailable($pedido));
+
+        return response()->json([
+            'message' => 'Estado actualizado correctamente',
+            'pedido' => $pedido
+        ]);
     }
 }
 

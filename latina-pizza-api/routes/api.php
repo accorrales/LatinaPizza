@@ -8,6 +8,10 @@ use App\Http\Controllers\API\CategoriaController;
 use App\Http\Controllers\Api\PedidoController;
 use App\Http\Controllers\API\Admin\PedidoAdminController;
 use App\Http\Controllers\API\HistorialPedidoController;
+use App\Http\Controllers\Api\SucursalController;
+use App\Http\Controllers\API\CarritoController;
+use App\Http\Controllers\API\StripeController;
+use App\Http\Controllers\API\PagoController;
 
 Route::middleware([
     'auth:sanctum',
@@ -23,9 +27,13 @@ Route::middleware([
     return response()->json(['message' => '🙋 Bienvenido, Cliente.']);
 });
 
-Route::middleware('auth:sanctum')->apiResource('productos', ProductoController::class);
+Route::apiResource('productos', ProductoController::class)->only(['index', 'show']);
+Route::apiResource('categorias', CategoriaController::class)->only(['index', 'show']);
 
-Route::middleware('auth:sanctum')->apiResource('categorias', CategoriaController::class);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('productos', ProductoController::class)->except(['index', 'show']);
+    Route::apiResource('categorias', CategoriaController::class)->except(['index', 'show']);
+});
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/pedidos', [PedidoController::class, 'index']);
@@ -35,6 +43,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::middleware('auth:sanctum')->get('/mis-pedidos', [PedidoController::class, 'misPedidos']);
 
 Route::middleware('auth:sanctum')->get('/pedidos/{id}', [PedidoController::class, 'detallePedido']);
+
+Route::middleware(['auth:sanctum'])->apiResource('pedidos', PedidoController::class);
 
 Route::middleware([
     'auth:sanctum',
@@ -54,3 +64,27 @@ Route::middleware([
 
 Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->get('/admin/tiempo-estimado', [PedidoAdminController::class, 'tiempoEstimado']);
 Route::middleware('auth:sanctum')->get('/pedidos/{id}/historial', [HistorialPedidoController::class, 'index']);
+Route::middleware([
+    'auth:sanctum',
+    CheckRole::class . ':admin'
+])->get('/admin/pedidos/{id}/historial', [PedidoAdminController::class, 'verHistorial']);
+
+Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+    Route::apiResource('sucursales', SucursalController::class);
+});
+
+Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+    Route::get('/resumen-sucursal/{id}', [PedidoAdminController::class, 'resumenSucursal']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/carrito', [CarritoController::class, 'index']);
+    Route::post('/carrito/add', [CarritoController::class, 'add']);
+    Route::delete('/carrito/remove/{id}', [CarritoController::class, 'remove']);
+    Route::delete('/carrito/clear', [CarritoController::class, 'clear']);
+    Route::post('/stripe/checkout', [StripeController::class, 'checkout']);
+});
+
+Route::middleware('auth:sanctum')->post('/pagar-con-stripe', [StripeController::class, 'checkout']);
+
+Route::post('/stripe/webhook', [PagoController::class, 'webhook']);
