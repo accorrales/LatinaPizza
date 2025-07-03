@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\SucursalController;
 use App\Http\Controllers\API\CarritoController;
 use App\Http\Controllers\API\StripeController;
 use App\Http\Controllers\API\PagoController;
+use App\Http\Controllers\Api\UserController;
 
 Route::middleware([
     'auth:sanctum',
@@ -83,6 +84,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/carrito/remove/{id}', [CarritoController::class, 'remove']);
     Route::delete('/carrito/clear', [CarritoController::class, 'clear']);
     Route::post('/stripe/checkout', [StripeController::class, 'checkout']);
+});
+
+Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+    Route::apiResource('usuarios', UserController::class)->only(['index', 'show', 'update', 'destroy']);
 });
 
 Route::middleware('auth:sanctum')->post('/pagar-con-stripe', [StripeController::class, 'checkout']);

@@ -21,6 +21,7 @@ class ProductoController extends Controller
             'precio' => 'required|numeric|min:0',
             'imagen' => 'nullable|string',
             'categoria_id' => 'required|exists:categorias,id',
+            'estado' => 'nullable|boolean',
         ]);
 
         $producto = Producto::create($request->all());
@@ -44,6 +45,7 @@ class ProductoController extends Controller
             'precio' => 'sometimes|required|numeric|min:0',
             'imagen' => 'nullable|string',
             'categoria_id' => 'sometimes|required|exists:categorias,id',
+            'estado' => 'nullable|boolean',
         ]);
 
         $producto->update($request->all());

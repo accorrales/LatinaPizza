@@ -10,7 +10,7 @@ class RouteServiceProvider extends ServiceProvider
     /**
      * La ruta a la que los usuarios son redirigidos después del login.
      */
-    public const HOME = '/catalogo'; // Cambia esto si quieres que te lleve a otra vista
+    public const HOME = '/home'; // Cambia esto si quieres que te lleve a otra vista
 
     /**
      * Define tu lógica de rutas aquí.
