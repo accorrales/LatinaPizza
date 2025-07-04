@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\PedidoProducto;
 use App\Models\PedidoHistorial;
 use App\Models\Sucursal;
-
+use App\Models\DetallePedido;
+use App\Models\DetallePedidoExtra;
 class PedidoController extends Controller
 {
     public function store(Request $request)
@@ -68,14 +69,59 @@ class PedidoController extends Controller
     public function misPedidos(Request $request)
     {
         $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Usuario no autenticado'], 401);
+        }
 
-        $pedidos = Pedido::with('productos')
-            ->where('user_id', $user->id)
-            ->orderByDesc('created_at')
-            ->get();
+        $pedidos = Pedido::with([
+            'productos',
+            'detalles.sabor',
+            'detalles.tamano',
+            'detalles.masa',
+            'detalles.extras',
+            'promociones.promocion',
+            'promociones.tamano',
+            'promociones.masa',
+            'promociones.extras',
+        ])
+        ->where('user_id', $user->id)
+        ->orderByDesc('created_at')
+        ->get();
+
+        // Transformamos cada pedido
+        $pedidos->transform(function ($pedido) {
+            if ($pedido->promociones && $pedido->promociones->count() > 0) {
+                $pedido->tipo_contenido = 'promocion';
+
+                $precioSinPromo = 0;
+                foreach ($pedido->promociones as $promocion) {
+                    $pizza = $promocion->sabor->precio ?? 0;
+                    $tamano = $promocion->tamano->precio ?? 0;
+                    $masa = $promocion->masa->precio ?? 0;
+                    $extras = $promocion->extras->sum('precio');
+
+                    $precioSinPromo += $pizza + $tamano + $masa + $extras;
+                }
+
+                $descuento = $pedido->promociones->sum(fn($p) => $p->promocion->precio_total ?? 0);
+                $totalConDescuento = $precioSinPromo - $descuento;
+
+                // Nuevos campos con nombres claros
+                $pedido->precio_sin_promocion = $precioSinPromo;
+                $pedido->descuento = $descuento;
+                $pedido->total_con_descuento = $totalConDescuento;
+            } elseif ($pedido->detalles && $pedido->detalles->count() > 0) {
+                $pedido->tipo_contenido = 'normal';
+            } else {
+                $pedido->tipo_contenido = 'productos';
+            }
+
+            return $pedido;
+        });
 
         return response()->json($pedidos);
     }
+
     public function detallePedido($id, Request $request)
     {
         $pedido = Pedido::with('productos')

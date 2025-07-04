@@ -12,6 +12,7 @@ class Promocion extends Model
         'nombre',
         'descripcion',
         'precio_total',
+        'precio_sugerido',
     ];
 
     public function detalles()

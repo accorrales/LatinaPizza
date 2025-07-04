@@ -52,9 +52,10 @@ class PromocionController extends Controller
         $promocion = Promocion::findOrFail($id);
 
         $validated = $request->validate([
-            'nombre' => 'sometimes|string|max:255',
+            'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
-            'precio_total' => 'sometimes|numeric|min:0',
+            'precio_total' => 'required|numeric|min:0',
+            'precio_sugerido' => 'nullable|numeric|min:0',
         ]);
 
         $promocion->update($validated);

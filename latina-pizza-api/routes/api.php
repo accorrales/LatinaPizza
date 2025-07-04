@@ -101,7 +101,10 @@ Route::post('/detalle-pedidos', [DetallePedidoController::class, 'store']);
 
 Route::post('/detalle-promocion', [DetallePedidoPromocionController::class, 'store']);
 
+Route::get('/detalle-promocion/{pedido_id}', [DetallePedidoPromocionController::class, 'detallesConPrecioYDesglose']);
+
 Route::middleware('auth:sanctum')->get('/pedidos/{id}', [PedidoController::class, 'show']);
 
 Route::apiResource('promociones', PromocionController::class)->only(['index', 'store']);
 Route::get('/promociones/{id}', [PromocionController::class, 'show']);
+Route::get('/detalle-pedido-promocion/{pedido_id}/detalles', [DetallePedidoPromocionController::class, 'detallesConPrecioYDesglose']);

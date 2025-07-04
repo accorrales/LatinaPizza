@@ -41,4 +41,10 @@ class DetallePedidoPromocion extends Model
     {
         return $this->belongsTo(Masa::class);
     }
+    public function extras()
+    {
+        return $this->belongsToMany(Extra::class, 'detalle_promocion_extra')
+                    ->withPivot('precio_extra')
+                    ->withTimestamps();
+    }
 }
