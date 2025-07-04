@@ -43,5 +43,13 @@ class Pedido extends Model
     {
         return $this->belongsTo(Sucursal::class);
     }
+    public function promociones()
+    {
+        return $this->hasMany(DetallePedidoPromocion::class);
+    }
+    public function detalles()
+    {
+        return $this->hasMany(DetallePedido::class);
+    }
 }
 

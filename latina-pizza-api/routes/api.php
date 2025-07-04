@@ -14,6 +14,7 @@ use App\Http\Controllers\API\StripeController;
 use App\Http\Controllers\API\PagoController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\API\DetallePedidoController;
+use App\Http\Controllers\API\DetallePedidoPromocionController;
 
 Route::middleware([
     'auth:sanctum',
@@ -96,3 +97,8 @@ Route::middleware('auth:sanctum')->post('/pagar-con-stripe', [StripeController::
 Route::post('/stripe/webhook', [PagoController::class, 'webhook']);
 
 Route::post('/detalle-pedidos', [DetallePedidoController::class, 'store']);
+
+Route::post('/detalle-promocion', [DetallePedidoPromocionController::class, 'store']);
+
+Route::middleware('auth:sanctum')->get('/pedidos/{id}', [PedidoController::class, 'show']);
+

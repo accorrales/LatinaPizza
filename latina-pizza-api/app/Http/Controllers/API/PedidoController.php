@@ -118,5 +118,21 @@ class PedidoController extends Controller
             'pedido' => $pedido
         ]);
     }
+    public function show($id, Request $request)
+    {
+        $pedido = Pedido::with([
+            'productos',
+            'detalles.sabor',
+            'detalles.tamano',
+            'detalles.masa',
+            'detalles.extras',
+            'promociones.promocion',
+            'usuario',
+            'sucursal',
+        ])->where('user_id', $request->user()->id)
+        ->findOrFail($id);
+
+        return response()->json($pedido);
+    }
 }
 

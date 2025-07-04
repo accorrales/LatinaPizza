@@ -89,5 +89,4 @@ class DetallePedidoController extends Controller
             'detalle' => $detalle->load(['sabor', 'tamano', 'masa', 'extras'])
         ], 201);
     }
-
 }
