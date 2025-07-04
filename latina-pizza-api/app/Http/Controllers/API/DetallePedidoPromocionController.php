@@ -35,6 +35,10 @@ class DetallePedidoPromocionController extends Controller
             ]);
         }
 
+        // Cargar relaciones correctamente
+        $registros = collect($registros);
+        $registros->each->load(['sabor', 'tamano', 'masa', 'promocion']);
+
         return response()->json([
             'message' => 'Promoción agregada correctamente al pedido',
             'detalles' => $registros

@@ -10,12 +10,13 @@ class Promocion extends Model
 
     protected $fillable = [
         'nombre',
-        'precio',
         'descripcion',
+        'precio_total',
     ];
 
     public function detalles()
     {
-        return $this->hasMany(DetallePedidoPromocion::class, 'promocion_id');
+        return $this->hasMany(DetallePedidoPromocion::class, 'promocion_id')
+                    ->with(['sabor', 'tamano', 'masa']);
     }
 }

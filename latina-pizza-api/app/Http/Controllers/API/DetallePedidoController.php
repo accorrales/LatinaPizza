@@ -81,7 +81,7 @@ class DetallePedidoController extends Controller
             }
 
             // Attach con valores personalizados
-            $detalle->extras()->attach($extrasConPrecios);
+            $detalle->extras()->sync($extrasConPrecios);
         }
 
         return response()->json([

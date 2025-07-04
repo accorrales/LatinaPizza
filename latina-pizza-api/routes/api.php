@@ -15,6 +15,7 @@ use App\Http\Controllers\API\PagoController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\API\DetallePedidoController;
 use App\Http\Controllers\API\DetallePedidoPromocionController;
+use App\Http\Controllers\API\PromocionController;
 
 Route::middleware([
     'auth:sanctum',
@@ -102,3 +103,5 @@ Route::post('/detalle-promocion', [DetallePedidoPromocionController::class, 'sto
 
 Route::middleware('auth:sanctum')->get('/pedidos/{id}', [PedidoController::class, 'show']);
 
+Route::apiResource('promociones', PromocionController::class)->only(['index', 'store']);
+Route::get('/promociones/{id}', [PromocionController::class, 'show']);
