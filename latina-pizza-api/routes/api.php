@@ -13,6 +13,7 @@ use App\Http\Controllers\API\CarritoController;
 use App\Http\Controllers\API\StripeController;
 use App\Http\Controllers\API\PagoController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\API\DetallePedidoController;
 
 Route::middleware([
     'auth:sanctum',
@@ -93,3 +94,5 @@ Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin'
 Route::middleware('auth:sanctum')->post('/pagar-con-stripe', [StripeController::class, 'checkout']);
 
 Route::post('/stripe/webhook', [PagoController::class, 'webhook']);
+
+Route::post('/detalle-pedidos', [DetallePedidoController::class, 'store']);
