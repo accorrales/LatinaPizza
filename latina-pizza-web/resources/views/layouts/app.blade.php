@@ -20,6 +20,7 @@
         flex: 1;
     }
 </style>
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans text-gray-900">
     <header class="bg-white backdrop-blur shadow-md sticky top-0 z-50 border-b border-gray-200">
@@ -60,10 +61,34 @@
                     class="relative hover:text-red-700 transition after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[2px] after:bg-red-600 hover:after:w-full after:transition-all after:duration-300">Mis Pedidos</a>
 
                     @if(Auth::user()->role === 'admin')
-                        <a href="{{ route('admin.usuarios.index') }}" class="hover:text-blue-700 transition">👥 Usuarios</a>
-                        <a href="{{ route('admin.productos.index') }}" class="hover:text-blue-700 transition">🧀 Productos</a>
-                        <a href="{{ route('admin.categorias.index') }}" class="hover:text-blue-700 transition">⚙️ Categorías</a>
+                        {{-- MENÚ DESPLEGABLE ADMIN --}}
+                        <div x-data="{ open: false }" class="relative">
+                            <div @mouseenter="open = true" @mouseleave="open = false" class="relative">
+                                <button class="hover:text-blue-700 transition flex items-center gap-1">
+                                    🛠️ Administración <i class="fas fa-chevron-down text-xs"></i>
+                                </button>
+                                <div x-show="open"
+                                    x-transition
+                                    class="absolute bg-white shadow-lg rounded-md mt-2 py-2 px-3 w-48 z-50 border border-gray-200">
+                                    <a href="{{ route('admin.usuarios.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">👥 Usuarios</a>
+                                    <a href="{{ route('admin.productos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">🧀 Productos</a>
+                                    <a href="{{ route('admin.categorias.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">⚙️ Categorías</a>
+                                    <a href="{{ route('admin.pedidos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">📦 Pedidos</a>
+                                </div>
+                            </div>
+                            <div x-show="open"
+                                @mouseenter="open = true"
+                                @mouseleave="open = false"
+                                x-transition
+                                class="absolute bg-white shadow-lg rounded-md mt-2 py-2 px-3 w-48 z-50 border border-gray-200">
+                                <a href="{{ route('admin.usuarios.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">👥 Usuarios</a>
+                                <a href="{{ route('admin.productos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">🧀 Productos</a>
+                                <a href="{{ route('admin.categorias.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">⚙️ Categorías</a>
+                                <a href="{{ route('admin.pedidos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">📦 Pedidos</a>
+                            </div>
+                        </div>
                     @endif
+                    {{-- USUARIO --}}
 
                     <span class="text-sm sm:text-base text-gray-700">👤 {{ Auth::user()->name }}</span>
 
@@ -87,21 +112,41 @@
             <a href="/catalogo" class="hover:text-red-600 transition">🍕 Menú</a>
             <a href="{{ route('carrito.ver') }}" class="hover:text-red-600 transition">🛒 Carrito</a>
             @auth
-                <a href="{{ route('usuario.pedidos') }}" class="hover:text-blue-700 transition">🧾 Mis Pedidos</a>
-                @if(Auth::user()->role === 'admin')
-                    <a href="{{ route('admin.usuarios.index') }}" class="hover:text-blue-700 transition">👥 Usuarios</a>
-                    <a href="{{ route('admin.productos.index') }}" class="hover:text-blue-700 transition">🧀 Productos</a>
-                    <a href="{{ route('admin.categorias.index') }}" class="hover:text-blue-700 transition">⚙️ Categorías</a>
-                @endif
-                <span class="text-gray-700">👤 {{ Auth::user()->name }}</span>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="hover:text-red-600 transition">Cerrar sesión</button>
-                </form>
-            @else
-                <a href="{{ route('login') }}" class="hover:text-blue-700 transition">🔐 Login</a>
-                <a href="{{ route('register') }}" class="hover:text-blue-700 transition">📝 Registro</a>
-            @endauth
+    <a href="{{ route('usuario.pedidos') }}" class="hover:text-blue-700 transition">🧾 Mis Pedidos</a>
+
+    @if(Auth::user()->role === 'admin')
+
+        {{-- 🛠️ Mantenimientos --}}
+        <div x-data="{ openAdmin: false }" class="relative">
+            <button @click="openAdmin = !openAdmin"
+                    class="hover:text-blue-700 transition flex items-center gap-1">
+                🛠️ Administración
+                <i :class="openAdmin ? 'fa-chevron-up' : 'fa-chevron-down'" class="fas text-xs"></i>
+            </button>
+            <div x-show="openAdmin"
+                @click.away="openAdmin = false"
+                x-transition
+                class="absolute right-0 mt-2 bg-white shadow-md rounded-md z-50 w-56 border border-gray-200 py-2 text-sm text-gray-800">
+                <a href="{{ route('admin.usuarios.index') }}" class="block px-4 py-2 hover:bg-gray-100">👥 Usuarios</a>
+                <a href="{{ route('admin.productos.index') }}" class="block px-4 py-2 hover:bg-gray-100">🧀 Productos</a>
+                <a href="{{ route('admin.categorias.index') }}" class="block px-4 py-2 hover:bg-gray-100">⚙️ Categorías</a>
+                <hr class="my-1">
+                <a href="{{ route('admin.pedidos.index') }}" class="block px-4 py-2 hover:bg-gray-100">📋 Pedidos</a>
+                <a href="{{ url('/admin/tiempo-estimado') }}" class="block px-4 py-2 hover:bg-gray-100">⏱️ Tiempo Estimado</a>
+                <a href="{{ url('/admin/resumen-sucursal/' . Auth::user()->sucursal_id) }}" class="block px-4 py-2 hover:bg-gray-100">📊 Resumen Sucursal</a>
+            </div>
+        </div>
+    @endif
+
+    <span class="text-gray-700 mt-3">👤 {{ Auth::user()->name }}</span>
+    <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <button type="submit" class="hover:text-red-600 transition">Cerrar sesión</button>
+    </form>
+@else
+    <a href="{{ route('login') }}" class="hover:text-blue-700 transition">🔐 Login</a>
+    <a href="{{ route('register') }}" class="hover:text-blue-700 transition">📝 Registro</a>
+@endauth
         </div>
 
         {{-- SCRIPTS INTERACTIVOS --}}
@@ -142,6 +187,9 @@
                     opacity: 1;
                     transform: translateY(0);
                 }
+            }
+            .group:hover .group-hover\:flex {
+                display: flex !important;
             }
         </style>
     </header>
