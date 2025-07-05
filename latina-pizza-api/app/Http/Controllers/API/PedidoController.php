@@ -31,25 +31,21 @@ class PedidoController extends Controller
 
         $total = 0;
 
-        // Calcular total
         foreach ($request->productos as $item) {
             $producto = Producto::find($item['id']);
             $total += $producto->precio * $item['cantidad'];
         }
 
-        // Crear pedido
         $pedido = Pedido::create([
             'user_id' => Auth::id(),
-            'sucursal_id' => Auth::user()->sucursal_id, // 👈 asociación automática
+            'sucursal_id' => Auth::user()->sucursal_id,
             'total' => $total,
             'estado' => 'pendiente',
             'tipo_pedido' => $request->tipo_pedido,
         ]);
 
-        // Guardar historial inicial
         $pedido->guardarHistorial('pendiente');
-        
-        // Asociar productos
+
         foreach ($request->productos as $item) {
             $pedido->productos()->attach($item['id'], ['cantidad' => $item['cantidad']]);
         }
@@ -66,6 +62,7 @@ class PedidoController extends Controller
 
         return response()->json($pedidos);
     }
+
     public function misPedidos(Request $request)
     {
         $user = $request->user();
@@ -88,28 +85,12 @@ class PedidoController extends Controller
         ->orderByDesc('created_at')
         ->get();
 
-        // Transformamos cada pedido
         $pedidos->transform(function ($pedido) {
             if ($pedido->promociones && $pedido->promociones->count() > 0) {
-                $pedido->tipo_contenido = 'promocion';
-
-                $precioSinPromo = 0;
-                foreach ($pedido->promociones as $promocion) {
-                    $pizza = $promocion->sabor->precio ?? 0;
-                    $tamano = $promocion->tamano->precio ?? 0;
-                    $masa = $promocion->masa->precio ?? 0;
-                    $extras = $promocion->extras->sum('precio');
-
-                    $precioSinPromo += $pizza + $tamano + $masa + $extras;
+                $datos = $this->calcularDesglosePromocion($pedido);
+                foreach ($datos as $key => $value) {
+                    $pedido->$key = $value;
                 }
-
-                $descuento = $pedido->promociones->sum(fn($p) => $p->promocion->precio_total ?? 0);
-                $totalConDescuento = $precioSinPromo - $descuento;
-
-                // Nuevos campos con nombres claros
-                $pedido->precio_sin_promocion = $precioSinPromo;
-                $pedido->descuento = $descuento;
-                $pedido->total_con_descuento = $totalConDescuento;
             } elseif ($pedido->detalles && $pedido->detalles->count() > 0) {
                 $pedido->tipo_contenido = 'normal';
             } else {
@@ -122,14 +103,28 @@ class PedidoController extends Controller
         return response()->json($pedidos);
     }
 
-    public function detallePedido($id, Request $request)
+    public function show($id, Request $request)
     {
-        $pedido = Pedido::with('productos')
-            ->where('user_id', $request->user()->id)
-            ->findOrFail($id);
+        $pedido = Pedido::with([
+            'productos',
+            'detalles.sabor',
+            'detalles.tamano',
+            'detalles.masa',
+            'detalles.extras',
+            'promociones.promocion',
+            'usuario',
+            'sucursal',
+        ])
+        ->findOrFail($id);
+
+        // Seguridad: asegurarse que sea del usuario autenticado
+        if ($pedido->user_id !== $request->user()->id) {
+            abort(403, 'No autorizado');
+        }
 
         return response()->json($pedido);
     }
+
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -137,6 +132,12 @@ class PedidoController extends Controller
         ]);
 
         $pedido = Pedido::findOrFail($id);
+
+        // Seguridad extra (por si el usuario no es admin)
+        if ($pedido->user_id !== Auth::id()) {
+            abort(403, 'No autorizado');
+        }
+
         $pedido->estado = $request->estado;
         $pedido->save();
 
@@ -156,7 +157,6 @@ class PedidoController extends Controller
         $pedido->estado = $request->estado;
         $pedido->save();
 
-        // Enviar notificación por correo
         Mail::to($pedido->usuario->email)->send(new EstadoPedidoMailable($pedido));
 
         return response()->json([
@@ -164,21 +164,32 @@ class PedidoController extends Controller
             'pedido' => $pedido
         ]);
     }
-    public function show($id, Request $request)
-    {
-        $pedido = Pedido::with([
-            'productos',
-            'detalles.sabor',
-            'detalles.tamano',
-            'detalles.masa',
-            'detalles.extras',
-            'promociones.promocion',
-            'usuario',
-            'sucursal',
-        ])->where('user_id', $request->user()->id)
-        ->findOrFail($id);
 
-        return response()->json($pedido);
+    // 🔒 Ya no necesitas detallePedido() separado porque show() hace todo
+
+    // 👉 Método limpio para calcular desgloses
+    private function calcularDesglosePromocion($pedido)
+    {
+        $precioSinPromo = 0;
+        foreach ($pedido->promociones as $promocion) {
+            $pizza = $promocion->sabor->precio ?? 0;
+            $tamano = $promocion->tamano->precio ?? 0;
+            $masa = $promocion->masa->precio ?? 0;
+            $extras = $promocion->extras->sum('precio');
+
+            $precioSinPromo += $pizza + $tamano + $masa + $extras;
+        }
+
+        $descuento = $pedido->promociones->sum(fn($p) => $p->promocion->precio_total ?? 0);
+        $totalConDescuento = $precioSinPromo - $descuento;
+
+        return [
+            'tipo_contenido' => 'promocion',
+            'precio_sin_promocion' => $precioSinPromo,
+            'descuento' => $descuento,
+            'total_con_descuento' => $totalConDescuento
+        ];
     }
 }
+
 

@@ -108,3 +108,12 @@ Route::middleware('auth:sanctum')->get('/pedidos/{id}', [PedidoController::class
 Route::apiResource('promociones', PromocionController::class)->only(['index', 'store']);
 Route::get('/promociones/{id}', [PromocionController::class, 'show']);
 Route::get('/detalle-pedido-promocion/{pedido_id}/detalles', [DetallePedidoPromocionController::class, 'detallesConPrecioYDesglose']);
+
+Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+    Route::get('/pedidos', [PedidoAdminController::class, 'index']); // ✅ Listado + filtros
+    Route::put('/pedidos/{id}/estado', [PedidoAdminController::class, 'actualizarEstado']); // ✅ Cambiar estado
+    Route::get('/pedidos/{id}/historial', [PedidoAdminController::class, 'verHistorial']); // ✅ Ver historial
+    Route::get('/tiempo-estimado', [PedidoAdminController::class, 'tiempoEstimado']); // ✅ Tiempo estimado
+    Route::get('/resumen-sucursal/{id}', [PedidoAdminController::class, 'resumenSucursal']); // ✅ Resumen por sucursal
+    Route::get('/pedidos/{id}/ver', [PedidoAdminController::class, 'verPedido']);
+});

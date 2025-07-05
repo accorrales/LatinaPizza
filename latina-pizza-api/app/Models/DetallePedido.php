@@ -39,4 +39,8 @@ class DetallePedido extends Model
     {
         return $this->belongsToMany(Extra::class, 'detalle_pedido_extra', 'detalle_pedido_id', 'extra_id')->withTimestamps();
     }
+    public function promocion()
+    {
+        return $this->belongsTo(Promocion::class);
+    }
 }

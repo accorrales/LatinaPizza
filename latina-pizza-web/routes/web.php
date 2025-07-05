@@ -9,6 +9,7 @@ use App\Http\Controllers\AdminProductoController;
 use App\Http\Controllers\AdminUsuarioController;
 use App\Http\Controllers\PedidoPromocionController;
 use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\AdminPedidoController;
 
 Route::get('/', function () {
     return view('home');
@@ -32,16 +33,25 @@ Route::put('/carrito/update/{id}', [CarritoController::class, 'actualizarCantida
 // Admin routes
 // This route is for the admin to manage categories
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
+
+    // 🛠 Categorías
     Route::resource('categorias', AdminCategoriaController::class);
-});
 
-Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
+    // 🍕 Productos
     Route::resource('productos', AdminProductoController::class);
+
+    // 👤 Usuarios
+    Route::resource('usuarios', AdminUsuarioController::class)->only(['index', 'destroy', 'edit', 'update']);
+
+    // 📦 Pedidos
+    Route::prefix('pedidos')->name('pedidos.')->group(function () {
+        Route::get('/', [AdminPedidoController::class, 'index'])->name('index');
+        Route::get('/{id}', [AdminPedidoController::class, 'show'])->name('show');
+        Route::put('/{id}/estado', [AdminPedidoController::class, 'cambiarEstado'])->name('estado');
+        Route::get('/{id}/historial', [AdminPedidoController::class, 'verHistorial'])->name('historial');
+    });
 });
 
-Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
-    Route::resource('usuarios', AdminUsuarioController::class)->only(['index', 'destroy', 'edit', 'update']);
-});
 
 Route::get('/pedido-promocion/{id}/resumen', [PedidoPromocionController::class, 'mostrarResumen'])->name('pedido.promocion.resumen');
 
@@ -57,6 +67,7 @@ Route::get('/mis-pedidos/{id}', [PedidoController::class, 'detalleHistorial'])->
 
 Route::get('/mis-pedidos/{id}/promocion', [PedidoController::class, 'detallePromocion'])
     ->name('pedidos.detalle.promocion');
+
 
 require __DIR__.'/auth.php';
 

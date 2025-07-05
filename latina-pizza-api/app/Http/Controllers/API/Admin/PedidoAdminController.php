@@ -8,6 +8,21 @@ use Illuminate\Http\Request;
 
 class PedidoAdminController extends Controller
 {
+    public function verPedido($id)
+    {
+        $pedido = Pedido::with([
+            'productos',
+            'detalles.sabor',
+            'detalles.tamano',
+            'detalles.masa',
+            'detalles.extras',
+            'promociones.promocion',
+            'usuario',
+            'sucursal',
+        ])->findOrFail($id);
+
+        return response()->json($pedido);
+    }
     public function index(Request $request)
     {
         $user = $request->user(); // ya viene autenticado
@@ -19,7 +34,6 @@ class PedidoAdminController extends Controller
 
         return response()->json($pedidos);
     }
-
     public function actualizarEstado(Request $request, $id)
     {
         $request->validate([
