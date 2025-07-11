@@ -123,4 +123,11 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+        /*
+    |--------------------------------------------------------------------------
+    | API URL personalizada para uso en frontend (modal, fetch, etc.)
+    |--------------------------------------------------------------------------
+    */
+
+    'api_url' => env('APP_API_URL', 'http://localhost:8001'),
 ];

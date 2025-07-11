@@ -10,13 +10,17 @@ class Pedido extends Model
     use HasFactory;
 
     protected $fillable = [
-    'user_id',
-    'sucursal_id',
-    'total',
-    'estado',
-    'tipo_pedido',
-];
-
+        'user_id',
+        'sucursal_id',
+        'total',
+        'estado',
+        'tipo_pedido',
+    ];
+    // En Producto.php
+    public function masa()
+    {
+        return $this->belongsTo(Masa::class, 'masa_id');
+    }
 
     public function productos()
     {

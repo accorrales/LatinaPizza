@@ -6,11 +6,56 @@ use App\Http\Controllers\Controller;
 use App\Models\Producto;
 use Illuminate\Http\Request;
 
+namespace App\Http\Controllers\API;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Producto;
+
 class ProductoController extends Controller
 {
     public function index()
     {
-        return Producto::with('categoria')->get();
+        // ✅ Trae también sabor, tamano y categoría
+        return Producto::with(['categoria', 'sabor', 'tamano'])->get();
+    }
+    public function saboresConTamanos()
+    {
+        $productos = Producto::with(['sabor', 'tamano'])
+            ->whereHas('sabor')
+            ->whereHas('tamano')
+            ->where('estado', true)
+            ->get();
+
+        $agrupado = $productos->groupBy(function ($producto) {
+            return $producto->sabor->id;
+        });
+
+        $resultado = [];
+
+        foreach ($agrupado as $saborId => $productosDelSabor) {
+            $primerProducto = $productosDelSabor->first();
+            $sabor = $primerProducto->sabor;
+
+            $resultado[] = [
+                'sabor_id' => $sabor->id,
+                'sabor_nombre' => $sabor->nombre,
+                'descripcion' => $sabor->descripcion ?? $primerProducto->descripcion,
+                'imagen' => $sabor->imagen,
+                'categoria_id' => $primerProducto->categoria_id,
+                'tamanos' => $productosDelSabor->map(function ($p) {
+                    return [
+                        'producto_id'   => $p->id,
+                        'tamano_id'     => $p->tamano->id,
+                        'tamano_nombre' => $p->tamano->nombre,
+                        'precio'        => $p->precio, // Este es el precio total actual del producto (si se usa)
+                        'precio_base'   => $p->tamano->precio_base, // 👈 Este es el real por tamaño
+                    ];
+                })->values(),
+            ];
+        }
+
+        return response()->json($resultado);
     }
 
     public function store(Request $request)
@@ -21,6 +66,8 @@ class ProductoController extends Controller
             'precio' => 'required|numeric|min:0',
             'imagen' => 'nullable|string',
             'categoria_id' => 'required|exists:categorias,id',
+            'sabor_id' => 'required|exists:sabores,id',
+            'tamano_id' => 'required|exists:tamanos,id',
             'estado' => 'nullable|boolean',
         ]);
 
@@ -31,7 +78,7 @@ class ProductoController extends Controller
 
     public function show($id)
     {
-        $producto = Producto::with('categoria')->findOrFail($id);
+        $producto = Producto::with(['categoria', 'sabor', 'tamano'])->findOrFail($id);
         return response()->json($producto);
     }
 
@@ -45,6 +92,8 @@ class ProductoController extends Controller
             'precio' => 'sometimes|required|numeric|min:0',
             'imagen' => 'nullable|string',
             'categoria_id' => 'sometimes|required|exists:categorias,id',
+            'sabor_id' => 'sometimes|required|exists:sabores,id',
+            'tamano_id' => 'sometimes|required|exists:tamanos,id',
             'estado' => 'nullable|boolean',
         ]);
 
@@ -59,3 +108,4 @@ class ProductoController extends Controller
         return response()->json(['message' => 'Producto eliminado.']);
     }
 }
+

@@ -18,4 +18,11 @@ class Extra extends Model
     {
         return $this->belongsToMany(DetallePedido::class, 'detalle_pedido_extra', 'extra_id', 'detalle_pedido_id')->withTimestamps();
     }
+    public function productosEnCarrito()
+    {
+        return $this->belongsToMany(Producto::class, 'carrito_producto_extra', 'extra_id', 'producto_id')
+                    ->withPivot('carrito_id')
+                    ->withTimestamps();
+    }
+
 }

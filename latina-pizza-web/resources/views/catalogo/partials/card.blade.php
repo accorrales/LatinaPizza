@@ -1,23 +1,21 @@
-<div class="bg-white rounded shadow p-4 relative h-full flex flex-col justify-between">
-    <img src="{{ $producto['imagen'] }}" alt="{{ $producto['nombre'] }}" class="w-full h-40 object-cover rounded mb-2">
-    <h3 class="text-lg font-semibold">{{ $producto['nombre'] }}</h3>
-    <p class="text-red-600 font-bold mt-1">₡{{ number_format($producto['precio'], 2) }}</p>
+<div class="bg-white rounded-2xl shadow-md hover:shadow-lg transition p-4 flex flex-col justify-between h-full">
+    <img src="{{ $sabor['imagen'] }}"
+         alt="{{ $sabor['sabor_nombre'] }}"
+         class="w-full h-40 object-cover rounded-xl mb-3 border border-gray-200">
 
-    <div class="flex justify-between mt-3">
+    <h3 class="text-xl font-bold text-red-600 mb-1">{{ $sabor['sabor_nombre'] }}</h3>
+    <p class="text-gray-600 text-sm flex-grow">{{ $sabor['descripcion'] }}</p>
+
+    <div class="mt-4">
         <button
-            onclick='mostrarDetalle(@json($producto))'
-            class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+            onclick="abrirModal(this)"
+            data-sabor='@json($sabor)'
+            class="w-full bg-gradient-to-r from-red-600 to-red-500 text-white px-4 py-2 rounded-full hover:from-red-700 hover:to-red-600 text-sm font-semibold shadow"
         >
-            Ver más
+            Ver tamaños y precios
         </button>
-        <form action="{{ route('carrito.agregar') }}" method="POST">
-            @csrf
-            <input type="hidden" name="producto_id" value="{{ $producto['id'] }}">
-            <input type="hidden" name="cantidad" value="1">
-            <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm">
-                Agregar
-            </button>
-        </form>
     </div>
 </div>
+
+
 

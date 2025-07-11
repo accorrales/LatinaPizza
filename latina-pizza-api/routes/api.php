@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\API\DetallePedidoController;
 use App\Http\Controllers\API\DetallePedidoPromocionController;
 use App\Http\Controllers\API\PromocionController;
+use App\Http\Controllers\Api\OpcionesPizzaController;
 
 Route::middleware([
     'auth:sanctum',
@@ -108,6 +109,10 @@ Route::middleware('auth:sanctum')->get('/pedidos/{id}', [PedidoController::class
 Route::apiResource('promociones', PromocionController::class)->only(['index', 'store']);
 Route::get('/promociones/{id}', [PromocionController::class, 'show']);
 Route::get('/detalle-pedido-promocion/{pedido_id}/detalles', [DetallePedidoPromocionController::class, 'detallesConPrecioYDesglose']);
+Route::get('/sabores-con-tamanos', [ProductoController::class, 'saboresConTamanos']);
+
+Route::get('/masas', [OpcionesPizzaController::class, 'masas']);
+Route::get('/extras', [OpcionesPizzaController::class, 'extras']);
 
 Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
     Route::get('/pedidos', [PedidoAdminController::class, 'index']); // ✅ Listado + filtros

@@ -1,144 +1,139 @@
 @extends('layouts.app')
-@php use Illuminate\Support\Str; @endphp
 
 @section('content')
-    <div class="container mx-auto px-4 py-6">
-        <h2 class="text-3xl font-bold text-center text-red-600 mb-6">Menú Latina</h2>
+<div class="container mx-auto px-4 py-6">
+    <h2 class="text-3xl font-bold text-center text-red-600 mb-6">Menú Latina</h2>
 
-        <!-- Filtros de categorías -->
-        <div class="flex flex-wrap justify-center gap-3 mb-8">
-            <a href="{{ route('catalogo.index') }}"
-            class="px-4 py-2 rounded-full border transition
-                    {{ is_null($categoriaSeleccionada) ? 'bg-red-600 text-white' : 'bg-white text-red-600 border-red-600 hover:bg-red-100' }}">
-                Todos
+    <!-- Filtros de categorías -->
+    <div class="flex flex-wrap justify-center gap-3 mb-8">
+        <a href="{{ route('catalogo.index') }}"
+           class="px-4 py-2 rounded-full border transition
+           {{ is_null($categoriaSeleccionada) ? 'bg-red-600 text-white' : 'bg-white text-red-600 border-red-600 hover:bg-red-100' }}">
+            Todos
+        </a>
+        @foreach ($categorias as $cat)
+            <a href="{{ route('catalogo.index', ['categoria_id' => $cat['id']]) }}"
+               class="px-4 py-2 rounded-full border transition
+               {{ $categoriaSeleccionada == $cat['id'] ? 'bg-red-600 text-white' : 'bg-white text-red-600 border-red-600 hover:bg-red-100' }}">
+                {{ $cat['nombre'] }}
             </a>
-            @foreach ($categorias as $cat)
-                <a href="{{ route('catalogo.index', ['categoria_id' => $cat['id']]) }}"
-                class="px-4 py-2 rounded-full border transition
-                    {{ $categoriaSeleccionada == $cat['id'] ? 'bg-red-600 text-white' : 'bg-white text-red-600 border-red-600 hover:bg-red-100' }}">
-                    {{ $cat['nombre'] }}
-                </a>
-            @endforeach
-        </div>
-
-        <!-- Vista agrupada por tamaño con carrusel -->
-        @if(isset($agrupadosPorTamanio))
-            @foreach($agrupadosPorTamanio as $tamanio => $grupo)
-            <h3 class="text-xl font-bold text-gray-800 mb-2 mt-6">{{ $tamanio }}</h3>
-
-                @if(count($grupo) > 0)
-                    <div class="relative group">
-                        <!-- Flecha izquierda -->
-                        <button onclick="scrollLeft('{{ Str::slug($tamanio) }}')"
-                                class="hidden md:flex items-center justify-center absolute left-0 top-1/2 transform -translate-y-1/2 z-20 w-10 h-10 bg-white border rounded-full shadow hover:bg-gray-100">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </button>
-
-                        <!-- Contenedor deslizable -->
-                        <div id="scroll-{{ Str::slug($tamanio) }}"
-                            class="flex overflow-x-auto gap-4 pb-2 scrollbar-hide scroll-smooth px-8 md:px-12">
-                            @foreach ($grupo as $producto)
-                                <div class="flex-shrink-0 w-72">
-                                    @include('catalogo.partials.card', ['producto' => $producto])
-                                </div>
-                            @endforeach
-                        </div>
-
-                        <!-- Flecha derecha -->
-                        <button onclick="scrollRight('{{ Str::slug($tamanio) }}')"
-                                class="hidden md:flex items-center justify-center absolute right-0 top-1/2 transform -translate-y-1/2 z-20 w-10 h-10 bg-white border rounded-full shadow hover:bg-gray-100">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
-                    </div>
-                @else
-                    <div class="text-center text-gray-500 italic mb-8">
-                        No hay productos disponibles para este tamaño por ahora.
-                    </div>
-                @endif
-
         @endforeach
-
-        @else
-            <!-- Vista sin agrupación -->
-            <div class="flex overflow-x-auto gap-4 pb-2 scrollbar-hide">
-                @foreach ($productos as $producto)
-                    <div class="flex-shrink-0 w-72">
-                        @include('catalogo.partials.card', ['producto' => $producto])
-                    </div>
-                @endforeach
-            </div>
-        @endif
-
-        <!-- Modal -->
-        <div id="modalDetalle" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm hidden transition-opacity duration-300">
-            <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6 relative animate-fade-in-down">
-                <button onclick="cerrarModal()" class="absolute top-3 right-3 text-gray-500 hover:text-black text-2xl font-bold">&times;</button>
-                <img id="modalImagen" class="w-full h-48 object-cover rounded-xl mb-4 shadow-sm" src="" alt="Imagen del producto">
-                <h2 id="modalNombre" class="text-2xl font-bold text-red-600 mb-2"></h2>
-                <p id="modalDescripcion" class="text-gray-700 mb-4 text-sm leading-relaxed"></p>
-                <p id="modalPrecio" class="text-lg font-bold text-green-600"></p>
-            </div>
-        </div>
     </div>
-    <style>
-        @keyframes fade-in-down {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .animate-fade-in-down {
-            animation: fade-in-down 0.3s ease-out;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .relative.group {
-            padding-left: 2rem;
-            padding-right: 2rem;
-        }
-    </style>
+
+    <!-- Tarjetas de sabores -->
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        @foreach ($sabores as $sabor)
+            @include('catalogo.partials.card', ['sabor' => $sabor])
+        @endforeach
+    </div>
+    @include('catalogo.partials.modal')
+</div>
 @endsection
+
 @section('scripts')
-    <script>
-        window.scrollLeft = function(id) {
-            const el = document.getElementById('scroll-' + id);
-            if (el) el.scrollBy({ left: -500, behavior: 'smooth' });
-        }
+<script>
+    const API_URL = "{{ config('app.api_url') }}";
+</script>
+<script>
+let extrasData = [];
+let precioBase = 0;
+let precioMasa = 0;
 
-        window.scrollRight = function(id) {
-            const el = document.getElementById('scroll-' + id);
-            if (el) el.scrollBy({ left: 500, behavior: 'smooth' });
-        }
+window.abrirModal = async function(element) {
+    const sabor = JSON.parse(element.dataset.sabor);
 
-        window.mostrarDetalle = function(producto) {
-            document.getElementById('modalImagen').src = producto.imagen;
-            document.getElementById('modalNombre').textContent = producto.nombre;
-            document.getElementById('modalDescripcion').textContent = producto.descripcion;
-            document.getElementById('modalPrecio').textContent = '₡' + parseFloat(producto.precio).toFixed(2);
-            document.getElementById('modalDetalle').classList.remove('hidden');
-        }
+    precioBase = 0;
+    precioMasa = 0;
+    extrasData = [];
 
-        window.cerrarModal = function() {
-            document.getElementById('modalDetalle').classList.add('hidden');
-        }
-    </script>
+    document.getElementById('modalImagen').src = sabor.imagen;
+    document.getElementById('modalNombre').textContent = sabor.sabor_nombre;
+    document.getElementById('modalDescripcion').textContent = sabor.descripcion;
+
+    // Tamaños
+   const tamanosHtml = sabor.tamanos.map(t => `
+        <label class="flex items-center gap-2 border px-3 py-1 rounded cursor-pointer text-sm text-gray-700">
+            <input type="radio" name="producto_id" value="${t.producto_id}" data-precio="${t.precio_base}" onchange="cambiarTamano(${t.precio_base}, '${t.tamano_nombre.toLowerCase()}')" required>
+            ${t.tamano_nombre} - ₡${parseFloat(t.precio_base).toFixed(2)}
+        </label>
+    `).join('');
+
+    document.getElementById('modalTamanos').innerHTML = tamanosHtml;
+
+    // Masas
+    try {
+        const res = await fetch(`http://127.0.0.1:8001/api/masas`);
+        const masas = await res.json();
+        const masaSelect = document.getElementById('masa');
+        masaSelect.innerHTML = masas.map(m => `<option value="${m.id}" data-precio="${m.precio_extra}">${m.tipo} (+₡${m.precio_extra})</option>`).join('');
+        masaSelect.onchange = function () {
+            const precio = parseFloat(this.selectedOptions[0].dataset.precio);
+            precioMasa = isNaN(precio) ? 0 : precio;
+            actualizarTotal();
+        };
+    } catch {
+        document.getElementById('masa').innerHTML = '<option>Error al cargar masas</option>';
+    }
+
+    // Extras
+    try {
+        const res = await fetch(`http://127.0.0.1:8001/api/extras`);
+        extrasData = await res.json();
+        renderizarExtras('precio_pequena'); // default
+    } catch {
+        document.getElementById('extrasOpciones').innerHTML = '<p class="text-xs text-red-500">No se pudieron cargar los extras.</p>';
+    }
+
+    document.getElementById('modalSabor').classList.remove('hidden');
+};
+
+function cambiarTamano(precio, tamanoNombre) {
+    precioBase = parseFloat(precio);
+
+    let key = 'precio_pequena';
+    if (tamanoNombre.includes('mediana')) key = 'precio_mediana';
+    else if (tamanoNombre.includes('grande') && !tamanoNombre.includes('extra')) key = 'precio_grande';
+    else if (tamanoNombre.includes('extra')) key = 'precio_extragrande';
+
+    renderizarExtras(key);
+    actualizarTotal();
+}
+
+function renderizarExtras(clave) {
+    const contenedor = document.getElementById('extrasOpciones');
+    contenedor.innerHTML = extrasData.map(extra => {
+        const precio = parseFloat(extra[clave]) || 0;
+        return `
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="extras[]" value="${extra.id}" data-precio="${precio}" onchange="actualizarTotal()">
+                ${extra.nombre} (+₡${precio.toFixed(0)})
+            </label>
+        `;
+    }).join('');
+}
+
+function actualizarTotal() {
+    const extras = document.querySelectorAll('input[name="extras[]"]:checked');
+    let totalExtras = 0;
+    extras.forEach(e => {
+        totalExtras += parseFloat(e.dataset.precio);
+    });
+
+    const total = precioBase + precioMasa + totalExtras;
+    document.getElementById('precioTotal').textContent = `Total: ₡${total.toFixed(2)}`;
+    document.getElementById('inputPrecioTotal').value = total.toFixed(2);
+}
+
+function cerrarModal() {
+    document.getElementById('modalSabor').classList.add('hidden');
+}
+</script>
 @endsection
 
-
-
-
-
-
-
-
-
+<style>
+@keyframes fade-in-down {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-down { animation: fade-in-down 0.3s ease-out; }
+</style>

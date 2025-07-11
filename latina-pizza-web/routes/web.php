@@ -29,6 +29,7 @@ Route::post('/carrito/agregar', [CarritoController::class, 'agregar'])->name('ca
 Route::get('/carrito', [CarritoController::class, 'ver'])->name('carrito.ver');
 Route::delete('/carrito/eliminar/{id}', [CarritoController::class, 'eliminar'])->name('carrito.eliminar');
 Route::put('/carrito/update/{id}', [CarritoController::class, 'actualizarCantidad'])->name('carrito.update');
+Route::post('/carrito/checkout', [CarritoController::class, 'checkout'])->name('carrito.checkout');
 
 // Admin routes
 // This route is for the admin to manage categories

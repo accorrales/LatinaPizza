@@ -9,27 +9,34 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 class CarritoController extends Controller
 {
-    
     public function agregar(Request $request)
     {
-        $token = Session::get('token'); // 🔐 Obtenemos el token guardado en sesión (de login API)
+        $token = Session::get('token');
 
         if (!$token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión para agregar productos al carrito');
         }
 
-       $response = Http::withToken($token)->post('http://127.0.0.1:8001/api/carrito/add', [
-        'producto_id' => $request->input('producto_id'),
-        'cantidad' => $request->input('cantidad', 1),
+        $response = Http::withToken($token)->post('http://127.0.0.1:8001/api/carrito/add', [
+            'producto_id'    => $request->input('producto_id'),
+            'cantidad'       => $request->input('cantidad', 1),
+            'masa_id'        => $request->input('masa_id'),
+            'extras'         => $request->input('extras', []),
+            'nota_cliente'   => $request->input('nota_cliente'),
+            'precio_total'   => $request->input('precio_total'), // 👈 enviar al backend
         ]);
 
         if ($response->successful()) {
             return redirect('/catalogo')->with('success', 'Producto agregado al carrito correctamente');
         } else {
-            // 🧠 Mostrar el mensaje de error real
             return redirect('/catalogo')->with('error', 'Error al agregar producto: ' . $response->body());
         }
     }
+    public function checkout(Request $request)
+    {
+        return redirect('/carrito')->with('success', 'Pedido confirmado (falta lógica de pago)');
+    }
+    
     public function ver()
     {
         $token = Session::get('token');
@@ -58,11 +65,12 @@ class CarritoController extends Controller
         $response = Http::withToken($token)->delete("http://127.0.0.1:8001/api/carrito/remove/$id");
 
         if ($response->successful()) {
-            return redirect('/carrito')->with('success', 'Producto eliminado del carrito');
+            return redirect()->route('carrito.ver')->with('success', 'Producto eliminado del carrito');
         } else {
-            return redirect('/carrito')->with('error', 'Error al eliminar producto: ' . $response->body());
+            return redirect()->route('carrito.ver')->with('error', 'Error al eliminar producto: ' . $response->body());
         }
     }
+
     public function actualizarCantidad(Request $request, $id)
     {
         $token = Session::get('token');

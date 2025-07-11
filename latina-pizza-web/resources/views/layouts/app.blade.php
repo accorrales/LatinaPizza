@@ -256,5 +256,7 @@
             easing: 'ease-in-out', // Efecto de suavizado
         });
     </script>
+     @yield('scripts') {{-- justo antes del </body> --}}
+     
 </body>
 </html>

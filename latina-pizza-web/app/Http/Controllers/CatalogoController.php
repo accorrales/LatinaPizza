@@ -11,60 +11,27 @@ class CatalogoController extends Controller
     public function index(Request $request)
     {
         $categoriaSeleccionada = $request->query('categoria_id');
-        $productos = [];
+        $sabores = [];
         $categorias = [];
-        $agrupadosPorTamanio = [
-            'Pequeñas' => [],
-            'Medianas' => [],
-            'Grandes' => [],
-            'Extra Grandes' => [],
-            'Otros' => []
-        ];
 
         try {
-            $responseProductos = Http::get('http://127.0.0.1:8001/api/productos');
+            // ✅ CAMBIO IMPORTANTE: ruta correcta del backend
+            $responseSabores = Http::get('http://127.0.0.1:8001/api/sabores-con-tamanos');
             $responseCategorias = Http::get('http://127.0.0.1:8001/api/categorias');
 
-            if ($responseProductos->successful() && $responseCategorias->successful()) {
-                $productos = $responseProductos->json();
+            if ($responseSabores->successful() && $responseCategorias->successful()) {
+                $sabores = $responseSabores->json();
                 $categorias = $responseCategorias->json();
 
-                // Filtra si hay categoría seleccionada
+                // ✅ Filtra por categoría si hay una seleccionada
                 if ($categoriaSeleccionada) {
-                    $productos = collect($productos)
+                    $sabores = collect($sabores)
                         ->where('categoria_id', $categoriaSeleccionada)
                         ->values()
                         ->all();
                 }
-
-                // Verifica si la categoría es Pizza o si no se seleccionó ninguna
-                $categoriaPizza = collect($categorias)->firstWhere('nombre', 'Pizza');
-
-                if (
-                    ($categoriaPizza && $categoriaSeleccionada == $categoriaPizza['id']) ||
-                    is_null($categoriaSeleccionada)
-                ) {
-                    // Agrupa por tamaño
-                    foreach ($productos as $producto) {
-                        $nombre = strtolower($producto['nombre']);
-                        if (str_contains($nombre, 'extragrande') || str_contains($nombre, 'extra grande')) {
-                            $agrupadosPorTamanio['Extra Grandes'][] = $producto;
-                        } elseif (str_contains($nombre, 'grande')) {
-                            $agrupadosPorTamanio['Grandes'][] = $producto;
-                        } elseif (str_contains($nombre, 'mediana')) {
-                            $agrupadosPorTamanio['Medianas'][] = $producto;
-                        } elseif (str_contains($nombre, 'pequeña')) {
-                            $agrupadosPorTamanio['Pequeñas'][] = $producto;
-                        } else {
-                            $agrupadosPorTamanio['Otros'][] = $producto;
-                        }
-                    }
-                } else {
-                    // Si no es Pizza, vacía agrupación
-                    $agrupadosPorTamanio = null;
-                }
             } else {
-                session()->flash('error', 'No se pudieron obtener los productos o categorías.');
+                session()->flash('error', 'No se pudieron obtener los sabores o categorías.');
             }
 
         } catch (\Exception $e) {
@@ -72,10 +39,9 @@ class CatalogoController extends Controller
         }
 
         return view('catalogo.index', compact(
-            'productos',
+            'sabores',
             'categorias',
-            'categoriaSeleccionada',
-            'agrupadosPorTamanio'
+            'categoriaSeleccionada'
         ));
     }
 }
