@@ -129,3 +129,8 @@ Route::get('/promociones/{id}', [PromocionController::class, 'show']);
 Route::get('/sabores', [SaborController::class, 'index']);
 Route::get('/productos/bebidas', [ProductoController::class, 'bebidas']);
 
+Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+    Route::apiResource('sabores', SaborController::class);
+});
+
+

@@ -11,7 +11,7 @@ use App\Http\Controllers\PedidoPromocionController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\AdminPedidoController;
 use App\Http\Controllers\PromocionesController;
-
+use App\Http\Controllers\AdminSaborController;
 Route::get('/', function () {
     return view('home');
 })->name('home');
@@ -72,6 +72,14 @@ Route::get('/mis-pedidos/{id}/promocion', [PedidoController::class, 'detalleProm
     ->name('pedidos.detalle.promocion');
 
 Route::get('/promociones', [PromocionesController::class, 'index'])->name('promociones.index');
+Route::prefix('admin/sabores')->name('admin.sabores.')->group(function () {
+    Route::get('/', [AdminSaborController::class, 'index'])->name('index');
+    Route::get('/create', [AdminSaborController::class, 'create'])->name('create');
+    Route::post('/', [AdminSaborController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [AdminSaborController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [AdminSaborController::class, 'update'])->name('update');
+    Route::delete('/{id}', [AdminSaborController::class, 'destroy'])->name('destroy');
+});
 
 require __DIR__.'/auth.php';
 

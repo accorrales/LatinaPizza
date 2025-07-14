@@ -94,6 +94,7 @@
                                     <a href="{{ route('admin.productos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">🧀 Productos</a>
                                     <a href="{{ route('admin.categorias.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">⚙️ Categorías</a>
                                     <a href="{{ route('admin.pedidos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">📦 Pedidos</a>
+                                    <a href="{{ route('admin.sabores.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Sabores</a>
                                 </div>
                             </div>
                             <div x-show="open"
@@ -105,6 +106,7 @@
                                 <a href="{{ route('admin.productos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">🧀 Productos</a>
                                 <a href="{{ route('admin.categorias.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">⚙️ Categorías</a>
                                 <a href="{{ route('admin.pedidos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">📦 Pedidos</a>
+                                <a href="{{ route('admin.sabores.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Sabores</a>
                             </div>
                         </div>
                     @endif
@@ -150,6 +152,7 @@
                             <a href="{{ route('admin.usuarios.index') }}" class="block px-4 py-2 hover:bg-gray-100">👥 Usuarios</a>
                             <a href="{{ route('admin.productos.index') }}" class="block px-4 py-2 hover:bg-gray-100">🧀 Productos</a>
                             <a href="{{ route('admin.categorias.index') }}" class="block px-4 py-2 hover:bg-gray-100">⚙️ Categorías</a>
+                            <a href="{{ route('admin.sabores.index') }}" class="block px-4 py-2 hover:bg-gray-100">Sabores</a>
                             <hr class="my-1">
                             <a href="{{ route('admin.pedidos.index') }}" class="block px-4 py-2 hover:bg-gray-100">📋 Pedidos</a>
                             <a href="{{ url('/admin/tiempo-estimado') }}" class="block px-4 py-2 hover:bg-gray-100">⏱️ Tiempo Estimado</a>
