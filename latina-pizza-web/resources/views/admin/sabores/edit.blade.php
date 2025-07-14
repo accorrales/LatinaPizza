@@ -16,7 +16,7 @@
     @endif
 
     {{-- Formulario de edición --}}
-    <form action="{{ route('admin.sabores.update', $sabor->id) }}" method="POST" class="space-y-6 bg-white p-6 rounded-lg shadow-md">
+    <form id="formCrearTamano" action="{{ route('admin.sabores.update', $sabor->id) }}" method="POST" class="space-y-6 bg-white p-6 rounded-lg shadow-md">
         @csrf
         @method('PUT')
 
@@ -44,9 +44,11 @@
         </div>
 
         {{-- Botones --}}
-        <div class="flex justify-end gap-3">
-            <a href="{{ route('admin.sabores.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow">
-                Cancelar
+        <div class="flex justify-end gap-3" onclick="return validarYMostrarLoading('formCrearTamano')">
+            <a href="{{ route('admin.sabores.index') }}"
+                onclick="mostrarLoading()"
+                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow">
+                    Cancelar
             </a>
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow">
                 Actualizar Sabor

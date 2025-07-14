@@ -12,6 +12,9 @@ use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\AdminPedidoController;
 use App\Http\Controllers\PromocionesController;
 use App\Http\Controllers\AdminSaborController;
+use App\Http\Controllers\AdminTamanoController;
+use App\Http\Controllers\AdminMasaController;
+
 Route::get('/', function () {
     return view('home');
 })->name('home');
@@ -80,6 +83,21 @@ Route::prefix('admin/sabores')->name('admin.sabores.')->group(function () {
     Route::put('/{id}', [AdminSaborController::class, 'update'])->name('update');
     Route::delete('/{id}', [AdminSaborController::class, 'destroy'])->name('destroy');
 });
-
+Route::prefix('admin/tamanos')->name('admin.tamanos.')->group(function () {
+    Route::get('/', [AdminTamanoController::class, 'index'])->name('index');
+    Route::get('/create', [AdminTamanoController::class, 'create'])->name('create');
+    Route::post('/', [AdminTamanoController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [AdminTamanoController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [AdminTamanoController::class, 'update'])->name('update');
+    Route::delete('/{id}', [AdminTamanoController::class, 'destroy'])->name('destroy');
+});
+Route::prefix('admin/masas')->name('admin.masas.')->group(function () {
+    Route::get('/', [AdminMasaController::class, 'index'])->name('index');
+    Route::get('/create', [AdminMasaController::class, 'create'])->name('create');
+    Route::post('/', [AdminMasaController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [AdminMasaController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [AdminMasaController::class, 'update'])->name('update');
+    Route::delete('/{id}', [AdminMasaController::class, 'destroy'])->name('destroy');
+});
 require __DIR__.'/auth.php';
 

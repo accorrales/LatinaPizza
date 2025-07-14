@@ -12,9 +12,5 @@ class Tamano extends Model
     {
         return $this->hasMany(DetallePedido::class);
     }
-    public function tamano()
-    {
-        return $this->belongsTo(Tamano::class);
-    }
 
 }

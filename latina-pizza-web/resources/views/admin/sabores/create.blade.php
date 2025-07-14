@@ -16,7 +16,7 @@
     @endif
 
     {{-- Formulario de creación --}}
-    <form action="{{ route('admin.sabores.store') }}" method="POST" class="space-y-6 bg-white p-6 rounded-lg shadow-md" enctype="multipart/form-data">
+    <form id="formCrearTamano" action="{{ route('admin.sabores.store') }}" method="POST" class="space-y-6 bg-white p-6 rounded-lg shadow-md" enctype="multipart/form-data">
         @csrf
 
         {{-- Nombre --}}
@@ -45,10 +45,12 @@
 
         {{-- Botones --}}
         <div class="flex justify-end gap-3">
-            <a href="{{ route('admin.sabores.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow">
-                Cancelar
+            <a href="{{ route('admin.sabores.index') }}"
+                onclick="mostrarLoading()"
+                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow">
+                    Cancelar
             </a>
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded shadow">
+            <button type="submit" onclick="return validarYMostrarLoading('formCrearTamano')" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded shadow">
                 Guardar Sabor
             </button>
         </div>

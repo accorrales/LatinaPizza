@@ -95,6 +95,8 @@
                                     <a href="{{ route('admin.categorias.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">⚙️ Categorías</a>
                                     <a href="{{ route('admin.pedidos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">📦 Pedidos</a>
                                     <a href="{{ route('admin.sabores.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Sabores</a>
+                                    <a href="{{ route('admin.tamanos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Tamaños</a>
+                                    <a href="{{ route('admin.masas.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Masas</a>
                                 </div>
                             </div>
                             <div x-show="open"
@@ -107,6 +109,8 @@
                                 <a href="{{ route('admin.categorias.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">⚙️ Categorías</a>
                                 <a href="{{ route('admin.pedidos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">📦 Pedidos</a>
                                 <a href="{{ route('admin.sabores.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Sabores</a>
+                                <a href="{{ route('admin.tamanos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Tamaños</a>
+                                <a href="{{ route('admin.masas.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Masas</a>
                             </div>
                         </div>
                     @endif
@@ -248,6 +252,18 @@
 
             function ocultarLoading() {
                 document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        </script>
+        <script>
+            function validarYMostrarLoading(formId) {
+                const form = document.getElementById(formId);
+                if (form && form.checkValidity()) {
+                    mostrarLoading();
+                    return true;
+                } else {
+                    form.reportValidity(); // muestra errores
+                    return false;
+                }
             }
         </script>
 

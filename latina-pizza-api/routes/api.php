@@ -18,6 +18,8 @@ use App\Http\Controllers\API\DetallePedidoPromocionController;
 use App\Http\Controllers\API\PromocionController;
 use App\Http\Controllers\Api\OpcionesPizzaController;
 use App\Http\Controllers\Api\SaborController;
+use App\Http\Controllers\Api\TamanoController;
+use App\Http\Controllers\Api\MasaController; 
 
 Route::middleware([
     'auth:sanctum',
@@ -133,4 +135,10 @@ Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin'
     Route::apiResource('sabores', SaborController::class);
 });
 
+Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+    Route::apiResource('tamanos', TamanoController::class);
+});
 
+Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+    Route::apiResource('masas', MasaController::class);
+});
