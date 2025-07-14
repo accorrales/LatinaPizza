@@ -9,16 +9,17 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
         Schema::table('carrito_items', function (Blueprint $table) {
-            $table->unsignedBigInteger('promocion_id')->nullable()->after('producto_id');
-
-            $table->foreign('promocion_id')->references('id')->on('promociones')->onDelete('set null');
+            $table->foreignId('promocion_id')->nullable()->constrained('promociones')->onDelete('set null');
         });
     }
 
-    public function down(): void
+    /**
+     * Reverse the migrations.
+     */
+    public function down()
     {
         Schema::table('carrito_items', function (Blueprint $table) {
             $table->dropForeign(['promocion_id']);

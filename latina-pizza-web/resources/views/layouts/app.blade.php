@@ -21,6 +21,26 @@
     }
 </style>
 <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<style>
+    
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.3s ease-out;
+}
+</style>
+
 </head>
 <body class="bg-gray-100 font-sans text-gray-900">
     <header class="bg-white backdrop-blur shadow-md sticky top-0 z-50 border-b border-gray-200">
@@ -28,7 +48,7 @@
 
             {{-- LOGO --}}
             <a href="/" class="flex items-center">
-                <img src="{{ asset('storage/Logo.png') }}" alt="Latina Pizza Logo"
+                <img src="{{ asset('images/Logo.png') }}" alt="Latina Pizza Logo"
                     class="h-16 w-auto transition-transform duration-300 hover:scale-105 drop-shadow-lg">
             </a>
 
@@ -107,156 +127,217 @@
         </div>
 
         {{-- MENÚ PARA MÓVIL (animación slide) --}}
-        <div id="mobile-menu"
-            class="sm:hidden hidden flex flex-col gap-3 px-4 pb-4 text-sm text-gray-800 font-medium animate-slide-down">
-            <a href="/catalogo" class="hover:text-red-600 transition">🍕 Menú</a>
-            <a href="{{ route('carrito.ver') }}" class="hover:text-red-600 transition">🛒 Carrito</a>
-            @auth
-    <a href="{{ route('usuario.pedidos') }}" class="hover:text-blue-700 transition">🧾 Mis Pedidos</a>
+            <div id="mobile-menu"
+                class="sm:hidden hidden flex flex-col gap-3 px-4 pb-4 text-sm text-gray-800 font-medium animate-slide-down">
+                <a href="/catalogo" class="hover:text-red-600 transition">🍕 Menú</a>
+                <a href="{{ route('carrito.ver') }}" class="hover:text-red-600 transition">🛒 Carrito</a>
+                @auth
+                <a href="{{ route('usuario.pedidos') }}" class="hover:text-blue-700 transition">🧾 Mis Pedidos</a>
 
-    @if(Auth::user()->role === 'admin')
+                @if(Auth::user()->role === 'admin')
 
-        {{-- 🛠️ Mantenimientos --}}
-        <div x-data="{ openAdmin: false }" class="relative">
-            <button @click="openAdmin = !openAdmin"
-                    class="hover:text-blue-700 transition flex items-center gap-1">
-                🛠️ Administración
-                <i :class="openAdmin ? 'fa-chevron-up' : 'fa-chevron-down'" class="fas text-xs"></i>
-            </button>
-            <div x-show="openAdmin"
-                @click.away="openAdmin = false"
-                x-transition
-                class="absolute right-0 mt-2 bg-white shadow-md rounded-md z-50 w-56 border border-gray-200 py-2 text-sm text-gray-800">
-                <a href="{{ route('admin.usuarios.index') }}" class="block px-4 py-2 hover:bg-gray-100">👥 Usuarios</a>
-                <a href="{{ route('admin.productos.index') }}" class="block px-4 py-2 hover:bg-gray-100">🧀 Productos</a>
-                <a href="{{ route('admin.categorias.index') }}" class="block px-4 py-2 hover:bg-gray-100">⚙️ Categorías</a>
-                <hr class="my-1">
-                <a href="{{ route('admin.pedidos.index') }}" class="block px-4 py-2 hover:bg-gray-100">📋 Pedidos</a>
-                <a href="{{ url('/admin/tiempo-estimado') }}" class="block px-4 py-2 hover:bg-gray-100">⏱️ Tiempo Estimado</a>
-                <a href="{{ url('/admin/resumen-sucursal/' . Auth::user()->sucursal_id) }}" class="block px-4 py-2 hover:bg-gray-100">📊 Resumen Sucursal</a>
+                    {{-- 🛠️ Mantenimientos --}}
+                    <div x-data="{ openAdmin: false }" class="relative">
+                        <button @click="openAdmin = !openAdmin"
+                                class="hover:text-blue-700 transition flex items-center gap-1">
+                            🛠️ Administración
+                            <i :class="openAdmin ? 'fa-chevron-up' : 'fa-chevron-down'" class="fas text-xs"></i>
+                        </button>
+                        <div x-show="openAdmin"
+                            @click.away="openAdmin = false"
+                            x-transition
+                            class="absolute right-0 mt-2 bg-white shadow-md rounded-md z-50 w-56 border border-gray-200 py-2 text-sm text-gray-800">
+                            <a href="{{ route('admin.usuarios.index') }}" class="block px-4 py-2 hover:bg-gray-100">👥 Usuarios</a>
+                            <a href="{{ route('admin.productos.index') }}" class="block px-4 py-2 hover:bg-gray-100">🧀 Productos</a>
+                            <a href="{{ route('admin.categorias.index') }}" class="block px-4 py-2 hover:bg-gray-100">⚙️ Categorías</a>
+                            <hr class="my-1">
+                            <a href="{{ route('admin.pedidos.index') }}" class="block px-4 py-2 hover:bg-gray-100">📋 Pedidos</a>
+                            <a href="{{ url('/admin/tiempo-estimado') }}" class="block px-4 py-2 hover:bg-gray-100">⏱️ Tiempo Estimado</a>
+                            <a href="{{ url('/admin/resumen-sucursal/' . Auth::user()->sucursal_id) }}" class="block px-4 py-2 hover:bg-gray-100">📊 Resumen Sucursal</a>
+                        </div>
+                    </div>
+                @endif
+
+                    <span class="text-gray-700 mt-3">👤 {{ Auth::user()->name }}</span>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="hover:text-red-600 transition">Cerrar sesión</button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" class="hover:text-blue-700 transition">🔐 Login</a>
+                    <a href="{{ route('register') }}" class="hover:text-blue-700 transition">📝 Registro</a>
+                @endauth
+            </div>
+
+            {{-- SCRIPTS INTERACTIVOS --}}
+            <script>
+                const toggle = document.getElementById('menu-toggle');
+                const menu = document.getElementById('mobile-menu');
+                const lines = toggle.querySelectorAll('.hamburger-line');
+
+                toggle.addEventListener('click', () => {
+                    menu.classList.toggle('hidden');
+                    lines[0].classList.toggle('rotate-45');
+                    lines[1].classList.toggle('opacity-0');
+                    lines[2].classList.toggle('-rotate-45');
+                });
+                // Cerrar el menú móvil al hacer clic en un enlace
+                document.querySelectorAll('#mobile-menu a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        menu.classList.add('hidden');
+                        lines[0].classList.remove('rotate-45');
+                        lines[1].classList.remove('opacity-0');
+                        lines[2].classList.remove('-rotate-45');
+                    });
+                });
+            </script>
+
+            {{-- TAILWIND EXTRA CLASES PERSONALIZADAS --}}
+            <style>
+                .animate-slide-down {
+                    animation: slideDown 0.3s ease-out forwards;
+                }
+
+                @keyframes slideDown {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                .group:hover .group-hover\:flex {
+                    display: flex !important;
+                }
+            </style>
+        </header>
+        <!-- 🍕 Overlay de Carga Visual -->
+        <!-- PIZZA LOADING MEJORADO -->
+        <div id="loadingOverlay" class="fixed inset-0 z-[9999] bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center transition-opacity duration-300">
+            <div class="flex flex-col items-center space-y-4 animate-fade-in">
+                <!-- Pizza girando con glow -->
+                <div class="relative">
+                <img src="/images/pizzaloading.gif" alt="Cargando..." class="w-24 h-24 animate-spin-slow drop-shadow-glow">
+                <div class="absolute inset-0 rounded-full bg-red-500 opacity-30 blur-2xl animate-ping"></div>
+                </div>
+                <!-- Texto suave -->
+                <p class="text-white text-base sm:text-lg font-medium tracking-wide animate-pulse">Cargando Con Amor🍕❤️</p>
             </div>
         </div>
-    @endif
 
-    <span class="text-gray-700 mt-3">👤 {{ Auth::user()->name }}</span>
-    <form method="POST" action="{{ route('logout') }}">
-        @csrf
-        <button type="submit" class="hover:text-red-600 transition">Cerrar sesión</button>
-    </form>
-@else
-    <a href="{{ route('login') }}" class="hover:text-blue-700 transition">🔐 Login</a>
-    <a href="{{ route('register') }}" class="hover:text-blue-700 transition">📝 Registro</a>
-@endauth
-        </div>
-
-        {{-- SCRIPTS INTERACTIVOS --}}
-        <script>
-            const toggle = document.getElementById('menu-toggle');
-            const menu = document.getElementById('mobile-menu');
-            const lines = toggle.querySelectorAll('.hamburger-line');
-
-            toggle.addEventListener('click', () => {
-                menu.classList.toggle('hidden');
-                lines[0].classList.toggle('rotate-45');
-                lines[1].classList.toggle('opacity-0');
-                lines[2].classList.toggle('-rotate-45');
-            });
-            // Cerrar el menú móvil al hacer clic en un enlace
-            document.querySelectorAll('#mobile-menu a').forEach(link => {
-                link.addEventListener('click', () => {
-                    menu.classList.add('hidden');
-                    lines[0].classList.remove('rotate-45');
-                    lines[1].classList.remove('opacity-0');
-                    lines[2].classList.remove('-rotate-45');
-                });
-            });
-        </script>
-
-        {{-- TAILWIND EXTRA CLASES PERSONALIZADAS --}}
         <style>
-            .animate-slide-down {
-                animation: slideDown 0.3s ease-out forwards;
+            .animate-spin-slow {
+                animation: spin 1.8s linear infinite;
             }
 
-            @keyframes slideDown {
-                from {
-                    opacity: 0;
-                    transform: translateY(-10px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-            .group:hover .group-hover\:flex {
-                display: flex !important;
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
             }
         </style>
-    </header>
 
+        <script>
+          function mostrarLoading() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            }
 
-    <main class="max-w-7xl mx-auto py-8">
-        @yield('content')
-    </main>
+            function ocultarLoading() {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        </script>
 
-    <footer class="bg-gray-900 text-white py-10 mt-16 px-4" data-aos="fade-up">
-    <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-10">
+        <main class="max-w-7xl mx-auto py-8">
+            @yield('content')
+        </main>
 
-        {{-- LOGO + DESCRIPCIÓN --}}
-        <div class="flex flex-col items-start space-y-4">
-            <img src="{{ asset('storage/Logo.png') }}" alt="Latina Pizza Logo"
-                class="h-14 w-auto drop-shadow-lg transition-transform duration-300 hover:scale-105">
-            <p class="text-sm text-gray-400 leading-6">
-                Gracias por elegir Latina Pizza. Te llevamos el mejor sabor a la puerta de tu casa.
-            </p>
-        </div>
+        <footer class="bg-gray-900 text-white py-10 mt-16 px-4" data-aos="fade-up">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-10">
 
-        {{-- ENLACES RÁPIDOS --}}
-        <div class="space-y-3">
-            <h4 class="text-red-400 font-semibold mb-2 text-lg">Enlaces</h4>
-            <a href="/" class="block text-gray-300 hover:text-red-300 transition">Inicio</a>
-            <a href="/catalogo" class="block text-gray-300 hover:text-red-300 transition">Menú</a>
-            <a href="{{ route('usuario.pedidos') }}" class="block text-gray-300 hover:text-red-300 transition">Mis Pedidos</a>
-            @auth
-                <a href="{{ route('logout') }}" class="block text-gray-300 hover:text-red-300 transition">Cerrar sesión</a>
-            @else
-                <a href="{{ route('login') }}" class="block text-gray-300 hover:text-red-300 transition">Login</a>
-                <a href="{{ route('register') }}" class="block text-gray-300 hover:text-red-300 transition">Registro</a>
-            @endauth
-        </div>
+                {{-- LOGO + DESCRIPCIÓN --}}
+                <div class="flex flex-col items-start space-y-4">
+                    <img src="{{ asset('images/Logo.png') }}" alt="Latina Pizza Logo"
+                        class="h-14 w-auto drop-shadow-lg transition-transform duration-300 hover:scale-105">
+                    <p class="text-sm text-gray-400 leading-6">
+                        Gracias por elegir Latina Pizza. Te llevamos el mejor sabor a la puerta de tu casa.
+                    </p>
+                </div>
 
-        {{-- CONTACTO + HORARIOS --}}
-        <div class="space-y-3">
-            <h4 class="text-red-400 font-semibold mb-2 text-lg">Contacto</h4>
-            <p class="text-sm text-gray-400">📍 San José, Costa Rica</p>
-            <p class="text-sm text-gray-400">📞 +506 8888-8888</p>
-            <p class="text-sm text-gray-400">✉️ contacto@latinapizza.com</p>
+                {{-- ENLACES RÁPIDOS --}}
+                <div class="space-y-3">
+                    <h4 class="text-red-400 font-semibold mb-2 text-lg">Enlaces</h4>
+                    <a href="/" class="block text-gray-300 hover:text-red-300 transition">Inicio</a>
+                    <a href="/catalogo" class="block text-gray-300 hover:text-red-300 transition">Menú</a>
+                    <a href="{{ route('usuario.pedidos') }}" class="block text-gray-300 hover:text-red-300 transition">Mis Pedidos</a>
+                    @auth
+                        <a href="{{ route('logout') }}" class="block text-gray-300 hover:text-red-300 transition">Cerrar sesión</a>
+                    @else
+                        <a href="{{ route('login') }}" class="block text-gray-300 hover:text-red-300 transition">Login</a>
+                        <a href="{{ route('register') }}" class="block text-gray-300 hover:text-red-300 transition">Registro</a>
+                    @endauth
+                </div>
 
-            <h4 class="text-red-400 font-semibold mt-5 mb-1 text-lg">Horarios</h4>
-            <p class="text-sm text-gray-400">Lunes a Domingo: 11:00am - 10:00pm</p>
-            <p class="text-sm text-gray-500 italic">Aplica en todos los locales</p>
+                {{-- CONTACTO + HORARIOS --}}
+                <div class="space-y-3">
+                    <h4 class="text-red-400 font-semibold mb-2 text-lg">Contacto</h4>
+                    <p class="text-sm text-gray-400">📍 San José, Costa Rica</p>
+                    <p class="text-sm text-gray-400">📞 +506 8888-8888</p>
+                    <p class="text-sm text-gray-400">✉️ contacto@latinapizza.com</p>
 
-            <div class="flex space-x-4 mt-4">
-                <a href="#" class="text-gray-400 hover:text-red-400 transition duration-300"><i class="fab fa-facebook-f"></i></a>
-                <a href="#" class="text-gray-400 hover:text-red-400 transition duration-300"><i class="fab fa-instagram"></i></a>
-                <a href="#" class="text-gray-400 hover:text-red-400 transition duration-300"><i class="fab fa-whatsapp"></i></a>
+                    <h4 class="text-red-400 font-semibold mt-5 mb-1 text-lg">Horarios</h4>
+                    <p class="text-sm text-gray-400">Lunes a Domingo: 11:00am - 10:00pm</p>
+                    <p class="text-sm text-gray-500 italic">Aplica en todos los locales</p>
+
+                    <div class="flex space-x-4 mt-4">
+                        <a href="#" class="text-gray-400 hover:text-red-400 transition duration-300"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-red-400 transition duration-300"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-red-400 transition duration-300"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
 
-    <div class="mt-10 text-center text-gray-500 text-sm border-t border-gray-800 pt-4">
-        © {{ date('Y') }} Latina Pizza. Todos los derechos reservados.
-    </div>
-</footer>
-    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-    <script>
-        AOS.init({
-            duration: 800, // Duración de la animación
-            once: true, // Solo animar una vez
-            easing: 'ease-in-out', // Efecto de suavizado
-        });
-    </script>
-     @yield('scripts') {{-- justo antes del </body> --}}
-     
+            <div class="mt-10 text-center text-gray-500 text-sm border-t border-gray-800 pt-4">
+                © {{ date('Y') }} Latina Pizza. Todos los derechos reservados.
+            </div>
+        </footer>
+
+        <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+        <script>
+            AOS.init({
+                duration: 800, // Duración de la animación
+                once: true, // Solo animar una vez
+                easing: 'ease-in-out', // Efecto de suavizado
+            });
+        </script>
+        @yield('scripts') {{-- justo antes del </body> --}}
+        <!-- 🍕 Overlay de Carga Visual -->
+        
+        <script>
+    function mostrarLoading() {
+        document.getElementById('loadingOverlay').classList.remove('hidden');
+    }
+
+    document.getElementById('btnIrAlCarrito').addEventListener('click', function () {
+        mostrarLoading();
+    });
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const enlacesNavbar = document.querySelectorAll('nav a, .navbar a, header a');
+
+  enlacesNavbar.forEach(enlace => {
+    enlace.addEventListener('click', (e) => {
+      const href = enlace.getAttribute('href');
+      
+      // Evitamos anclas o enlaces vacíos
+      if (!href || href.startsWith('#') || href === 'javascript:void(0)') return;
+
+      // Mostrar loading solo si es navegación real dentro del sitio
+      mostrarLoading();
+    });
+  });
+});
+</script>
 </body>
 </html>

@@ -17,6 +17,7 @@ use App\Http\Controllers\API\DetallePedidoController;
 use App\Http\Controllers\API\DetallePedidoPromocionController;
 use App\Http\Controllers\API\PromocionController;
 use App\Http\Controllers\Api\OpcionesPizzaController;
+use App\Http\Controllers\Api\SaborController;
 
 Route::middleware([
     'auth:sanctum',
@@ -88,6 +89,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/carrito/remove/{id}', [CarritoController::class, 'remove']);
     Route::delete('/carrito/clear', [CarritoController::class, 'clear']);
     Route::post('/stripe/checkout', [StripeController::class, 'checkout']);
+    Route::post('/carrito/agregar-promocion', [CarritoController::class, 'agregarPromocion']);
 });
 
 Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
@@ -106,7 +108,6 @@ Route::get('/detalle-promocion/{pedido_id}', [DetallePedidoPromocionController::
 
 Route::middleware('auth:sanctum')->get('/pedidos/{id}', [PedidoController::class, 'show']);
 
-Route::apiResource('promociones', PromocionController::class)->only(['index', 'store']);
 Route::get('/promociones/{id}', [PromocionController::class, 'show']);
 Route::get('/detalle-pedido-promocion/{pedido_id}/detalles', [DetallePedidoPromocionController::class, 'detallesConPrecioYDesglose']);
 Route::get('/sabores-con-tamanos', [ProductoController::class, 'saboresConTamanos']);
@@ -122,3 +123,9 @@ Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin'
     Route::get('/resumen-sucursal/{id}', [PedidoAdminController::class, 'resumenSucursal']); // ✅ Resumen por sucursal
     Route::get('/pedidos/{id}/ver', [PedidoAdminController::class, 'verPedido']);
 });
+
+Route::get('/promociones', [PromocionController::class, 'index']);
+Route::get('/promociones/{id}', [PromocionController::class, 'show']);
+Route::get('/sabores', [SaborController::class, 'index']);
+Route::get('/productos/bebidas', [ProductoController::class, 'bebidas']);
+

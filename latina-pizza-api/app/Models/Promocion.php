@@ -13,11 +13,14 @@ class Promocion extends Model
         'descripcion',
         'precio_total',
         'precio_sugerido',
+        'imagen', // si la agregaste
     ];
 
-    public function detalles()
+    public function componentes()
     {
-        return $this->hasMany(DetallePedidoPromocion::class, 'promocion_id')
+        return $this->hasMany(PromocionComponente::class, 'promocion_id')
                     ->with(['sabor', 'tamano', 'masa']);
     }
 }
+
+

@@ -13,17 +13,24 @@ class CatalogoController extends Controller
         $categoriaSeleccionada = $request->query('categoria_id');
         $sabores = [];
         $categorias = [];
+        $promociones = [];
 
         try {
-            // ✅ CAMBIO IMPORTANTE: ruta correcta del backend
+            // Rutas al backend
             $responseSabores = Http::get('http://127.0.0.1:8001/api/sabores-con-tamanos');
             $responseCategorias = Http::get('http://127.0.0.1:8001/api/categorias');
+            $responsePromociones = Http::get('http://127.0.0.1:8001/api/promociones');
 
-            if ($responseSabores->successful() && $responseCategorias->successful()) {
+            if (
+                $responseSabores->successful() &&
+                $responseCategorias->successful() &&
+                $responsePromociones->successful()
+            ) {
                 $sabores = $responseSabores->json();
                 $categorias = $responseCategorias->json();
+                $promociones = $responsePromociones->json()['data'];
 
-                // ✅ Filtra por categoría si hay una seleccionada
+                // Filtrar sabores por categoría si se seleccionó una
                 if ($categoriaSeleccionada) {
                     $sabores = collect($sabores)
                         ->where('categoria_id', $categoriaSeleccionada)
@@ -31,9 +38,8 @@ class CatalogoController extends Controller
                         ->all();
                 }
             } else {
-                session()->flash('error', 'No se pudieron obtener los sabores o categorías.');
+                session()->flash('error', 'No se pudieron obtener los datos del menú.');
             }
-
         } catch (\Exception $e) {
             session()->flash('error', 'Error de conexión con la API.');
         }
@@ -41,7 +47,9 @@ class CatalogoController extends Controller
         return view('catalogo.index', compact(
             'sabores',
             'categorias',
-            'categoriaSeleccionada'
+            'categoriaSeleccionada',
+            'promociones'
         ));
     }
 }
+

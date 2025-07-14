@@ -18,6 +18,10 @@ use App\Models\Extra;
 use Illuminate\Support\Facades\Log;
 use App\Models\Tamano;
 use App\Models\CarritoItem;
+use App\Models\CarritoItemExtra;
+use App\Models\Promocion;
+use App\Models\CarritoItemPromocionDetalle;
+use App\Models\CarritoItemsPromocionExtra;
 class CarritoController extends Controller
 {
     // Ver el carrito del usuario
@@ -28,7 +32,11 @@ class CarritoController extends Controller
             'items.producto.tamano',
             'items.producto.sabor',
             'items.masa',
-            'items.extras'
+            'items.extras',
+            'items.promocion',
+            'items.detallesPromocion.sabor',
+            'items.detallesPromocion.masa',
+            'items.detallesPromocion.extras.extra',
         ])->first();
 
         if (!$carrito || $carrito->items->isEmpty()) {
@@ -39,28 +47,98 @@ class CarritoController extends Controller
         $total = 0;
 
         foreach ($carrito->items as $item) {
-            $producto = $item->producto;
+            // Producto normal
+            if ($item->producto_id && $item->producto) {
+                $subtotal = $item->precio_total;
+                $total += $subtotal;
 
-            // Verificamos que el producto aún exista
-            if (!$producto) continue;
+                $items[] = [
+                    'id' => $item->id,
+                    'tipo' => 'producto',
+                    'nombre' => $item->producto->nombre,
+                    'tamano' => $item->producto->tamano->nombre ?? 'N/A',
+                    'sabor' => $item->producto->sabor->nombre ?? 'N/A',
+                    'masa_nombre' => $item->masa->tipo ?? 'N/A',
+                    'cantidad' => $item->cantidad,
+                    'nota_cliente' => $item->nota_cliente,
+                    'precio_total' => $item->precio_total,
+                    'extras' => $item->extras->map(fn($extra) => [
+                        'id' => $extra->id,
+                        'nombre' => $extra->nombre,
+                    ])->toArray(),
+                ];
+            }
 
-            $subtotal = $item->precio_total;
-            $total += $subtotal;
+            // Promoción personalizada
+            elseif ($item->promocion_id && $item->promocion) {
+                $base = floatval($item->promocion->precio_base);
+                $extrasTotal = 0;
 
-            $items[] = [
-                'id' => $item->id,
-                'nombre' => $producto->nombre,
-                'tamano' => $producto->tamano->nombre ?? 'N/A',
-                'sabor' => $producto->sabor->nombre ?? 'N/A',
-                'masa_nombre' => $item->masa->tipo ?? 'N/A',
-                'cantidad' => $item->cantidad,
-                'nota_cliente' => $item->nota_cliente,
-                'precio_total' => $item->precio_total,
-                'extras' => $item->extras->map(fn($extra) => [
-                    'id' => $extra->id,
-                    'nombre' => $extra->nombre,
-                ])->toArray(),
-            ];
+                $componentes = $item->detallesPromocion->map(function ($detalle) use (&$extrasTotal) {
+                    if ($detalle->tipo === 'pizza') {
+                        $tamanoNombre = strtolower($detalle->tamano->nombre ?? 'mediana'); // Ej: 'mediana', 'grande'
+
+                        $extras = $detalle->extras->map(function ($e) use (&$extrasTotal, $tamanoNombre) {
+                            $precio = match ($tamanoNombre) {
+                                'pequena' => $e->extra->precio_pequena,
+                                'mediana' => $e->extra->precio_mediana,
+                                'grande' => $e->extra->precio_grande,
+                                'extragrande' => $e->extra->precio_extragrande,
+                                default => 0,
+                            };
+
+                            $extrasTotal += floatval($precio);
+
+                            return [
+                                'id' => $e->extra->id,
+                                'nombre' => $e->extra->nombre,
+                                'precio' => $precio,
+                            ];
+                        });
+
+                        return [
+                            'tipo' => 'pizza',
+                            'sabor' => [
+                                'nombre' => $detalle->sabor->nombre ?? 'N/A'
+                            ],
+                            'masa' => [
+                                'nombre' => $detalle->masa->tipo ?? 'N/A'
+                            ],
+                            'tamano' => [
+                                'nombre' => ucfirst($tamanoNombre)
+                            ],
+                            'nota_cliente' => $detalle->nota_cliente,
+                            'extras' => $extras->toArray(),
+                        ];
+                    } elseif ($detalle->tipo === 'bebida') {
+                        return [
+                            'tipo' => 'bebida',
+                            'producto' => [
+                                'nombre' => $detalle->producto->nombre ?? 'N/A'
+                            ]
+                        ];
+                    }
+
+                    return ['tipo' => 'desconocido'];
+                });
+
+                $subtotal = $base + $extrasTotal;
+                $total += $subtotal;
+
+                $items[] = [
+                    'id' => $item->id,
+                    'tipo' => 'promocion',
+                    'nombre' => $item->promocion->nombre,
+                    'descripcion' => $item->promocion->descripcion,
+                    'imagen' => $item->promocion->imagen ?? null,
+                    'pizzas' => $componentes,
+                    'precio_total' => $subtotal,
+                    'desglose' => [
+                        'base' => $base,
+                        'extras' => $extrasTotal,
+                    ]
+                ];
+            }
         }
 
         return response()->json([
@@ -68,7 +146,6 @@ class CarritoController extends Controller
             'total' => $total,
         ]);
     }
-
 
     // Agregar producto al carrito
     public function add(Request $request)
@@ -134,9 +211,95 @@ class CarritoController extends Controller
             $item->extras()->sync($extras->pluck('id')->toArray());
         }
 
-        return response()->json(['message' => 'Producto personalizado agregado al carrito']);
+        return response()->json(['message' => 'Producto agregado al carrito']);
     }
+    public function agregarPromocion(Request $request)
+    {
+        DB::beginTransaction();
 
+        try {
+            $user = Auth::user();
+
+            // ⚠️ Crear carrito si no existe
+            $carrito = Carrito::firstOrCreate(
+                ['user_id' => $user->id],
+                ['estado' => 'activo']
+            );
+
+            // ✅ Verificamos promoción
+            $promocion = Promocion::with('componentes')->findOrFail($request->promocion_id);
+
+            // ✅ Crear item principal del carrito
+            $item = CarritoItem::create([
+                'carrito_id' => $carrito->id,
+                'user_id' => $user->id,
+                'tipo' => 'promocion',
+                'promocion_id' => $promocion->id,
+                'precio_total' => 0,
+            ]);
+
+            // ✅ Precio base de la promoción
+            $precioFinal = floatval($promocion->precio_total);
+
+            // ✅ Guardamos los componentes personalizados
+            foreach ($request->productos as $producto) {
+                if ($producto['tipo'] === 'pizza') {
+                    $detalle = CarritoItemPromocionDetalle::create([
+                        'carrito_item_id' => $item->id,
+                        'tipo' => 'pizza',
+                        'sabor_id' => $producto['sabor_id'],
+                        'masa_id' => $producto['masa_id'],
+                        'nota_cliente' => $producto['nota_cliente'] ?? null,
+                    ]);
+
+                    if (!empty($producto['extras']) && $detalle) {
+                        foreach ($producto['extras'] as $extraId) {
+                            $extra = Extra::find($extraId);
+                            if (!$extra) continue;
+
+                            // ✅ Sumamos el precio general del extra (no por tamaño)
+                            $precioExtra = floatval($extra->precio ?? 0);
+                            $precioFinal += $precioExtra;
+
+                            CarritoItemsPromocionExtra::create([
+                                'detalle_id' => $detalle->id,
+                                'extra_id' => $extra->id,
+                                'precio' => $precioExtra,
+                            ]);
+                        }
+                    }
+                }
+
+                if ($producto['tipo'] === 'bebida') {
+                    $bebida = Producto::find($producto['producto_id']);
+                    if ($bebida && $bebida->categoria_id == 4) {
+                        CarritoItemPromocionDetalle::create([
+                            'carrito_item_id' => $item->id,
+                            'tipo' => 'bebida',
+                            'producto_id' => $bebida->id,
+                        ]);
+                    }
+                }
+            }
+
+            // ✅ Actualizamos total final
+            $item->update(['precio_total' => $precioFinal]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => '✅ Promoción agregada correctamente al carrito',
+                'carrito_item_id' => $item->id,
+                'precio_total' => $precioFinal
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => '❌ No se pudo agregar la promoción',
+                'debug' => $e->getMessage()
+            ], 500);
+        }
+    }
     // Eliminar producto del carrito
     public function remove($id)
     {

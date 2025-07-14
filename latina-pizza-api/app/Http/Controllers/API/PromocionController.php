@@ -9,10 +9,14 @@ class PromocionController extends Controller
 {
     public function index()
     {
-        $promociones = Promocion::all();
+        $promociones = Promocion::with([
+            'componentes.sabor',
+            'componentes.tamano',
+            'componentes.masa'
+        ])->get();
 
         return response()->json([
-            'message' => 'Lista de promociones',
+            'success' => true,
             'data' => $promociones
         ]);
     }
@@ -35,16 +39,8 @@ class PromocionController extends Controller
 
     public function show($id)
     {
-        $promocion = Promocion::with([
-            'detalles.sabor',
-            'detalles.tamano',
-            'detalles.masa'
-        ])->findOrFail($id);
-
-        return response()->json([
-            'message' => 'Detalle de la promoción',
-            'data' => $promocion
-        ]);
+        $promociones = Promocion::with(['componentes.tamano'])->get();
+        return response()->json(['data' => $promociones]);
     }
 
     public function update(Request $request, $id)

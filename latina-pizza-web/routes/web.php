@@ -10,6 +10,7 @@ use App\Http\Controllers\AdminUsuarioController;
 use App\Http\Controllers\PedidoPromocionController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\AdminPedidoController;
+use App\Http\Controllers\PromocionesController;
 
 Route::get('/', function () {
     return view('home');
@@ -30,6 +31,7 @@ Route::get('/carrito', [CarritoController::class, 'ver'])->name('carrito.ver');
 Route::delete('/carrito/eliminar/{id}', [CarritoController::class, 'eliminar'])->name('carrito.eliminar');
 Route::put('/carrito/update/{id}', [CarritoController::class, 'actualizarCantidad'])->name('carrito.update');
 Route::post('/carrito/checkout', [CarritoController::class, 'checkout'])->name('carrito.checkout');
+Route::post('/carrito/agregar-promocion', [CarritoController::class, 'agregarPromocion'])->name('carrito.agregarPromocion');
 
 // Admin routes
 // This route is for the admin to manage categories
@@ -69,6 +71,7 @@ Route::get('/mis-pedidos/{id}', [PedidoController::class, 'detalleHistorial'])->
 Route::get('/mis-pedidos/{id}/promocion', [PedidoController::class, 'detallePromocion'])
     ->name('pedidos.detalle.promocion');
 
+Route::get('/promociones', [PromocionesController::class, 'index'])->name('promociones.index');
 
 require __DIR__.'/auth.php';
 

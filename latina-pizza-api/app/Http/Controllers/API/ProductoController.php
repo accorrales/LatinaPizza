@@ -14,11 +14,17 @@ use App\Models\Producto;
 
 class ProductoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // ✅ Trae también sabor, tamano y categoría
-        return Producto::with(['categoria', 'sabor', 'tamano'])->get();
+        $query = Producto::with(['categoria', 'sabor', 'tamano']);
+
+        if ($request->filled('categoria_id')) {
+            $query->where('categoria_id', $request->categoria_id);
+        }
+
+        return response()->json($query->get());
     }
+
     public function saboresConTamanos()
     {
         $productos = Producto::with(['sabor', 'tamano'])
@@ -106,6 +112,15 @@ class ProductoController extends Controller
     {
         Producto::destroy($id);
         return response()->json(['message' => 'Producto eliminado.']);
+    }
+    public function bebidas()
+    {
+        // Refresco tiene id = 4 en la tabla categorías
+        $bebidas = Producto::where('categoria_id', 4)
+                    ->where('estado', true)
+                    ->get(['id', 'nombre']);
+
+        return response()->json($bebidas);
     }
 }
 

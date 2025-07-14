@@ -111,4 +111,26 @@ class CarritoController extends Controller
             return back()->with('error', 'Error al actualizar cantidad: ' . $response->body());
         }
     }
+    public function agregarPromocion(Request $request)
+    {
+        $token = Session::get('token');
+
+        if (!$token) {
+            return response()->json(['error' => 'Debe iniciar sesión'], 401);
+        }
+
+        $response = Http::withToken($token)->post('http://127.0.0.1:8001/api/carrito/agregar-promocion', $request->all());
+
+        if ($response->successful()) {
+            return response()->json([
+                'message' => '🎉 Promoción agregada correctamente al carrito',
+                'data' => $response->json()
+            ]);
+        } else {
+            return response()->json([
+                'error' => '❌ Error al agregar la promoción',
+                'debug' => $response->body()
+            ], $response->status());
+        }
+    }
 }

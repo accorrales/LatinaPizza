@@ -6,7 +6,7 @@
             &times;
         </button>
 
-        <form method="POST" action="{{ route('carrito.agregar') }}" class="p-6 sm:p-8">
+        <form id="formAgregarProducto" class="p-6 sm:p-8">
             @csrf
 
             <!-- Imagen destacada -->
@@ -58,4 +58,20 @@
         </form>
     </div>
 </div>
+
+<div id="modalConfirmacion" class="fixed inset-0 z-50 bg-black bg-opacity-60 hidden flex items-center justify-center px-4 animate-fade-in-down">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
+    <h3 class="text-xl font-semibold text-green-700 mb-4">🎉 ¡Producto agregado al carrito!</h3>
+    <p class="text-gray-700 mb-6">¿Qué deseas hacer ahora?</p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <button onclick="cerrarModalConfirmacion()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-xl w-full">
+        🔁 Seguir comprando
+      </button>
+      <a href="/carrito" id="btnIrAlCarrito" onclick="mostrarLoading()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl w-full text-center">
+        🛒 Ir al carrito
+        </a>
+    </div>
+  </div>
+</div>
+
 
