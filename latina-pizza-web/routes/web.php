@@ -14,6 +14,7 @@ use App\Http\Controllers\PromocionesController;
 use App\Http\Controllers\AdminSaborController;
 use App\Http\Controllers\AdminTamanoController;
 use App\Http\Controllers\AdminMasaController;
+use App\Http\Controllers\AdminExtraController;
 
 Route::get('/', function () {
     return view('home');
@@ -99,5 +100,16 @@ Route::prefix('admin/masas')->name('admin.masas.')->group(function () {
     Route::put('/{id}', [AdminMasaController::class, 'update'])->name('update');
     Route::delete('/{id}', [AdminMasaController::class, 'destroy'])->name('destroy');
 });
+
+
+Route::prefix('admin/extras')->name('admin.extras.')->group(function () {
+    Route::get('/', [AdminExtraController::class, 'index'])->name('index');
+    Route::get('/create', [AdminExtraController::class, 'create'])->name('create');
+    Route::post('/', [AdminExtraController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [AdminExtraController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [AdminExtraController::class, 'update'])->name('update');
+    Route::delete('/{id}', [AdminExtraController::class, 'destroy'])->name('destroy');
+});
+
 require __DIR__.'/auth.php';
 

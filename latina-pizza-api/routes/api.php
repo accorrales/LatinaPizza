@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\OpcionesPizzaController;
 use App\Http\Controllers\Api\SaborController;
 use App\Http\Controllers\Api\TamanoController;
 use App\Http\Controllers\Api\MasaController; 
+use App\Http\Controllers\Api\ExtraController;
 
 Route::middleware([
     'auth:sanctum',
@@ -141,4 +142,8 @@ Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin'
 
 Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
     Route::apiResource('masas', MasaController::class);
+});
+
+Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+    Route::apiResource('extras-productos', ExtraController::class);
 });
