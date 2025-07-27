@@ -27,21 +27,49 @@ class PromocionController extends Controller
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio_total' => 'required|numeric|min:0',
+            'incluye_bebida' => 'required|boolean', // ✅ Asegúrate de que esté en el request
+            'componentes' => 'nullable|array',
+            'componentes.*.tipo' => 'required|in:pizza,bebida',
+            'componentes.*.sabor_id' => 'nullable|exists:sabores,id',
+            'componentes.*.tamano_id' => 'nullable|exists:tamanos,id',
+            'componentes.*.masa_id' => 'nullable|exists:masas,id',
+        ]); 
+            
+        $promocion = Promocion::create([
+            'nombre' => $validated['nombre'],
+            'descripcion' => $validated['descripcion'] ?? null,
+            'precio_total' => $validated['precio_total'],
+            'incluye_bebida' => $validated['incluye_bebida'], // ✅ Aquí se guarda el valor
         ]);
 
-        $promocion = Promocion::create($validated);
+        if (isset($validated['componentes'])) {
+            foreach ($validated['componentes'] as $componente) {
+                $promocion->componentes()->create([
+                    'tipo'      => $componente['tipo'],
+                    'sabor_id'  => $componente['tipo'] === 'pizza' ? $componente['sabor_id'] ?? null : null,
+                    'tamano_id' => $componente['tipo'] === 'pizza' ? $componente['tamano_id'] ?? null : null,
+                    'masa_id'   => $componente['tipo'] === 'pizza' ? $componente['masa_id'] ?? null : null,
+                ]);
+            }
+        }
 
         return response()->json([
             'message' => 'Promoción creada exitosamente',
-            'promocion' => $promocion
+            'promocion' => $promocion->load('componentes.sabor', 'componentes.tamano', 'componentes.masa')
         ], 201);
     }
 
     public function show($id)
     {
-        $promociones = Promocion::with(['componentes.tamano'])->get();
-        return response()->json(['data' => $promociones]);
+        $promocion = Promocion::with([
+            'componentes.sabor',
+            'componentes.tamano',
+            'componentes.masa'
+        ])->findOrFail($id);
+
+        return response()->json(['data' => $promocion]);
     }
+
 
     public function update(Request $request, $id)
     {
@@ -52,15 +80,48 @@ class PromocionController extends Controller
             'descripcion' => 'nullable|string',
             'precio_total' => 'required|numeric|min:0',
             'precio_sugerido' => 'nullable|numeric|min:0',
+            'imagen' => 'nullable|string',
+            'incluye_bebida' => 'required|boolean',
+            'componentes' => 'required|array|min:1',
+            'componentes.*.tipo' => 'required|in:pizza,bebida',
+            'componentes.*.cantidad' => 'required|integer|min:1',
+            'componentes.*.tamano_id' => 'nullable|integer|exists:tamanos,id',
+            'componentes.*.sabor_id' => 'nullable|integer|exists:sabores,id',
+            'componentes.*.masa_id' => 'nullable|integer|exists:masas,id',
         ]);
 
-        $promocion->update($validated);
+        // 🔁 Actualiza la promoción
+        $promocion->update([
+            'nombre' => $validated['nombre'],
+            'descripcion' => $validated['descripcion'] ?? null,
+            'precio_total' => $validated['precio_total'],
+            'precio_sugerido' => $validated['precio_sugerido'] ?? null,
+            'imagen' => $validated['imagen'] ?? null,
+        ]);
+
+        // 🧹 Elimina componentes anteriores
+        $promocion->componentes()->delete();
+
+        // ➕ Crea los nuevos componentes
+        foreach ($validated['componentes'] as $componente) {
+            $promocion->componentes()->create([
+                'tipo' => $componente['tipo'],
+                'cantidad' => $componente['cantidad'],
+                'sabor_id' => $componente['sabor_id'] ?? null,
+                'tamano_id' => $componente['tamano_id'] ?? null,
+                'masa_id' => $componente['masa_id'] ?? null,
+            ]);
+        }
+
+        // 🔁 Carga relaciones para el response
+        $promocion->load('componentes.sabor', 'componentes.tamano', 'componentes.masa');
 
         return response()->json([
             'message' => 'Promoción actualizada correctamente',
-            'promocion' => $promocion
+            'promocion' => $promocion,
         ]);
     }
+
 
     public function destroy($id)
     {

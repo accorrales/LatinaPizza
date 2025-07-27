@@ -10,21 +10,28 @@ class TamanoController extends Controller
 {
     public function index()
     {
-        return response()->json(Tamano::all());
+        $tamanos = Tamano::all();
+
+        return response()->json([
+            'success' => true,
+            'data' => $tamanos
+        ]);
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'tipo' => 'required|string|max:255',
+            'nombre' => 'required|string|max:255', // ← corregido
             'precio_base' => 'required|numeric|min:0',
         ]);
 
-        $tamano = Tamano::create($request->all());
+        $tamano = Tamano::create([
+            'nombre' => $request->nombre,
+            'precio_base' => $request->precio_base,
+        ]);
 
         return response()->json($tamano, 201);
     }
-
     public function show($id)
     {
         $tamano = Tamano::findOrFail($id);
@@ -36,11 +43,14 @@ class TamanoController extends Controller
         $tamano = Tamano::findOrFail($id);
 
         $request->validate([
-            'tipo' => 'required|string|max:255',
+            'nombre' => 'required|string|max:255', // ← corregido
             'precio_base' => 'required|numeric|min:0',
         ]);
 
-        $tamano->update($request->all());
+        $tamano->update([
+            'nombre' => $request->nombre,
+            'precio_base' => $request->precio_base,
+        ]);
 
         return response()->json($tamano);
     }

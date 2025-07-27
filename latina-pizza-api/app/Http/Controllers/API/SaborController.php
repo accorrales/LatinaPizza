@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Sabor;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Models\Resena;  
 class SaborController extends Controller
 {
     public function index(): JsonResponse
@@ -16,6 +17,38 @@ class SaborController extends Controller
 
         return response()->json($sabores);
     }
+    public function indexConResenas(): JsonResponse
+    {
+        $sabores = Sabor::with(['resenas.user']) // 🔥 Relación completa
+                        ->whereHas('resenas')    // Solo los sabores que tienen reseñas
+                        ->orderBy('nombre')
+                        ->get()
+                        ->map(function ($sabor) {
+                            return [
+                                'id' => $sabor->id,
+                                'nombre' => $sabor->nombre,
+                                'descripcion' => $sabor->descripcion,
+                                'imagen' => $sabor->imagen,
+                                'promedio_resenas' => round($sabor->resenas->avg('calificacion') ?? 0, 1),
+                                'total_resenas' => $sabor->resenas->count(),
+                                'resenas' => $sabor->resenas->map(function ($resena) {
+                                    return [
+                                        'id' => $resena->id,
+                                        'comentario' => $resena->comentario,
+                                        'calificacion' => $resena->calificacion,
+                                        'created_at' => $resena->created_at,
+                                        'user' => [
+                                            'id' => $resena->user->id ?? null,
+                                            'name' => $resena->user->name ?? 'Usuario desconocido',
+                                        ],
+                                    ];
+                                }),
+                            ];
+                        });
+
+        return response()->json($sabores);
+    }
+
     // 📥 POST /api/sabores
     public function store(Request $request)
     {

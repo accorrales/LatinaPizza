@@ -13,4 +13,8 @@ class Sabor extends Model
     {
         return $this->hasMany(DetallePedido::class);
     }
+    public function resenas()
+    {
+        return $this->hasMany(Resena::class);
+    }
 }

@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\SaborController;
 use App\Http\Controllers\Api\TamanoController;
 use App\Http\Controllers\Api\MasaController; 
 use App\Http\Controllers\Api\ExtraController;
+use App\Http\Controllers\API\ResenaController;
 
 Route::middleware([
     'auth:sanctum',
@@ -36,11 +37,9 @@ Route::middleware([
     return response()->json(['message' => '🙋 Bienvenido, Cliente.']);
 });
 
-Route::apiResource('productos', ProductoController::class)->only(['index', 'show']);
 Route::apiResource('categorias', CategoriaController::class)->only(['index', 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('productos', ProductoController::class)->except(['index', 'show']);
     Route::apiResource('categorias', CategoriaController::class)->except(['index', 'show']);
 });
 
@@ -147,3 +146,35 @@ Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin'
 Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
     Route::apiResource('extras-productos', ExtraController::class);
 });
+
+Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+    Route::get('/productos', [ProductoController::class, 'index']);
+    Route::get('/productos/{id}', [ProductoController::class, 'show']);
+    Route::post('/productos', [ProductoController::class, 'store']);
+    Route::put('/productos/{id}', [ProductoController::class, 'update']);
+    Route::delete('/productos/{id}', [ProductoController::class, 'destroy']);
+
+    // Endpoints especiales
+    Route::get('/productos-sabores-tamanos', [ProductoController::class, 'saboresConTamanos']);
+    Route::get('/productos-bebidas', [ProductoController::class, 'bebidas']);
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    // Crear reseña (recibe sabor_id en el body)
+    Route::post('/resenas', [ResenaController::class, 'store']);
+    // Actualizar reseña
+    Route::put('/resenas/{id}', [ResenaController::class, 'update']);
+    // Eliminar reseña
+    Route::delete('/resenas/{id}', [ResenaController::class, 'destroy']);
+});
+    // Promedio de estrellas por sabor
+    Route::get('/resenas-promedio/{saborId}', [ResenaController::class, 'promedio']);
+    // Ver reseñas de un sabor
+    Route::get('/resenas/{saborId}', [ResenaController::class, 'index']);
+
+    Route::get('/sabores-con-resenas', [SaborController::class, 'indexConResenas']);
+    Route::middleware('auth:sanctum')->get('/resenas/verificar-compra/{saborId}', [ResenaController::class, 'verificarCompra']);
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::apiResource('promociones', PromocionController::class);
+});
+        

@@ -32,5 +32,9 @@ class Producto extends Model
     public function tamano()   { return $this->belongsTo(Tamano::class); }
     public function categoria(){ return $this->belongsTo(Categoria::class); }
     public function pedidos()  { return $this->belongsToMany(Pedido::class, 'pedido_producto')->withTimestamps(); }
+    public function resenas()
+    {
+        return $this->hasMany(Resena::class);
+    }
 }
 

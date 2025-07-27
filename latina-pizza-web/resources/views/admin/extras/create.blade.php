@@ -12,7 +12,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('admin.extras.store') }}" class="space-y-6">
+    <form id="formCrearExtra" method="POST" action="{{ route('admin.extras.store') }}" class="space-y-6">
         @csrf
 
         <div>
@@ -63,10 +63,10 @@
         </div>
 
         <div class="flex justify-between mt-6">
-            <a href="{{ route('admin.extras.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded shadow inline-flex items-center">
+            <a href="{{ route('admin.extras.index') }}" onclick="mostrarLoading()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded shadow inline-flex items-center">
                 <i class="fas fa-arrow-left mr-2"></i> Cancelar
             </a>
-            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded shadow inline-flex items-center">
+            <button type="submit" onclick="return validarYMostrarLoading('formCrearMasa')" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded shadow inline-flex items-center">
                 <i class="fas fa-save mr-2"></i> Guardar Extra
             </button>
         </div>

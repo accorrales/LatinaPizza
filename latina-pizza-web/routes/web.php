@@ -15,6 +15,9 @@ use App\Http\Controllers\AdminSaborController;
 use App\Http\Controllers\AdminTamanoController;
 use App\Http\Controllers\AdminMasaController;
 use App\Http\Controllers\AdminExtraController;
+use App\Http\Controllers\ResenaController;
+use App\Http\Controllers\AdminResenaController;
+use App\Http\Controllers\AdminPromocionController;
 
 Route::get('/', function () {
     return view('home');
@@ -111,5 +114,40 @@ Route::prefix('admin/extras')->name('admin.extras.')->group(function () {
     Route::delete('/{id}', [AdminExtraController::class, 'destroy'])->name('destroy');
 });
 
+Route::prefix('admin/productos')->name('admin.productos.')->group(function () {
+    Route::get('/', [AdminProductoController::class, 'index'])->name('index');
+    Route::get('/create', [AdminProductoController::class, 'create'])->name('create');
+    Route::post('/', [AdminProductoController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [AdminProductoController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [AdminProductoController::class, 'update'])->name('update');
+    Route::delete('/{id}', [AdminProductoController::class, 'destroy'])->name('destroy');
+});
+// Reseñas: eliminación para usuarios autenticados
+Route::delete('/resenas/{id}', [ResenaController::class, 'destroy'])->name('resenas.destroy')->middleware('auth');
+Route::get('/sabor/{id}/resenas', [ResenaController::class, 'verResenas'])->name('sabor.resenas');
+Route::get('/resenas/crear/{saborId}', [ResenaController::class, 'crear'])->name('resenas.crear')->middleware('auth');
+Route::post('/resenas', [ResenaController::class, 'store'])->name('resenas.store')->middleware('auth');
+
+Route::prefix('admin/resenas')->name('admin.resenas.')->middleware('auth')->group(function () {
+    Route::get('/', [AdminResenaController::class, 'index'])->name('index');
+    Route::get('/{id}/edit', [AdminResenaController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [AdminResenaController::class, 'update'])->name('update');
+    Route::delete('/{id}', [AdminResenaController::class, 'destroy'])->name('destroy');
+});
+Route::put('/resenas/{id}', [ResenaController::class, 'update'])->name('resenas.update')->middleware('auth');
+
+Route::prefix('admin/promociones')->name('admin.promociones.')->middleware('auth')->group(function () {
+    Route::get('/', [AdminPromocionController::class, 'index'])->name('index');
+    Route::get('/create', [AdminPromocionController::class, 'create'])->name('create');
+    // Más adelante agregamos: create, store, edit, update, destroy
+});
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/promociones', [AdminPromocionController::class, 'index'])->name('promociones.index');
+    Route::get('/promociones/create', [AdminPromocionController::class, 'create'])->name('promociones.create');
+    Route::post('/promociones', [AdminPromocionController::class, 'store'])->name('promociones.store');
+    Route::get('/promociones/{id}/edit', [AdminPromocionController::class, 'edit'])->name('promociones.edit');
+    Route::put('/promociones/{id}', [AdminPromocionController::class, 'update'])->name('promociones.update');
+    Route::delete('/promociones/{id}', [AdminPromocionController::class, 'destroy'])->name('promociones.destroy');
+});
 require __DIR__.'/auth.php';
 

@@ -1,52 +1,91 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">✏️ Editar Producto</h1>
+<div class="max-w-3xl mx-auto px-4 py-8 bg-white shadow rounded-xl">
+    <h2 class="text-3xl font-extrabold mb-6 text-center text-blue-600">✏️ Editar Producto</h2>
 
-   <form action="{{ route('admin.productos.update', $producto['id']) }}" method="POST">
-    @csrf
-    @method('PUT')
-        <div class="mb-4">
-            <label class="block mb-1 font-semibold">Nombre:</label>
-            <input type="text" name="nombre" value="{{ $producto['nombre'] }}" class="w-full border px-3 py-2 rounded" required>
+    @if(session('error'))
+        <div class="bg-red-100 text-red-800 px-4 py-2 rounded mb-4">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <form method="POST" action="{{ route('admin.productos.update', $producto['id']) }}" class="space-y-6">
+        @csrf
+        @method('PUT')
+
+        <div>
+            <label class="block font-semibold mb-1 text-gray-700">Nombre</label>
+            <input type="text" name="nombre" value="{{ old('nombre', $producto['nombre']) }}"
+                   class="w-full border border-gray-300 rounded px-4 py-2 @error('nombre') border-red-500 @enderror" required>
+            @error('nombre')
+                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
-        <div class="mb-4">
-            <label class="block mb-1 font-semibold">Descripción:</label>
-            <textarea name="descripcion" class="w-full border px-3 py-2 rounded">{{ $producto['descripcion'] }}</textarea>
+        <div>
+            <label class="block font-semibold mb-1 text-gray-700">Descripción</label>
+            <textarea name="descripcion"
+                      class="w-full border border-gray-300 rounded px-4 py-2 @error('descripcion') border-red-500 @enderror">{{ old('descripcion', $producto['descripcion']) }}</textarea>
+            @error('descripcion')
+                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
-        <div class="mb-4">
-            <label class="block mb-1 font-semibold">Precio:</label>
-            <input type="number" step="0.01" name="precio" value="{{ $producto['precio'] }}" class="w-full border px-3 py-2 rounded" required>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block font-semibold mb-1 text-gray-700">₡ Precio</label>
+                <input type="number" step="0.01" name="precio" value="{{ old('precio', $producto['precio']) }}"
+                       class="w-full border border-gray-300 rounded px-3 py-2 @error('precio') border-red-500 @enderror" required>
+                @error('precio')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label class="block font-semibold mb-1 text-gray-700">URL de Imagen</label>
+                <input type="text" name="imagen" value="{{ old('imagen', $producto['imagen']) }}"
+                       class="w-full border border-gray-300 rounded px-3 py-2 @error('imagen') border-red-500 @enderror">
+                @error('imagen')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
         </div>
 
-        <div class="mb-4">
-            <label class="block mb-1 font-semibold">Imagen (URL):</label>
-            <input type="text" name="imagen" value="{{ $producto['imagen'] }}" class="w-full border px-3 py-2 rounded">
-        </div>
-
-        <div class="mb-4">
-            <label class="block mb-1 font-semibold">Categoría:</label>
-            <select name="categoria_id" class="w-full border px-3 py-2 rounded" required>
-                @foreach ($categorias as $categoria)
-                    <option value="{{ $categoria['id'] }}" {{ $producto['categoria_id'] == $categoria['id'] ? 'selected' : '' }}>
+        <div>
+            <label class="block font-semibold mb-1 text-gray-700">Categoría</label>
+            <select name="categoria_id"
+                    class="w-full border border-gray-300 rounded px-3 py-2 @error('categoria_id') border-red-500 @enderror" required>
+                <option value="">-- Seleccione una categoría --</option>
+                @foreach($categorias as $categoria)
+                    <option value="{{ $categoria['id'] }}"
+                        {{ old('categoria_id', $producto['categoria_id']) == $categoria['id'] ? 'selected' : '' }}>
                         {{ $categoria['nombre'] }}
                     </option>
                 @endforeach
             </select>
+            @error('categoria_id')
+                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
-        <div class="mb-4">
-            <label>
-                <input type="checkbox" name="estado" {{ $producto['estado'] ? 'checked' : '' }}>
-                Activo
-            </label>
+        <div class="flex items-center space-x-2">
+            <input type="checkbox" name="estado" id="estado"
+                   {{ old('estado', $producto['estado']) ? 'checked' : '' }}>
+            <label for="estado" class="text-gray-700">Producto activo</label>
         </div>
 
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Guardar Cambios</button>
-        <a href="{{ route('admin.productos.index') }}" class="ml-4 text-gray-600 hover:underline">Cancelar</a>
+        <div class="flex justify-between mt-6">
+            <a href="{{ route('admin.productos.index') }}"
+               class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded shadow inline-flex items-center">
+                <i class="fas fa-arrow-left mr-2"></i> Cancelar
+            </a>
+            <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow inline-flex items-center">
+                <i class="fas fa-sync-alt mr-2"></i> Actualizar Producto
+            </button>
+        </div>
     </form>
 </div>
 @endsection
+

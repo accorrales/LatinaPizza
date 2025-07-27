@@ -7,6 +7,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
     html, body {
         height: 100%;
@@ -98,6 +99,8 @@
                                     <a href="{{ route('admin.tamanos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Tamaños</a>
                                     <a href="{{ route('admin.masas.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Masas</a>
                                     <a href="{{ route('admin.extras.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Extras</a>
+                                    <a href="{{ route('admin.resenas.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Reseñas</a>
+                                    <a href="{{ route('admin.promociones.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> promociones</a>
                                 </div>
                             </div>
                             <div x-show="open"
@@ -113,6 +116,7 @@
                                 <a href="{{ route('admin.tamanos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Tamaños</a>
                                 <a href="{{ route('admin.masas.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Masas</a>
                                 <a href="{{ route('admin.extras.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Extras</a>
+                                <a href="{{ route('admin.promociones.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> promociones</a>
                             </div>
                         </div>
                     @endif
@@ -360,5 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
+ @stack('scripts')
 </body>
 </html>

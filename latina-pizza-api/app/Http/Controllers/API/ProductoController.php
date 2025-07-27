@@ -44,6 +44,7 @@ class ProductoController extends Controller
             $sabor = $primerProducto->sabor;
 
             $resultado[] = [
+                'id' => $sabor->id, // 👈 Este campo es clave para poder consultar las reseñas por ID real
                 'sabor_id' => $sabor->id,
                 'sabor_nombre' => $sabor->nombre,
                 'descripcion' => $sabor->descripcion ?? $primerProducto->descripcion,

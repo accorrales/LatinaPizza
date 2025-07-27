@@ -13,7 +13,8 @@ class Promocion extends Model
         'descripcion',
         'precio_total',
         'precio_sugerido',
-        'imagen', // si la agregaste
+        'imagen',
+        'incluye_bebida', // <- nuevo
     ];
 
     public function componentes()

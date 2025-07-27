@@ -57,4 +57,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Carrito::class);
     }
+    public function resenas()
+    {
+        return $this->hasMany(Resena::class);
+    }
+
 }

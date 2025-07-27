@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('promociones', function (Blueprint $table) {
+        /*Schema::create('promociones', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
             $table->text('descripcion')->nullable();
@@ -19,7 +19,7 @@ return new class extends Migration
             $table->boolean('incluye_bebida')->default(false);
             $table->string('imagen')->nullable(); // 💡 imagen de la promo
             $table->timestamps();
-        });
+        });*/
     }
 
     /**
