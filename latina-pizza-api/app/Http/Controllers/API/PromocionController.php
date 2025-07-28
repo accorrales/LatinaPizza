@@ -5,6 +5,9 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Promocion;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+
 class PromocionController extends Controller
 {
     public function index()
@@ -23,54 +26,59 @@ class PromocionController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validated = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio_total' => 'required|numeric|min:0',
-            'incluye_bebida' => 'required|boolean', // ✅ Asegúrate de que esté en el request
-            'componentes' => 'nullable|array',
+            'precio_sugerido' => 'nullable|numeric|min:0',
+            'imagen' => 'nullable|string',
+            'incluye_bebida' => 'required|boolean',
+            'componentes' => 'required|array|min:1',
             'componentes.*.tipo' => 'required|in:pizza,bebida',
-            'componentes.*.sabor_id' => 'nullable|exists:sabores,id',
-            'componentes.*.tamano_id' => 'nullable|exists:tamanos,id',
-            'componentes.*.masa_id' => 'nullable|exists:masas,id',
-        ]); 
-            
+            'componentes.*.tamano_id' => 'nullable|integer|exists:tamanos,id',
+            'componentes.*.cantidad' => 'required|integer|min:1',
+            'componentes.*.sabor_id' => 'nullable|integer|exists:sabores,id',
+            'componentes.*.masa_id' => 'nullable|integer|exists:masas,id',
+        ])->validate();
+
         $promocion = Promocion::create([
             'nombre' => $validated['nombre'],
             'descripcion' => $validated['descripcion'] ?? null,
             'precio_total' => $validated['precio_total'],
-            'incluye_bebida' => $validated['incluye_bebida'], // ✅ Aquí se guarda el valor
+            'precio_sugerido' => $validated['precio_sugerido'] ?? null,
+            'imagen' => $validated['imagen'] ?? null,
+            'incluye_bebida' => $validated['incluye_bebida'],
         ]);
 
-        if (isset($validated['componentes'])) {
-            foreach ($validated['componentes'] as $componente) {
-                $promocion->componentes()->create([
-                    'tipo'      => $componente['tipo'],
-                    'sabor_id'  => $componente['tipo'] === 'pizza' ? $componente['sabor_id'] ?? null : null,
-                    'tamano_id' => $componente['tipo'] === 'pizza' ? $componente['tamano_id'] ?? null : null,
-                    'masa_id'   => $componente['tipo'] === 'pizza' ? $componente['masa_id'] ?? null : null,
-                ]);
-            }
+        foreach ($validated['componentes'] as $componente) {
+            $promocion->componentes()->create([
+                'tipo'      => $componente['tipo'],
+                'cantidad'  => $componente['cantidad'],
+                'tamano_id' => $componente['tamano_id'] ?? null,
+                'sabor_id'  => $componente['sabor_id'] ?? null,
+                'masa_id'   => $componente['masa_id'] ?? null,
+            ]);
         }
 
         return response()->json([
             'message' => 'Promoción creada exitosamente',
-            'promocion' => $promocion->load('componentes.sabor', 'componentes.tamano', 'componentes.masa')
+            'promocion' => $promocion->load('componentes.tamano', 'componentes.sabor', 'componentes.masa')
         ], 201);
     }
 
     public function show($id)
     {
         $promocion = Promocion::with([
-            'componentes.sabor',
             'componentes.tamano',
-            'componentes.masa'
+            'componentes.masa',
+            'componentes.sabor'
         ])->findOrFail($id);
 
-        return response()->json(['data' => $promocion]);
+        return response()->json([
+            'success' => true,
+            'data' => $promocion
+        ]);
     }
-
-
     public function update(Request $request, $id)
     {
         $promocion = Promocion::findOrFail($id);

@@ -103,21 +103,6 @@
                                     <a href="{{ route('admin.promociones.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> promociones</a>
                                 </div>
                             </div>
-                            <div x-show="open"
-                                @mouseenter="open = true"
-                                @mouseleave="open = false"
-                                x-transition
-                                class="absolute bg-white shadow-lg rounded-md mt-2 py-2 px-3 w-48 z-50 border border-gray-200">
-                                <a href="{{ route('admin.usuarios.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">👥 Usuarios</a>
-                                <a href="{{ route('admin.productos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">🧀 Productos</a>
-                                <a href="{{ route('admin.categorias.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">⚙️ Categorías</a>
-                                <a href="{{ route('admin.pedidos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">📦 Pedidos</a>
-                                <a href="{{ route('admin.sabores.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Sabores</a>
-                                <a href="{{ route('admin.tamanos.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Tamaños</a>
-                                <a href="{{ route('admin.masas.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Masas</a>
-                                <a href="{{ route('admin.extras.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> Extras</a>
-                                <a href="{{ route('admin.promociones.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100"> promociones</a>
-                            </div>
                         </div>
                     @endif
                     {{-- USUARIO --}}
@@ -163,6 +148,11 @@
                             <a href="{{ route('admin.productos.index') }}" class="block px-4 py-2 hover:bg-gray-100">🧀 Productos</a>
                             <a href="{{ route('admin.categorias.index') }}" class="block px-4 py-2 hover:bg-gray-100">⚙️ Categorías</a>
                             <a href="{{ route('admin.sabores.index') }}" class="block px-4 py-2 hover:bg-gray-100">Sabores</a>
+                            <a href="{{ route('admin.tamanos.index') }}" class="block px-4 py-2 text-sm hover:bg-gray-100"> Tamaños</a>
+                            <a href="{{ route('admin.masas.index') }}" class="block px-4 py-2 text-sm hover:bg-gray-100"> Masas</a>
+                            <a href="{{ route('admin.extras.index') }}" class="block px-4 py-2 text-sm hover:bg-gray-100"> Extras</a>
+                            <a href="{{ route('admin.promociones.index') }}" class="block px-4 py-2 text-sm hover:bg-gray-100"> promociones</a>
+
                             <hr class="my-1">
                             <a href="{{ route('admin.pedidos.index') }}" class="block px-4 py-2 hover:bg-gray-100">📋 Pedidos</a>
                             <a href="{{ url('/admin/tiempo-estimado') }}" class="block px-4 py-2 hover:bg-gray-100">⏱️ Tiempo Estimado</a>

@@ -14,6 +14,7 @@ class AdminPromocionController extends Controller
     public function index()
     {
         $token = Session::get('token');
+
         $response = Http::withToken($token)->get("{$this->apiBase}/promociones");
 
         if ($response->successful()) {
@@ -28,12 +29,11 @@ class AdminPromocionController extends Controller
     {
         $token = Session::get('token');
 
-        // Ahora sí, correcto
-        $tamanos = Http::withToken($token)
-            ->get("{$this->apiBase}/admin/tamanos")
-            ->json()['data'] ?? [];
+        $tamanos = Http::withToken($token)->get("{$this->apiBase}/admin/tamanos")->json()['data'] ?? [];
+        $sabores = Http::withToken($token)->get("{$this->apiBase}/admin/sabores")->json()['data'] ?? [];
+        $masas   = Http::withToken($token)->get("{$this->apiBase}/admin/masas")->json()['data'] ?? [];
 
-        return view('admin.promociones.create', compact('tamanos'));
+        return view('admin.promociones.create', compact('tamanos', 'sabores', 'masas'));
     }
 
     public function store(Request $request)
@@ -50,8 +50,7 @@ class AdminPromocionController extends Controller
             'precio_total' => 'required|numeric|min:0',
             'precio_sugerido' => 'nullable|numeric|min:0',
             'imagen' => 'nullable|string',
-            'incluye_bebida' => 'nullable|boolean', // ✅ validamos checkbox
-
+            'incluye_bebida' => 'nullable|boolean',
             'componentes' => 'required|array|min:1',
             'componentes.*.tipo' => 'required|in:pizza,bebida',
             'componentes.*.cantidad' => 'required|integer|min:1',
@@ -59,36 +58,21 @@ class AdminPromocionController extends Controller
         ]);
 
         $data = $validated;
-        $data['incluye_bebida'] = $request->has('incluye_bebida'); // ✅ checkbox como booleano (true o false)
+        $data['incluye_bebida'] = $request->has('incluye_bebida');
 
-        $response = Http::withToken($token)
-            ->post("http://127.0.0.1:8001/api/admin/promociones", $data); // ✅ cambia la URL si tenés otra
-
+        // Agregar campos por defecto a los componentes si no vienen
+        foreach ($data['componentes'] as &$componente) {
+            $componente['sabor_id'] = $componente['sabor_id'] ?? null;
+            $componente['masa_id'] = $componente['masa_id'] ?? null;
+        }
+        $response = Http::withToken($token)->post("{$this->apiBase}/promociones", $data);
+        
         if ($response->successful()) {
             return redirect()->route('admin.promociones.index')->with('success', 'Promoción creada correctamente');
         }
 
         return back()->with('error', 'Error al guardar la promoción.')->withInput();
     }
-
-
-    public function destroy($id)
-    {
-        $token = Session::get('token');
-
-        if (!$token) {
-            return redirect()->route('login')->with('error', 'Debe iniciar sesión');
-        }
-
-        $response = Http::withToken($token)->delete("{$this->apiBase}/promociones/{$id}");
-
-        if ($response->successful()) {
-            return redirect()->route('admin.promociones.index')->with('success', 'Promoción eliminada correctamente');
-        }
-
-        return back()->with('error', 'No se pudo eliminar la promoción');
-    }
-
 
     public function edit($id)
     {
@@ -98,15 +82,11 @@ class AdminPromocionController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        // ✅ Obtener la promoción a editar
         $promocion = Http::withToken($token)->get("{$this->apiBase}/promociones/{$id}")->json()['data'] ?? null;
+        $tamanos   = Http::withToken($token)->get("{$this->apiBase}/admin/tamanos")->json()['data'] ?? [];
+        $sabores   = Http::withToken($token)->get("{$this->apiBase}/admin/sabores")->json()['data'] ?? [];
+        $masas     = Http::withToken($token)->get("{$this->apiBase}/admin/masas")->json()['data'] ?? [];
 
-        // ✅ Obtener todos los datos necesarios para los select
-        $tamanos = Http::withToken($token)->get("{$this->apiBase}/admin/tamanos")->json()['data'] ?? [];
-        $sabores = Http::withToken($token)->get("{$this->apiBase}/admin/sabores")->json()['data'] ?? [];
-        $masas   = Http::withToken($token)->get("{$this->apiBase}/admin/masas")->json()['data'] ?? [];
-
-        // ✅ Retornar la vista con todos los datos
         return view('admin.promociones.edit', compact('promocion', 'tamanos', 'sabores', 'masas'));
     }
 
@@ -130,18 +110,34 @@ class AdminPromocionController extends Controller
         $data = $validated;
         $data['incluye_bebida'] = $request->has('incluye_bebida');
 
-        // 👇 Enviar como POST con override _method=PUT
-        $response = Http::withToken($token)->put("{$this->apiBase}/promociones/{$id}", $validated);
-
-        // 🔍 Mostrar respuesta si falla
-        if (!$response->successful()) {
-            dd([
-                'status' => $response->status(),
-                'body' => $response->body(),
-                'validated' => $validated,
-            ]);
+        foreach ($data['componentes'] as &$componente) {
+            $componente['sabor_id'] = $componente['sabor_id'] ?? null;
+            $componente['masa_id'] = $componente['masa_id'] ?? null;
         }
-        return redirect()->route('admin.promociones.index')->with('success', 'Promoción actualizada correctamente');
+
+        $response = Http::withToken($token)->put("{$this->apiBase}/promociones/{$id}", $data);
+
+        if ($response->successful()) {
+            return redirect()->route('admin.promociones.index')->with('success', 'Promoción actualizada correctamente');
+        }
+
+        return back()->with('error', 'Error al actualizar la promoción.')->withInput();
     }
 
+    public function destroy($id)
+    {
+        $token = Session::get('token');
+
+        if (!$token) {
+            return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        }
+
+        $response = Http::withToken($token)->delete("{$this->apiBase}/promociones/{$id}");
+
+        if ($response->successful()) {
+            return redirect()->route('admin.promociones.index')->with('success', 'Promoción eliminada correctamente');
+        }
+
+        return back()->with('error', 'No se pudo eliminar la promoción');
+    }
 }

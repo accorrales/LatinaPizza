@@ -14,6 +14,7 @@ class PromocionComponente extends Model
         'sabor_id',
         'tamano_id',
         'masa_id',
+        'cantidad',
     ];
 
     public function promocion()

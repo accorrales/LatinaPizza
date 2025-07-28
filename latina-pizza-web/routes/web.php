@@ -139,15 +139,11 @@ Route::put('/resenas/{id}', [ResenaController::class, 'update'])->name('resenas.
 Route::prefix('admin/promociones')->name('admin.promociones.')->middleware('auth')->group(function () {
     Route::get('/', [AdminPromocionController::class, 'index'])->name('index');
     Route::get('/create', [AdminPromocionController::class, 'create'])->name('create');
-    // Más adelante agregamos: create, store, edit, update, destroy
+    Route::post('/', [AdminPromocionController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [AdminPromocionController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [AdminPromocionController::class, 'update'])->name('update');
+    Route::delete('/{id}', [AdminPromocionController::class, 'destroy'])->name('destroy');
 });
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::get('/promociones', [AdminPromocionController::class, 'index'])->name('promociones.index');
-    Route::get('/promociones/create', [AdminPromocionController::class, 'create'])->name('promociones.create');
-    Route::post('/promociones', [AdminPromocionController::class, 'store'])->name('promociones.store');
-    Route::get('/promociones/{id}/edit', [AdminPromocionController::class, 'edit'])->name('promociones.edit');
-    Route::put('/promociones/{id}', [AdminPromocionController::class, 'update'])->name('promociones.update');
-    Route::delete('/promociones/{id}', [AdminPromocionController::class, 'destroy'])->name('promociones.destroy');
-});
+
 require __DIR__.'/auth.php';
 

@@ -1,91 +1,100 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-3xl mx-auto px-4 py-8 bg-white shadow rounded-xl">
-    <h2 class="text-3xl font-extrabold mb-6 text-center text-blue-600">✏️ Editar Producto</h2>
+<div class="container mx-auto py-6">
+    <h2 class="text-2xl font-bold mb-6">Editar producto</h2>
 
-    @if(session('error'))
-        <div class="bg-red-100 text-red-800 px-4 py-2 rounded mb-4">
-            {{ session('error') }}
-        </div>
-    @endif
-
-    <form method="POST" action="{{ route('admin.productos.update', $producto['id']) }}" class="space-y-6">
+    <form action="{{ route('admin.productos.update', $producto['id']) }}" method="POST" class="space-y-4">
         @csrf
         @method('PUT')
 
+        {{-- Campo oculto para enviar la categoría aunque el select esté bloqueado --}}
+        <input type="hidden" name="categoria_id" value="{{ $producto['categoria_id'] }}">
+
+        {{-- Nombre (solo para productos que no son pizza) --}}
         <div>
-            <label class="block font-semibold mb-1 text-gray-700">Nombre</label>
-            <input type="text" name="nombre" value="{{ old('nombre', $producto['nombre']) }}"
-                   class="w-full border border-gray-300 rounded px-4 py-2 @error('nombre') border-red-500 @enderror" required>
-            @error('nombre')
-                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-            @enderror
+            <label for="nombre" class="block font-semibold">Nombre</label>
+            <input type="text" name="nombre" id="nombre" class="w-full border rounded px-3 py-2"
+                   value="{{ $producto['nombre'] }}" 
+                   @if(strtolower($producto['categoria']['nombre']) === 'pizza') readonly @endif>
         </div>
 
+        {{-- Descripción --}}
         <div>
-            <label class="block font-semibold mb-1 text-gray-700">Descripción</label>
-            <textarea name="descripcion"
-                      class="w-full border border-gray-300 rounded px-4 py-2 @error('descripcion') border-red-500 @enderror">{{ old('descripcion', $producto['descripcion']) }}</textarea>
-            @error('descripcion')
-                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-            @enderror
+            <label for="descripcion" class="block font-semibold">Descripción</label>
+            <textarea name="descripcion" id="descripcion" class="w-full border rounded px-3 py-2"
+                      @if(strtolower($producto['categoria']['nombre']) === 'pizza') readonly @endif>{{ $producto['descripcion'] }}</textarea>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        {{-- Precio --}}
+        <div>
+            <label for="precio" class="block font-semibold">Precio</label>
+            <input type="number" name="precio" id="precio" class="w-full border rounded px-3 py-2" step="0.01"
+                   value="{{ $producto['precio'] }}" required>
+        </div>
+
+        {{-- Imagen --}}
+        <div>
+            <label for="imagen" class="block font-semibold">URL de Imagen</label>
+            <input type="text" name="imagen" id="imagen" class="w-full border rounded px-3 py-2"
+                   value="{{ $producto['imagen'] }}">
+        </div>
+
+        {{-- Categoría (solo visual, no editable) --}}
+        <div>
+            <label class="block font-semibold">Categoría</label>
+            <input type="text" class="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed" value="{{ $producto['categoria']['nombre'] }}" disabled>
+        </div>
+
+        {{-- Si es Pizza, mostrar sabor y tamaño --}}
+        @if(strtolower($producto['categoria']['nombre']) === 'pizza')
+        <div class="space-y-4">
+            {{-- Sabor --}}
             <div>
-                <label class="block font-semibold mb-1 text-gray-700">₡ Precio</label>
-                <input type="number" step="0.01" name="precio" value="{{ old('precio', $producto['precio']) }}"
-                       class="w-full border border-gray-300 rounded px-3 py-2 @error('precio') border-red-500 @enderror" required>
-                @error('precio')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
+                <label for="sabor_id" class="block font-semibold">Sabor</label>
+                <select name="sabor_id" id="sabor_id" class="w-full border rounded px-3 py-2">
+                    @foreach ($sabores['data'] ?? $sabores as $sabor)
+                        <option value="{{ $sabor['id'] }}" 
+                            @if($sabor['id'] == $producto['sabor_id']) selected @endif>
+                            {{ $sabor['nombre'] }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
+            {{-- Tamaño --}}
             <div>
-                <label class="block font-semibold mb-1 text-gray-700">URL de Imagen</label>
-                <input type="text" name="imagen" value="{{ old('imagen', $producto['imagen']) }}"
-                       class="w-full border border-gray-300 rounded px-3 py-2 @error('imagen') border-red-500 @enderror">
-                @error('imagen')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
+                <label for="tamano_id" class="block font-semibold">Tamaño</label>
+                <select name="tamano_id" id="tamano_id" class="w-full border rounded px-3 py-2">
+                    @foreach ($tamanos as $tamano)
+                        <option value="{{ $tamano['id'] }}" 
+                            @if($tamano['id'] == $producto['tamano_id']) selected @endif>
+                            {{ $tamano['nombre'] }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
         </div>
+        @endif
 
+        {{-- Estado --}}
         <div>
-            <label class="block font-semibold mb-1 text-gray-700">Categoría</label>
-            <select name="categoria_id"
-                    class="w-full border border-gray-300 rounded px-3 py-2 @error('categoria_id') border-red-500 @enderror" required>
-                <option value="">-- Seleccione una categoría --</option>
-                @foreach($categorias as $categoria)
-                    <option value="{{ $categoria['id'] }}"
-                        {{ old('categoria_id', $producto['categoria_id']) == $categoria['id'] ? 'selected' : '' }}>
-                        {{ $categoria['nombre'] }}
-                    </option>
-                @endforeach
+            <label for="estado" class="block font-semibold">Estado</label>
+            <select name="estado" id="estado" class="w-full border rounded px-3 py-2">
+                <option value="1" @if($producto['estado']) selected @endif>Activo</option>
+                <option value="0" @if(!$producto['estado']) selected @endif>Inactivo</option>
             </select>
-            @error('categoria_id')
-                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-            @enderror
         </div>
 
-        <div class="flex items-center space-x-2">
-            <input type="checkbox" name="estado" id="estado"
-                   {{ old('estado', $producto['estado']) ? 'checked' : '' }}>
-            <label for="estado" class="text-gray-700">Producto activo</label>
-        </div>
-
-        <div class="flex justify-between mt-6">
-            <a href="{{ route('admin.productos.index') }}"
-               class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded shadow inline-flex items-center">
-                <i class="fas fa-arrow-left mr-2"></i> Cancelar
-            </a>
-            <button type="submit"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow inline-flex items-center">
-                <i class="fas fa-sync-alt mr-2"></i> Actualizar Producto
+        {{-- Botón --}}
+        <div class="pt-4">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
+                Guardar cambios
             </button>
         </div>
     </form>
 </div>
 @endsection
+
+
 

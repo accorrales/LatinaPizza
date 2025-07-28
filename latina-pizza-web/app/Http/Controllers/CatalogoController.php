@@ -18,21 +18,22 @@ class CatalogoController extends Controller
         $promociones = [];
 
         try {
-            // 🌐 Consultas a la API
-            $responseSabores = Http::get('http://127.0.0.1:8001/api/sabores-con-tamanos');
-            $responseCategorias = Http::get('http://127.0.0.1:8001/api/categorias');
+            // 🌐 Llamadas a la API pública
+            $responseSabores     = Http::get('http://127.0.0.1:8001/api/productos-sabores-tamanos');
+            $responseCategorias  = Http::get('http://127.0.0.1:8001/api/categorias');
             $responsePromociones = Http::get('http://127.0.0.1:8001/api/promociones');
 
+            // ✅ Si todo se obtuvo correctamente
             if (
                 $responseSabores->successful() &&
                 $responseCategorias->successful() &&
                 $responsePromociones->successful()
             ) {
-                $sabores = $responseSabores->json();
-                $categorias = $responseCategorias->json();
-                $promociones = $responsePromociones->json()['data'];
+                $sabores     = $responseSabores->json();
+                $categorias  = $responseCategorias->json()['data'] ?? [];
+                $promociones = $responsePromociones->json()['data'] ?? [];
 
-                // 🔻 Filtrar por categoría si se seleccionó una
+                // 🔍 Filtrar por categoría si viene en la query
                 if ($categoriaSeleccionada) {
                     $sabores = collect($sabores)
                         ->where('categoria_id', $categoriaSeleccionada)
@@ -40,31 +41,26 @@ class CatalogoController extends Controller
                         ->all();
                 }
 
-                // ⭐ Agregar promedio de reseñas y total a cada sabor
+                // ⭐ Agregar promedio de reseñas por sabor
                 foreach ($sabores as $index => $sabor) {
                     try {
-                        $response = Http::get("http://127.0.0.1:8001/api/resenas-promedio/{$sabor['sabor_id']}");
+                        $resPromedio = Http::get("http://127.0.0.1:8001/api/resenas-promedio/{$sabor['sabor_id']}");
+                        $data = $resPromedio->json();
 
-                        if ($response->successful()) {
-                            $data = $response->json();
-                            $sabores[$index]['promedio'] = $data['promedio'];
-                            $sabores[$index]['total_resenas'] = $data['total'];
-                        } else {
-                            $sabores[$index]['promedio'] = 0;
-                            $sabores[$index]['total_resenas'] = 0;
-                        }
+                        $sabores[$index]['promedio']       = $data['promedio'] ?? 0;
+                        $sabores[$index]['total_resenas'] = $data['total'] ?? 0;
                     } catch (\Exception $e) {
                         $sabores[$index]['promedio'] = 0;
                         $sabores[$index]['total_resenas'] = 0;
                     }
                 }
             } else {
-                session()->flash('error', 'No se pudieron obtener los datos del menú.');
+                session()->flash('error', 'No se pudieron obtener los datos del catálogo.');
             }
         } catch (\Exception $e) {
-            session()->flash('error', 'Error de conexión con la API.');
+            session()->flash('error', 'Error de conexión con el servidor.');
         }
-        
+
         return view('catalogo.index', compact(
             'sabores',
             'categorias',
@@ -73,4 +69,5 @@ class CatalogoController extends Controller
         ));
     }
 }
+
 

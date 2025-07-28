@@ -62,5 +62,6 @@ class TamanoController extends Controller
 
         return response()->json(['message' => 'Eliminado correctamente']);
     }
+    
 }
 

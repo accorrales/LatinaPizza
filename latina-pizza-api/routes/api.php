@@ -23,150 +23,136 @@ use App\Http\Controllers\Api\MasaController;
 use App\Http\Controllers\Api\ExtraController;
 use App\Http\Controllers\API\ResenaController;
 
-Route::middleware([
-    'auth:sanctum',
-    CheckRole::class . ':admin'  // ✅ así, directo
-])->get('/admin/solo-admin', function () {
-    return response()->json(['message' => '✅ Acceso permitido como ADMIN']);
-});
+    Route::middleware([
+        'auth:sanctum',
+        CheckRole::class . ':admin'  // ✅ así, directo
+    ])->get('/admin/solo-admin', function () {
+        return response()->json(['message' => '✅ Acceso permitido como ADMIN']);
+    });
 
-Route::middleware([
-    'auth:sanctum',
-    CheckRole::class . ':cliente'
-])->get('/cliente/solo-cliente', function () {
-    return response()->json(['message' => '🙋 Bienvenido, Cliente.']);
-});
+    Route::middleware([
+        'auth:sanctum',
+        CheckRole::class . ':cliente'
+    ])->get('/cliente/solo-cliente', function () {
+        return response()->json(['message' => '🙋 Bienvenido, Cliente.']);
+    });
 
-Route::apiResource('categorias', CategoriaController::class)->only(['index', 'show']);
+    Route::apiResource('categorias', CategoriaController::class)->only(['index', 'show']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('categorias', CategoriaController::class)->except(['index', 'show']);
-});
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::apiResource('categorias', CategoriaController::class)->except(['index', 'show']);
+    });
 
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/pedidos', [PedidoController::class, 'index']);
-    Route::post('/pedidos', [PedidoController::class, 'store']);
-});
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('/pedidos', [PedidoController::class, 'index']);
+        Route::post('/pedidos', [PedidoController::class, 'store']);
+    });
 
-Route::middleware('auth:sanctum')->get('/mis-pedidos', [PedidoController::class, 'misPedidos']);
+    Route::middleware('auth:sanctum')->get('/mis-pedidos', [PedidoController::class, 'misPedidos']);
 
-Route::middleware('auth:sanctum')->get('/pedidos/{id}', [PedidoController::class, 'detallePedido']);
+    Route::middleware('auth:sanctum')->get('/pedidos/{id}', [PedidoController::class, 'detallePedido']);
 
-Route::middleware(['auth:sanctum'])->apiResource('pedidos', PedidoController::class);
+    Route::middleware(['auth:sanctum'])->apiResource('pedidos', PedidoController::class);
 
-Route::middleware([
-    'auth:sanctum',
-    CheckRole::class . ':admin' // ✅ forma explícita
-])->get('/admin/pedidos', [PedidoAdminController::class, 'index']);
+    Route::middleware([
+        'auth:sanctum',
+        CheckRole::class . ':admin' // ✅ forma explícita
+    ])->get('/admin/pedidos', [PedidoAdminController::class, 'index']);
 
-Route::middleware([
-    'auth:sanctum',
-    CheckRole::class . ':admin'
-])->put('/admin/pedidos/{id}/estado', [PedidoAdminController::class, 'actualizarEstado']);
-require __DIR__.'/auth.php';
+    Route::middleware([
+        'auth:sanctum',
+        CheckRole::class . ':admin'
+    ])->put('/admin/pedidos/{id}/estado', [PedidoAdminController::class, 'actualizarEstado']);
+    require __DIR__.'/auth.php';
 
-Route::middleware([
-    'auth:sanctum',
-    CheckRole::class . ':admin'
-])->get('/admin/pedidos/filtrar', [PedidoAdminController::class, 'filtrar']);
+    Route::middleware([
+        'auth:sanctum',
+        CheckRole::class . ':admin'
+    ])->get('/admin/pedidos/filtrar', [PedidoAdminController::class, 'filtrar']);
 
-Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->get('/admin/tiempo-estimado', [PedidoAdminController::class, 'tiempoEstimado']);
-Route::middleware('auth:sanctum')->get('/pedidos/{id}/historial', [HistorialPedidoController::class, 'index']);
-Route::middleware([
-    'auth:sanctum',
-    CheckRole::class . ':admin'
-])->get('/admin/pedidos/{id}/historial', [PedidoAdminController::class, 'verHistorial']);
+    Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->get('/admin/tiempo-estimado', [PedidoAdminController::class, 'tiempoEstimado']);
+    Route::middleware('auth:sanctum')->get('/pedidos/{id}/historial', [HistorialPedidoController::class, 'index']);
+    Route::middleware([
+        'auth:sanctum',
+        CheckRole::class . ':admin'
+    ])->get('/admin/pedidos/{id}/historial', [PedidoAdminController::class, 'verHistorial']);
 
-Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
-    Route::apiResource('sucursales', SucursalController::class);
-});
+    Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+        Route::apiResource('sucursales', SucursalController::class);
+    });
 
-Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
-    Route::get('/resumen-sucursal/{id}', [PedidoAdminController::class, 'resumenSucursal']);
-});
+    Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+        Route::get('/resumen-sucursal/{id}', [PedidoAdminController::class, 'resumenSucursal']);
+    });
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/carrito', [CarritoController::class, 'index']);
-    Route::post('/carrito/add', [CarritoController::class, 'add']);
-    Route::delete('/carrito/remove/{id}', [CarritoController::class, 'remove']);
-    Route::delete('/carrito/clear', [CarritoController::class, 'clear']);
-    Route::post('/stripe/checkout', [StripeController::class, 'checkout']);
-    Route::post('/carrito/agregar-promocion', [CarritoController::class, 'agregarPromocion']);
-});
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/carrito', [CarritoController::class, 'index']);
+        Route::post('/carrito/add', [CarritoController::class, 'add']);
+        Route::delete('/carrito/remove/{id}', [CarritoController::class, 'remove']);
+        Route::delete('/carrito/clear', [CarritoController::class, 'clear']);
+        Route::post('/stripe/checkout', [StripeController::class, 'checkout']);
+        Route::post('/carrito/agregar-promocion', [CarritoController::class, 'agregarPromocion']);
+    });
 
-Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
-    Route::apiResource('usuarios', UserController::class)->only(['index', 'show', 'update', 'destroy']);
-});
+    Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+        Route::apiResource('usuarios', UserController::class)->only(['index', 'show', 'update', 'destroy']);
+    });
 
-Route::middleware('auth:sanctum')->post('/pagar-con-stripe', [StripeController::class, 'checkout']);
+    Route::middleware('auth:sanctum')->post('/pagar-con-stripe', [StripeController::class, 'checkout']);
 
-Route::post('/stripe/webhook', [PagoController::class, 'webhook']);
+    Route::post('/stripe/webhook', [PagoController::class, 'webhook']);
 
-Route::post('/detalle-pedidos', [DetallePedidoController::class, 'store']);
+    Route::post('/detalle-pedidos', [DetallePedidoController::class, 'store']);
 
-Route::post('/detalle-promocion', [DetallePedidoPromocionController::class, 'store']);
+    Route::post('/detalle-promocion', [DetallePedidoPromocionController::class, 'store']);
 
-Route::get('/detalle-promocion/{pedido_id}', [DetallePedidoPromocionController::class, 'detallesConPrecioYDesglose']);
+    Route::get('/detalle-promocion/{pedido_id}', [DetallePedidoPromocionController::class, 'detallesConPrecioYDesglose']);
 
-Route::middleware('auth:sanctum')->get('/pedidos/{id}', [PedidoController::class, 'show']);
+    Route::middleware('auth:sanctum')->get('/pedidos/{id}', [PedidoController::class, 'show']);
 
-Route::get('/promociones/{id}', [PromocionController::class, 'show']);
-Route::get('/detalle-pedido-promocion/{pedido_id}/detalles', [DetallePedidoPromocionController::class, 'detallesConPrecioYDesglose']);
-Route::get('/sabores-con-tamanos', [ProductoController::class, 'saboresConTamanos']);
+    Route::get('/promociones/{id}', [PromocionController::class, 'show']);
+    Route::get('/detalle-pedido-promocion/{pedido_id}/detalles', [DetallePedidoPromocionController::class, 'detallesConPrecioYDesglose']);
+    Route::get('/sabores-con-tamanos', [ProductoController::class, 'saboresConTamanos']);
 
-Route::get('/masas', [OpcionesPizzaController::class, 'masas']);
-Route::get('/extras', [OpcionesPizzaController::class, 'extras']);
+    Route::get('/masas', [OpcionesPizzaController::class, 'masas']);
+    Route::get('/extras', [OpcionesPizzaController::class, 'extras']);
 
-Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
-    Route::get('/pedidos', [PedidoAdminController::class, 'index']); // ✅ Listado + filtros
-    Route::put('/pedidos/{id}/estado', [PedidoAdminController::class, 'actualizarEstado']); // ✅ Cambiar estado
-    Route::get('/pedidos/{id}/historial', [PedidoAdminController::class, 'verHistorial']); // ✅ Ver historial
-    Route::get('/tiempo-estimado', [PedidoAdminController::class, 'tiempoEstimado']); // ✅ Tiempo estimado
-    Route::get('/resumen-sucursal/{id}', [PedidoAdminController::class, 'resumenSucursal']); // ✅ Resumen por sucursal
-    Route::get('/pedidos/{id}/ver', [PedidoAdminController::class, 'verPedido']);
-});
+    Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+        Route::get('/pedidos', [PedidoAdminController::class, 'index']); // ✅ Listado + filtros
+        Route::put('/pedidos/{id}/estado', [PedidoAdminController::class, 'actualizarEstado']); // ✅ Cambiar estado
+        Route::get('/pedidos/{id}/historial', [PedidoAdminController::class, 'verHistorial']); // ✅ Ver historial
+        Route::get('/tiempo-estimado', [PedidoAdminController::class, 'tiempoEstimado']); // ✅ Tiempo estimado
+        Route::get('/resumen-sucursal/{id}', [PedidoAdminController::class, 'resumenSucursal']); // ✅ Resumen por sucursal
+        Route::get('/pedidos/{id}/ver', [PedidoAdminController::class, 'verPedido']);
+    });
 
-Route::get('/promociones', [PromocionController::class, 'index']);
-Route::get('/promociones/{id}', [PromocionController::class, 'show']);
-Route::get('/sabores', [SaborController::class, 'index']);
-Route::get('/productos/bebidas', [ProductoController::class, 'bebidas']);
+    Route::get('/promociones', [PromocionController::class, 'index']);
+    Route::get('/promociones/{id}', [PromocionController::class, 'show']);
+    Route::get('/productos/bebidas', [ProductoController::class, 'bebidas']);
 
-Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
-    Route::apiResource('sabores', SaborController::class);
-});
+    Route::get('/sabores', [SaborController::class, 'index']);
 
-Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
-    Route::apiResource('tamanos', TamanoController::class);
-});
+    Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+        Route::get('/sabores', [SaborController::class, 'index']);
+        Route::get('/tamanos', [TamanoController::class, 'index']);
+    });
 
-Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
-    Route::apiResource('masas', MasaController::class);
-});
+    Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+        Route::apiResource('masas', MasaController::class);
+    });
 
-Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
-    Route::apiResource('extras-productos', ExtraController::class);
-});
+    Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+        Route::apiResource('extras-productos', ExtraController::class);
+    });
 
-Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
-    Route::get('/productos', [ProductoController::class, 'index']);
-    Route::get('/productos/{id}', [ProductoController::class, 'show']);
-    Route::post('/productos', [ProductoController::class, 'store']);
-    Route::put('/productos/{id}', [ProductoController::class, 'update']);
-    Route::delete('/productos/{id}', [ProductoController::class, 'destroy']);
-
-    // Endpoints especiales
-    Route::get('/productos-sabores-tamanos', [ProductoController::class, 'saboresConTamanos']);
-    Route::get('/productos-bebidas', [ProductoController::class, 'bebidas']);
-});
-
-Route::middleware(['auth:sanctum'])->group(function () {
-    // Crear reseña (recibe sabor_id en el body)
-    Route::post('/resenas', [ResenaController::class, 'store']);
-    // Actualizar reseña
-    Route::put('/resenas/{id}', [ResenaController::class, 'update']);
-    // Eliminar reseña
-    Route::delete('/resenas/{id}', [ResenaController::class, 'destroy']);
-});
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Crear reseña (recibe sabor_id en el body)
+        Route::post('/resenas', [ResenaController::class, 'store']);
+        // Actualizar reseña
+        Route::put('/resenas/{id}', [ResenaController::class, 'update']);
+        // Eliminar reseña
+        Route::delete('/resenas/{id}', [ResenaController::class, 'destroy']);
+    });
     // Promedio de estrellas por sabor
     Route::get('/resenas-promedio/{saborId}', [ResenaController::class, 'promedio']);
     // Ver reseñas de un sabor
@@ -174,7 +160,22 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/sabores-con-resenas', [SaborController::class, 'indexConResenas']);
     Route::middleware('auth:sanctum')->get('/resenas/verificar-compra/{saborId}', [ResenaController::class, 'verificarCompra']);
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::apiResource('promociones', PromocionController::class);
-});
-        
+
+    Route::get('/productos-sabores-tamanos', [ProductoController::class, 'saboresConTamanos']);
+    Route::get('/productos-bebidas', [ProductoController::class, 'bebidas']);
+    Route::get('/promociones', [PromocionController::class, 'index']);
+    Route::get('/promociones/{id}', [PromocionController::class, 'show']);
+    Route::get('/resenas-promedio/{saborId}', [ResenaController::class, 'promedio']);
+
+    Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
+        Route::get('/productos', [ProductoController::class, 'index']);
+        Route::get('/productos/{id}', [ProductoController::class, 'show']);
+        Route::post('/productos', [ProductoController::class, 'store']);
+        Route::put('/productos/{id}', [ProductoController::class, 'update']);
+        Route::delete('/productos/{id}', [ProductoController::class, 'destroy']);
+
+        // Promociones protegidas 
+    });
+    Route::post('/promociones', [PromocionController::class, 'store']);
+        Route::put('/promociones/{id}', [PromocionController::class, 'update']);
+        Route::delete('/promociones/{id}', [PromocionController::class, 'destroy']);

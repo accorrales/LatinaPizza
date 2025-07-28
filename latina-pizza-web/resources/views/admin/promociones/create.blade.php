@@ -1,121 +1,96 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto px-4 py-6">
-    <h2 class="text-2xl font-bold mb-4">Crear Promoción</h2>
+<div class="max-w-3xl mx-auto mt-10 bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-6">Crear nueva promoción</h1>
 
-    @if(session('error'))
-        <div class="bg-red-100 text-red-700 p-2 mb-4 rounded">{{ session('error') }}</div>
+    @if (session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {{ session('error') }}
+        </div>
     @endif
 
     <form action="{{ route('admin.promociones.store') }}" method="POST">
         @csrf
 
         <div class="mb-4">
-            <label class="block font-semibold">Nombre de la promoción</label>
-            <input type="text" name="nombre" class="w-full border rounded p-2" value="{{ old('nombre') }}" required>
+            <label class="block font-semibold mb-2">Nombre</label>
+            <input type="text" name="nombre" class="w-full border rounded p-2" required>
         </div>
 
         <div class="mb-4">
-            <label class="block font-semibold">Descripción</label>
-            <textarea name="descripcion" class="w-full border rounded p-2">{{ old('descripcion') }}</textarea>
+            <label class="block font-semibold mb-2">Descripción</label>
+            <textarea name="descripcion" class="w-full border rounded p-2"></textarea>
         </div>
 
         <div class="mb-4">
-            <label class="block font-semibold">Precio Total</label>
-            <input type="number" name="precio_total" step="0.01" class="w-full border rounded p-2" value="{{ old('precio_total') }}" required>
+            <label class="block font-semibold mb-2">Precio Total</label>
+            <input type="number" name="precio_total" step="0.01" min="0" class="w-full border rounded p-2" required>
         </div>
 
         <div class="mb-4">
-            <label class="block font-semibold">Precio Sugerido (opcional)</label>
-            <input type="number" name="precio_sugerido" step="0.01" class="w-full border rounded p-2" value="{{ old('precio_sugerido') }}">
+            <label class="block font-semibold mb-2">Precio Sugerido (opcional)</label>
+            <input type="number" name="precio_sugerido" step="0.01" min="0" class="w-full border rounded p-2">
         </div>
 
         <div class="mb-4">
-            <label class="block font-semibold">Imagen (URL opcional)</label>
-            <input type="text" name="imagen" class="w-full border rounded p-2" value="{{ old('imagen') }}">
+            <label class="block font-semibold mb-2">Imagen (URL)</label>
+            <input type="text" name="imagen" class="w-full border rounded p-2">
         </div>
 
         <div class="mb-4">
-            <label class="block font-semibold">¿Incluye bebida?</label>
-            <input type="checkbox" name="incluye_bebida" value="1" {{ old('incluye_bebida') ? 'checked' : '' }}>
+            <label class="inline-flex items-center">
+                <input type="checkbox" name="incluye_bebida" value="1" class="form-checkbox">
+                <span class="ml-2">Incluye bebida</span>
+            </label>
         </div>
 
         <hr class="my-6">
 
-        <h3 class="text-xl font-semibold mb-2">Componentes de la Promoción</h3>
+        <h2 class="text-xl font-semibold mb-4">Componentes</h2>
+        <div id="componentes"></div>
 
-        <div id="componentes">
-            <div class="componente border p-4 rounded mb-4 bg-gray-50">
-                <label class="block mb-2 font-semibold">Tipo de componente</label>
-                <select name="componentes[0][tipo]" class="w-full border rounded p-2" required>
-                    <option value="pizza">Pizza</option>
-                    <option value="bebida">Bebida</option>
-                </select>
+        <button type="button" id="agregar-componente" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            + Agregar componente
+        </button>
 
-                <label class="block mt-4 font-semibold">Cantidad</label>
-                <input type="number" name="componentes[0][cantidad]" value="1" min="1" class="w-full border rounded p-2" required>
+        <hr class="my-6">
 
-                <label class="block mt-4 font-semibold">Tamaño (solo aplica para pizzas)</label>
-                <select name="componentes[0][tamano_id]" class="w-full border rounded p-2">
-                    <option value="">Seleccionar tamaño</option>
-                    @foreach ($tamanos as $tamano)
-                        <option value="{{ $tamano['id'] }}">{{ $tamano['nombre'] }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
-        <button type="button" id="agregar-componente" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Agregar componente</button>
-
-        <div class="mt-6">
-            <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Guardar Promoción</button>
-            <a href="{{ route('admin.promociones.index') }}" class="ml-4 text-gray-600 hover:underline">Cancelar</a>
-        </div>
+        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
+            Guardar promoción
+        </button>
     </form>
 </div>
 @endsection
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        console.log('DOM listo'); // Para pruebas
+    const tamanos = @json($tamanos);
+    let contador = 1;
 
-        let contador = 1;
+    document.getElementById('agregar-componente').addEventListener('click', function () {
+        const opciones = tamanos.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
 
-        const botonAgregar = document.getElementById('agregar-componente');
-        const contenedor = document.getElementById('componentes');
+        const html = `
+        <div class="componente border p-4 rounded mb-4 bg-gray-100">
+            <label class="block mb-2 font-semibold">Tipo de componente</label>
+            <select name="componentes[${contador}][tipo]" class="w-full border rounded p-2" required>
+                <option value="pizza">Pizza</option>
+                <option value="bebida">Bebida</option>
+            </select>
 
-        if (!botonAgregar || !contenedor) {
-            console.warn('No se encontró el botón o el contenedor');
-            return;
-        }
+            <label class="block mt-4 font-semibold">Cantidad</label>
+            <input type="number" name="componentes[${contador}][cantidad]" value="1" min="1" class="w-full border rounded p-2" required>
 
-        botonAgregar.addEventListener('click', () => {
-            const template = `
-                <div class="componente border p-4 rounded mb-4 bg-gray-100">
-                    <label class="block mb-2 font-semibold">Tipo de componente</label>
-                    <select name="componentes[${contador}][tipo]" class="w-full border rounded p-2" required>
-                        <option value="pizza">Pizza</option>
-                        <option value="bebida">Bebida</option>
-                    </select>
-
-                    <label class="block mt-4 font-semibold">Cantidad</label>
-                    <input type="number" name="componentes[${contador}][cantidad]" value="1" min="1" class="w-full border rounded p-2" required>
-
-                    <label class="block mt-4 font-semibold">Tamaño (solo aplica para pizzas)</label>
-                    <select name="componentes[${contador}][tamano_id]" class="w-full border rounded p-2">
-                        <option value="">Seleccionar tamaño</option>
-                        @foreach ($tamanos as $tamano)
-                            <option value="{{ $tamano['id'] }}">{{ $tamano['nombre'] }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            `;
-
-            contenedor.insertAdjacentHTML('beforeend', template);
-            contador++;
-        });
+            <label class="block mt-4 font-semibold">Tamaño (solo aplica para pizzas)</label>
+            <select name="componentes[${contador}][tamano_id]" class="w-full border rounded p-2">
+                <option value="">Seleccionar tamaño</option>
+                ${opciones}
+            </select>
+        </div>`;
+        
+        document.getElementById('componentes').insertAdjacentHTML('beforeend', html);
+        contador++;
     });
 </script>
 @endpush

@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Session;
 class AdminTamanoController extends Controller
 {
     private $apiBase = 'http://127.0.0.1:8001/api';
-
     public function index()
     {
         $token = Session::get('token');
@@ -19,7 +18,7 @@ class AdminTamanoController extends Controller
         $response = Http::withToken($token)->get("$this->apiBase/admin/tamanos");
 
         if ($response->successful()) {
-            $tamanos = $response->json();
+            $tamanos = $response->json()['data'] ?? []; // ✅ Corrección
             return view('admin.tamanos.index', compact('tamanos'));
         }
 

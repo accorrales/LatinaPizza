@@ -2,10 +2,12 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-6">
-    <h2 class="text-3xl font-bold text-center text-red-600 mb-6">Menú Latina</h2>
 
-    <!-- Filtros de categorías -->
-    <div class="flex flex-wrap justify-center gap-3 mb-8">
+    <!-- ✅ Título -->
+    <h2 class="text-3xl font-bold text-center text-red-600 mb-8">Menú Latina</h2>
+
+    <!-- ✅ Filtros por categoría -->
+    <div class="flex flex-wrap justify-center gap-3 mb-10">
         <a href="{{ route('catalogo.index') }}"
            class="px-4 py-2 rounded-full border transition
            {{ is_null($categoriaSeleccionada) ? 'bg-red-600 text-white' : 'bg-white text-red-600 border-red-600 hover:bg-red-100' }}">
@@ -20,42 +22,52 @@
         @endforeach
     </div>
 
-    <!-- Tarjetas de sabores -->
-    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <!-- ✅ SABORES -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         @foreach ($sabores as $sabor)
             @include('catalogo.partials.card', ['sabor' => $sabor])
         @endforeach
     </div>
 
-    <!-- Tarjetas de promociones -->
+    <!-- ✅ PROMOCIONES -->
     @if(count($promociones) > 0)
-        <div class="my-10">
-            <h2 class="text-2xl font-bold text-red-600 mb-4">🎉 Promociones Especiales</h2>
+        <div class="mt-14">
+            <h2 class="text-2xl font-bold text-red-600 mb-6 flex items-center gap-2">🎉 Promociones Especiales</h2>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 @foreach($promociones as $promo)
-                    <div class="bg-white shadow-md rounded p-4 flex flex-col justify-between">
-                        <div>
-                            <img src="{{ $promo['imagen'] ?? 'https://via.placeholder.com/400x300?text=Promoción' }}" alt="Promo" class="rounded mb-3 w-full h-48 object-cover">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-1">{{ $promo['nombre'] }}</h3>
-                            <p class="text-sm text-gray-600 mb-2">{{ $promo['descripcion'] }}</p>
-                            <p class="text-green-700 font-bold text-md mb-2">₡{{ number_format($promo['precio_base'], 2) }}</p>
-                        </div>
-                        <div class="mt-4">
-                            <button 
-                                onclick="abrirModalPromocion({{ $promo['id'] }})"
-                                class="bg-red-600 w-full text-white py-2 rounded-lg font-semibold shadow hover:bg-red-700 transition">
-                                🛒 Personalizar y Agregar
-                            </button>
-                        </div>
+                    <div class="bg-white rounded-2xl shadow-md hover:shadow-lg transition p-4 flex flex-col justify-between">
+                        <!-- Imagen -->
+                        <img src="{{ $promo['imagen'] ?? 'https://via.placeholder.com/400x300?text=Promoción' }}"
+                             alt="Promo"
+                             class="w-full h-48 object-cover rounded-xl mb-3 border border-gray-200">
+
+                        <!-- Nombre + Descripción -->
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{{ $promo['nombre'] }}</h3>
+                        <p class="text-sm text-gray-600 flex-grow">{{ $promo['descripcion'] }}</p>
+
+                        <!-- Precio -->
+                        <p class="text-green-700 font-bold text-md mt-2">
+                            {{ number_format($promo['precio_total'] ?? 0, 2) }} colones
+                        </p>
+
+                        <!-- Botón -->
+                        <button
+                            onclick="abrirModalPromocion({{ $promo['id'] }})"
+                            class="mt-4 bg-gradient-to-r from-red-600 to-red-500 text-white px-4 py-2 rounded-full hover:from-red-700 hover:to-red-600 text-sm font-semibold shadow w-full"
+                        >
+                            🛒 Personalizar y Agregar
+                        </button>
                     </div>
                 @endforeach
             </div>
         </div>
     @endif
 
+    <!-- Modales -->
     @include('catalogo.partials.modal')
     @include('catalogo.partials.modal_promocion')
+
 </div>
 @endsection
 
@@ -203,110 +215,122 @@
     let datosExtras = [];
 
     async function abrirModalPromocion(id) {
-    mostrarLoading();
-    promocionSeleccionadaId = id;
-    document.getElementById('modalPromocion').classList.remove('hidden');
+        mostrarLoading();
+        promocionSeleccionadaId = id;
+        document.getElementById('modalPromocion').classList.remove('hidden');
 
-    try {
-        // Traemos todos los recursos necesarios en paralelo
-        const [promosRes, masasRes, saboresRes, refrescosRes, extrasRes] = await Promise.all([
-            fetch(`http://127.0.0.1:8001/api/promociones`),
-            fetch(`http://127.0.0.1:8001/api/masas`),
-            fetch(`http://127.0.0.1:8001/api/sabores`),
-            fetch(`http://127.0.0.1:8001/api/productos?categoria_id=4`),
-            fetch(`http://127.0.0.1:8001/api/extras`)
-        ]);
+        const token = localStorage.getItem('token') || "{{ session('token') }}";
 
-        const promos = await promosRes.json();
-        const promo = promos.data.find(p => parseInt(p.id) === parseInt(id));
-        if (!promo) throw new Error("Promoción no encontrada");
+        try {
+            const [promoRes, masasRes, saboresRes, refrescosRes, extrasRes] = await Promise.all([
+                fetch(`http://127.0.0.1:8001/api/promociones/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`http://127.0.0.1:8001/api/masas`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`http://127.0.0.1:8001/api/sabores`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`http://127.0.0.1:8001/api/admin/productos?categoria_id=2`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`http://127.0.0.1:8001/api/extras`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+            ]);
 
-        const masas = await masasRes.json();
-        const sabores = await saboresRes.json();
-        const refrescos = await refrescosRes.json();
-        datosExtras = await extrasRes.json();
+            const promoData = await promoRes.json();
+            if (!promoData.data) throw new Error("Promoción no encontrada");
+            const promo = promoData.data;
 
-        precioBasePromocion = parseFloat(promo.precio_base || 0);
-        const contieneBebida = promo.incluye_bebida === true;
-        const componentesPizza = promo.componentes.filter(c => c.tipo === 'pizza');
+            const masas = await masasRes.json();
+            const sabores = await saboresRes.json();
+            const refrescos = await refrescosRes.json();
+            datosExtras = await extrasRes.json();
 
-        let bloquesPizza = '';
-        let contadorGlobal = 1;
+            precioBasePromocion = parseFloat(promo.precio_base || promo.precio_total || 0);
+            const contieneBebida = promo.incluye_bebida === true;
+            const componentesPizza = promo.componentes.filter(c => c.tipo === 'pizza');
 
-        componentesPizza.forEach((c, i) => {
-            const tamanoTexto = c.tamano?.nombre?.toLowerCase() || 'grande';
-            let clavePrecio = 'precio_grande';
-            if (tamanoTexto.includes('peque')) clavePrecio = 'precio_pequena';
-            else if (tamanoTexto.includes('mediana')) clavePrecio = 'precio_mediana';
-            else if (tamanoTexto.includes('extra')) clavePrecio = 'precio_extragrande';
+            let bloquesPizza = '';
+            let contadorGlobal = 1;
 
-            for (let j = 0; j < c.cantidad; j++) {
-                const index = `${i}_${j}`;
-                const pizzaLabel = `Pizza ${contadorGlobal++} - Tamaño ${c.tamano?.nombre || ''}`;
+            componentesPizza.forEach((c, i) => {
+                const tamanoTexto = c.tamano?.nombre?.toLowerCase() || 'grande';
+                let clavePrecio = 'precio_grande';
+                if (tamanoTexto.includes('peque')) clavePrecio = 'precio_pequena';
+                else if (tamanoTexto.includes('mediana')) clavePrecio = 'precio_mediana';
+                else if (tamanoTexto.includes('extra')) clavePrecio = 'precio_extragrande';
 
-                const saborSelect = sabores.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
-                const masaSelect = masas.map(m => `<option value="${m.id}">${m.tipo}</option>`).join('');
-                const extrasHTML = datosExtras.map(e => {
-                    const precio = parseFloat(e[clavePrecio]) || 0;
-                    return `
-                        <label class="block text-sm">
-                            <input type="checkbox" name="extrasPizza${index}[]" value="${e.id}" data-precio="${precio}">
-                            ${e.nombre} (+₡${precio})
-                        </label>`;
-                }).join('');
-                
+                for (let j = 0; j < c.cantidad; j++) {
+                    const index = `${i}_${j}`;
+                    const pizzaLabel = `Pizza ${contadorGlobal++} - Tamaño ${c.tamano?.nombre || ''}`;
 
-                bloquesPizza += `
-                    <div class="mb-6 border-b pb-4">
-                        <h3 class="text-sm font-bold text-gray-800 mb-2">🍕 ${pizzaLabel}</h3>
+                    const saborSelect = sabores.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+                    const masaSelect = masas.map(m => `<option value="${m.id}">${m.tipo}</option>`).join('');
+                    const extrasHTML = datosExtras.map(e => {
+                        const precio = parseFloat(e[clavePrecio]) || 0;
+                        return `
+                            <label class="block text-sm">
+                                <input type="checkbox" name="extrasPizza${index}[]" value="${e.id}" data-precio="${precio}">
+                                ${e.nombre} (+₡${precio})
+                            </label>`;
+                    }).join('');
 
-                        <label class="text-sm">Sabor:</label>
-                        <select id="promoSabor${index}" class="w-full border rounded px-2 py-1 mb-2">${saborSelect}</select>
+                    bloquesPizza += `
+                        <div class="mb-6 border-b pb-4">
+                            <h3 class="text-sm font-bold text-gray-800 mb-2">🍕 ${pizzaLabel}</h3>
 
-                        <label class="text-sm">Tipo de masa:</label>
-                        <select id="promoMasa${index}" class="w-full border rounded px-2 py-1 mb-2">${masaSelect}</select>
+                            <label class="text-sm">Sabor:</label>
+                            <select id="promoSabor${index}" class="w-full border rounded px-2 py-1 mb-2">${saborSelect}</select>
 
-                        <label class="text-sm">Extras:</label>
-                        <div class="mb-2 text-sm" id="extrasPromo${index}">${extrasHTML}</div>
+                            <label class="text-sm">Tipo de masa:</label>
+                            <select id="promoMasa${index}" class="w-full border rounded px-2 py-1 mb-2">${masaSelect}</select>
 
-                        <label class="text-sm">Nota para esta pizza:</label>
-                        <textarea id="notaPizza${index}" class="w-full border rounded px-2 py-1 text-sm mb-2"></textarea>
-                    </div>`;
-            }
-        });
+                            <label class="text-sm">Extras:</label>
+                            <div class="mb-2 text-sm" id="extrasPromo${index}">${extrasHTML}</div>
 
-        const refrescoSelect = refrescos.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
-        const bebidaHTML = contieneBebida ? `
-            <div class="mt-4">
-                <label class="text-sm font-bold text-gray-700">🥤 Refresco incluido:</label>
-                <select id="selectBebida" class="w-full border px-3 py-2 rounded text-sm mt-1">
-                    <option value="">Seleccione un refresco</option>
-                    ${refrescoSelect}
-                </select>
-            </div>` : '';
+                            <label class="text-sm">Nota para esta pizza:</label>
+                            <textarea id="notaPizza${index}" class="w-full border rounded px-2 py-1 text-sm mb-2"></textarea>
+                        </div>`;
+                }
+            });
 
-        document.getElementById('contenedorPizzaPersonalizada').innerHTML = bloquesPizza + bebidaHTML;
+            const refrescoSelect = refrescos.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
+            const bebidaHTML = contieneBebida ? `
+                <div class="mt-4">
+                    <label class="text-sm font-bold text-gray-700">🥤 Refresco incluido:</label>
+                    <select id="selectBebida" class="w-full border px-3 py-2 rounded text-sm mt-1">
+                        <option value="">Seleccione un refresco</option>
+                        ${refrescoSelect}
+                    </select>
+                </div>` : '';
 
-        // Listeners para actualizar total si cambia algún extra
-        componentesPizza.forEach((c, i) => {
-            for (let j = 0; j < c.cantidad; j++) {
-                const index = `${i}_${j}`;
-                document.querySelectorAll(`#extrasPromo${index} input[type="checkbox"]`).forEach(input => {
-                    input.addEventListener('change', calcularTotalPromo);
-                });
-            }
-        });
+            document.getElementById('contenedorPizzaPersonalizada').innerHTML = bloquesPizza + bebidaHTML;
 
-        calcularTotalPromo();
+            // Listeners para actualizar total
+            componentesPizza.forEach((c, i) => {
+                for (let j = 0; j < c.cantidad; j++) {
+                    const index = `${i}_${j}`;
+                    document.querySelectorAll(`#extrasPromo${index} input[type="checkbox"]`).forEach(input => {
+                        input.addEventListener('change', calcularTotalPromo);
+                    });
+                }
+            });
 
-    } catch (error) {
-        console.error('❌ Error cargando datos de la promoción:', error);
-        document.getElementById('contenedorPizzaPersonalizada').innerHTML = `
-            <p class="text-red-500">Error al cargar datos de la promoción.</p>`;
-    } finally {
-        ocultarLoading(); // ✅ OCULTAR CUANDO TERMINE
+            calcularTotalPromo();
+
+        } catch (error) {
+            console.error('❌ Error cargando datos de la promoción:', error);
+            document.getElementById('contenedorPizzaPersonalizada').innerHTML = `
+                <p class="text-red-500">Error al cargar datos de la promoción.</p>`;
+        } finally {
+            ocultarLoading();
+        }
     }
-}
+
+
     function cerrarModalPromocion() {
         document.getElementById('modalPromocion').classList.add('hidden');
         document.getElementById('modalConfirmacion').classList.add('hidden');
