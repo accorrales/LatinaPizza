@@ -20,7 +20,6 @@
     @php $total = 0; @endphp
 
     @if ($carrito && isset($carrito['items']) && count($carrito['items']) > 0)
-
         {{-- 🌐 Vista Escritorio --}}
         <div class="hidden sm:block overflow-x-auto rounded-xl shadow-lg mt-4">
             <table class="min-w-full divide-y divide-gray-200 bg-white border border-gray-200">
@@ -77,8 +76,19 @@
                                                 <p class="text-blue-600">🥤 Bebida: {{ $pizza['producto']['nombre'] }}</p>
                                             @endif
                                         @endforeach
-                                        <p class="text-sm mt-2">Base: ₡{{ number_format($item['desglose']['base'], 2) }}</p>
-                                        <p class="text-sm">Extras: ₡{{ number_format($item['desglose']['extras'], 2) }}</p>
+                                        @php
+                                            $extras = 0;
+                                            foreach ($item['pizzas'] as $pizza) {
+                                                if (!empty($pizza['extras'])) {
+                                                    foreach ($pizza['extras'] as $extra) {
+                                                        $extras += $extra['precio'];
+                                                    }
+                                                }
+                                            }
+                                            $base = $item['precio_total'] - $extras;
+                                        @endphp
+                                        <p class="text-sm mt-2">Base: ₡{{ number_format($base, 2) }}</p>
+                                        <p class="text-sm">Extras: ₡{{ number_format($extras, 2) }}</p>
                                     @endif
                                 </div>
                             </td>
@@ -144,9 +154,20 @@
                                             <p class="text-blue-600">🥤 Bebida: {{ $pizza['producto']['nombre'] }}</p>
                                         @endif
                                     @endforeach
+                                    @php
+                                        $extras = 0;
+                                        foreach ($item['pizzas'] as $pizza) {
+                                            if (!empty($pizza['extras'])) {
+                                                foreach ($pizza['extras'] as $extra) {
+                                                    $extras += $extra['precio'];
+                                                }
+                                            }
+                                        }
+                                        $base = $item['precio_total'] - $extras;
+                                    @endphp
                                     <div class="text-sm mt-2 text-gray-700">
-                                        Base: ₡{{ number_format($item['desglose']['base'], 2) }}<br>
-                                        Extras: ₡{{ number_format($item['desglose']['extras'], 2) }}
+                                        Base: ₡{{ number_format($base, 2) }}<br>
+                                        Extras: ₡{{ number_format($extras, 2) }}
                                     </div>
                                 @endif
                             </div>

@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\TamanoController;
 use App\Http\Controllers\Api\MasaController; 
 use App\Http\Controllers\Api\ExtraController;
 use App\Http\Controllers\API\ResenaController;
+use App\Http\Controllers\API\DireccionUsuarioController;
 
     Route::middleware([
         'auth:sanctum',
@@ -179,3 +180,10 @@ use App\Http\Controllers\API\ResenaController;
     Route::post('/promociones', [PromocionController::class, 'store']);
         Route::put('/promociones/{id}', [PromocionController::class, 'update']);
         Route::delete('/promociones/{id}', [PromocionController::class, 'destroy']);
+
+
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('/direcciones', [DireccionUsuarioController::class, 'index']);
+        Route::post('/direcciones', [DireccionUsuarioController::class, 'store']);
+        Route::delete('/direcciones/{id}', [DireccionUsuarioController::class, 'destroy']);
+    });

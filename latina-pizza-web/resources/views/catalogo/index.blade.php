@@ -379,7 +379,6 @@
                     extras: extras,
                     nota_cliente: nota
                 });
-
                 j++;
             }
             i++;
@@ -417,6 +416,17 @@
         })
         .then(data => {
             alert("🎉 Promoción agregada correctamente al carrito");
+
+            // ✅ Mostrar precio total en el modal
+            const precioFinal = data.data.precio_total;
+            const totalPromo = document.getElementById('totalPromo');
+            if (totalPromo) {
+                totalPromo.textContent = `Total: ₡${precioFinal.toLocaleString('es-CR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })}`;
+            }
+
             cerrarModalPromocion();
             document.getElementById('modalConfirmacion').classList.remove('hidden');
         })
