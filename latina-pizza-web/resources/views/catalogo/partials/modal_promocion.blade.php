@@ -1,34 +1,36 @@
-<div id="modalPromocion" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden px-4">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
+<!-- ✅ Modal Personalización Promoción -->
+<div id="modalPromocion" class="fixed inset-0 z-50 hidden bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl w-full max-w-3xl relative shadow-2xl animate-fade-in-down overflow-hidden border border-red-500
+              max-h-[95vh] flex flex-col">
 
-    <!-- Botón cerrar -->
-    <button onclick="cerrarModalPromocion()" class="absolute top-3 right-4 text-gray-500 hover:text-red-600 text-2xl font-bold">
-      &times;
-    </button>
-
-    <!-- Título -->
-    <h2 class="text-2xl font-bold text-red-600 mb-6 text-center flex items-center justify-center gap-2">
-      🎁 <span>Personalizar Promoción</span>
-    </h2>
-
-    <!-- Contenido dinámico -->
-    <div id="contenedorPizzaPersonalizada" class="space-y-6 text-sm text-gray-800">
-      <p class="text-center text-gray-500 text-sm">Cargando componentes de la promoción...</p>
-    </div>
-
-    <!-- Total -->
-    <div class="mt-8 text-center text-green-700 text-xl font-semibold" id="totalPromo">
-      Total: ₡0.00
-    </div>
-
-    <!-- Botón agregar al carrito -->
-    <div class="sticky bottom-0 bg-white py-4 text-center mt-6 border-t border-gray-200">
-      <button onclick="agregarPromocionAlCarrito()"
-        class="bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-3 rounded-xl shadow-md transition duration-300 w-full sm:w-auto">
-        🛒 Agregar al Carrito
+    <!-- ✅ Header sticky -->
+    <div class="sticky top-0 bg-white z-20 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <h2 class="text-xl sm:text-2xl font-bold text-red-600 flex items-center gap-2">
+        🎁 <span>{{ __('catalogo.personalizar_promocion') }}</span>
+      </h2>
+      <button onclick="cerrarModalPromocion()" aria-label="{{ __('catalogo.cerrar') }}"
+              class="bg-white/80 hover:bg-white text-red-600 hover:text-red-700 border border-red-200 rounded-full w-9 h-9 flex items-center justify-center shadow transition-all duration-200">
+        <i class="fas fa-times text-xl"></i>
       </button>
     </div>
 
+    <!-- ✅ Contenido dinámico -->
+    <div id="contenedorPizzaPersonalizada" class="overflow-y-auto p-6 sm:p-8 flex-1 space-y-6 text-sm text-gray-800">
+      <p class="text-center text-gray-500">{{ __('catalogo.cargando_promocion') }}</p>
+    </div>
+
+    <!-- ✅ Total y botón sticky abajo -->
+    <div class="sticky bottom-0 z-10 bg-white border-t border-gray-200 px-6 sm:px-8 py-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="text-green-700 text-xl font-semibold text-center sm:text-left" id="totalPromo">
+          {{ __('catalogo.total') }} ₡0.00
+        </div>
+        <button onclick="agregarPromocionAlCarrito()"
+                class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-3 rounded-xl shadow-md transition duration-300">
+          🛒 {{ __('catalogo.agregar_carrito') }}
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -40,18 +42,18 @@
     <div class="text-green-600 text-5xl mb-4">🎉</div>
 
     <!-- Título -->
-    <h3 class="text-2xl font-bold text-gray-800 mb-2">¡Promoción agregada!</h3>
+    <h3 class="text-2xl font-bold text-gray-800 mb-2">{{ __('catalogo.promocion_agregada') }}</h3>
 
     <!-- Descripción -->
-    <p class="text-gray-600 mb-6">¿Qué deseas hacer ahora?</p>
+    <p class="text-gray-600 mb-6">{{ __('catalogo.que_deseas_ahora') }}</p>
 
     <!-- Botones -->
     <div class="flex flex-col sm:flex-row gap-4 justify-center">
       <button onclick="cerrarModalConfirmacion()" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-xl w-full transition">
-        🔁 Seguir comprando
+        🔁 {{ __('catalogo.seguir_comprando') }}
       </button>
       <a href="/carrito" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-xl w-full text-center transition">
-        🛒 Ir al carrito
+        🛒 {{ __('catalogo.ir_carrito') }}
       </a>
     </div>
 
@@ -61,8 +63,6 @@
     </button>
   </div>
 </div>
-
-
 
 <!-- Estilos -->
 <style>

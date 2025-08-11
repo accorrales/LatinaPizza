@@ -2,7 +2,9 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-6">
-    <h2 class="text-3xl font-extrabold text-red-600 mb-6 text-center animate-pulse">🛒 Mi Carrito</h2>
+    <h2 class="text-3xl font-extrabold text-red-600 mb-6 text-center animate-pulse">
+        {{ __('carrito.mi_carrito') }}
+    </h2>
 
     {{-- Mensajes de sesión --}}
     @if(session('success'))
@@ -25,10 +27,10 @@
             <table class="min-w-full divide-y divide-gray-200 bg-white border border-gray-200">
                 <thead class="bg-red-100 text-red-700">
                     <tr>
-                        <th class="px-6 py-3 text-left text-sm font-bold">🍕 Detalle</th>
-                        <th class="px-6 py-3 text-center text-sm font-bold">Cantidad</th>
-                        <th class="px-6 py-3 text-center text-sm font-bold">Precio</th>
-                        <th class="px-6 py-3 text-center text-sm font-bold">Acciones</th>
+                        <th class="px-6 py-3 text-left text-sm font-bold">{{ __('carrito.detalle') }}</th>
+                        <th class="px-6 py-3 text-center text-sm font-bold">{{ __('carrito.cantidad') }}</th>
+                        <th class="px-6 py-3 text-center text-sm font-bold">{{ __('carrito.precio') }}</th>
+                        <th class="px-6 py-3 text-center text-sm font-bold">{{ __('carrito.acciones') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 text-sm text-gray-800">
@@ -45,12 +47,14 @@
                                 </div>
                                 <div class="text-xs text-gray-600 mt-2 space-y-1">
                                     @if($item['tipo'] === 'producto')
-                                        <p><strong>Tamaño:</strong> {{ $item['tamano'] ?? '-' }}</p>
-                                        <p><strong>Sabor:</strong> {{ $item['sabor'] ?? '-' }}</p>
-                                        <p><strong>Masa:</strong> {{ $item['masa_nombre'] ?? '-' }}</p>
-                                        @if($item['nota_cliente'])<p><em>"{{ $item['nota_cliente'] }}"</em></p>@endif
+                                        <p><strong>{{ __('carrito.tamano') }}:</strong> {{ $item['tamano'] ?? '-' }}</p>
+                                        <p><strong>{{ __('carrito.sabor') }}:</strong> {{ $item['sabor'] ?? '-' }}</p>
+                                        <p><strong>{{ __('carrito.masa') }}:</strong> {{ $item['masa_nombre'] ?? '-' }}</p>
+                                        @if($item['nota_cliente'])
+                                            <p><strong>{{ __('carrito.nota_cliente') }}:</strong> <em>"{{ $item['nota_cliente'] }}"</em></p>
+                                        @endif
                                         @if(!empty($item['extras']))
-                                            <p><strong>Extras:</strong></p>
+                                            <p><strong>{{ __('carrito.extras') }}:</strong></p>
                                             <ul class="list-disc ml-6">
                                                 @foreach($item['extras'] as $extra)
                                                     <li>{{ $extra['nombre'] }}</li>
@@ -73,7 +77,7 @@
                                                     @endif
                                                 </div>
                                             @elseif($pizza['tipo'] === 'bebida')
-                                                <p class="text-blue-600">🥤 Bebida: {{ $pizza['producto']['nombre'] }}</p>
+                                                <p class="text-blue-600">{{ __('carrito.bebida') }}: {{ $pizza['producto']['nombre'] }}</p>
                                             @endif
                                         @endforeach
                                         @php
@@ -87,8 +91,8 @@
                                             }
                                             $base = $item['precio_total'] - $extras;
                                         @endphp
-                                        <p class="text-sm mt-2">Base: ₡{{ number_format($base, 2) }}</p>
-                                        <p class="text-sm">Extras: ₡{{ number_format($extras, 2) }}</p>
+                                        <p class="text-sm mt-2">{{ __('carrito.base') }}: ₡{{ number_format($base, 2) }}</p>
+                                        <p class="text-sm">{{ __('carrito.extras') }}: ₡{{ number_format($extras, 2) }}</p>
                                     @endif
                                 </div>
                             </td>
@@ -98,7 +102,7 @@
                                 <form method="POST" action="{{ route('carrito.eliminar', ['id' => $item['id']]) }}">
                                     @csrf @method('DELETE')
                                     <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded shadow text-sm transition transform hover:scale-105">
-                                        Eliminar
+                                        {{ __('carrito.eliminar') }}
                                     </button>
                                 </form>
                             </td>
@@ -123,12 +127,12 @@
                             </h3>
                             <div class="text-sm text-gray-600 mt-1">
                                 @if($item['tipo'] === 'producto')
-                                    <p>Tamaño: {{ $item['tamano'] }}</p>
-                                    <p>Sabor: {{ $item['sabor'] }}</p>
-                                    <p>Masa: {{ $item['masa_nombre'] }}</p>
+                                    <p>{{ __('carrito.tamano') }}: {{ $item['tamano'] }}</p>
+                                    <p>{{ __('carrito.sabor') }}: {{ $item['sabor'] }}</p>
+                                    <p>{{ __('carrito.masa') }}: {{ $item['masa_nombre'] }}</p>
                                     @if($item['nota_cliente'])<p><em>"{{ $item['nota_cliente'] }}"</em></p>@endif
                                     @if (!empty($item['extras']))
-                                        <p class="mt-1">Extras:</p>
+                                        <p class="mt-1">{{ __('carrito.extras') }}:</p>
                                         <ul class="list-disc ml-5 text-sm">
                                             @foreach ($item['extras'] as $extra)
                                                 <li>{{ $extra['nombre'] }}</li>
@@ -151,7 +155,7 @@
                                                 @endif
                                             </div>
                                         @elseif($pizza['tipo'] === 'bebida')
-                                            <p class="text-blue-600">🥤 Bebida: {{ $pizza['producto']['nombre'] }}</p>
+                                            <p class="text-blue-600">{{ __('carrito.bebida') }}: {{ $pizza['producto']['nombre'] }}</p>
                                         @endif
                                     @endforeach
                                     @php
@@ -166,8 +170,8 @@
                                         $base = $item['precio_total'] - $extras;
                                     @endphp
                                     <div class="text-sm mt-2 text-gray-700">
-                                        Base: ₡{{ number_format($base, 2) }}<br>
-                                        Extras: ₡{{ number_format($extras, 2) }}
+                                        {{ __('carrito.base') }}: ₡{{ number_format($base, 2) }}<br>
+                                        {{ __('carrito.extras') }}: ₡{{ number_format($extras, 2) }}
                                     </div>
                                 @endif
                             </div>
@@ -176,10 +180,10 @@
                     </div>
 
                     <div class="flex justify-between items-center text-sm mt-1">
-                        <span class="text-gray-500">Cantidad: {{ $cantidad }}</span>
+                        <span class="text-gray-500">{{ __('carrito.cantidad') }}: {{ $cantidad }}</span>
                         <form method="POST" action="{{ route('carrito.eliminar', ['id' => $item['id']]) }}">
                             @csrf @method('DELETE')
-                            <button class="text-red-600 hover:underline">Eliminar</button>
+                            <button class="text-red-600 hover:underline">{{ __('carrito.eliminar') }}</button>
                         </form>
                     </div>
                 </div>
@@ -189,27 +193,30 @@
         {{-- 💰 Total y acciones --}}
         <div class="mt-10 flex flex-col sm:flex-row justify-between items-center gap-6">
             <div class="text-3xl font-bold text-gray-800">
-                Total: <span class="text-green-600">₡{{ number_format($total, 2) }}</span>
+                {{ __('carrito.total') }}: <span class="text-green-600">₡{{ number_format($total, 2) }}</span>
             </div>
             <div class="flex gap-4">
                 <a href="{{ url('/catalogo') }}"
                     onclick="mostrarLoading();"
                     class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-xl font-semibold shadow-md transition hover:scale-105">
-                        🔄 Seguir Comprando
+                        {{ __('carrito.seguir_comprando') }}
                 </a>
                 <form method="POST" action="{{ route('carrito.checkout') }}">
                     @csrf
                     <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-semibold shadow-md transition hover:scale-105">
-                        ✅ Confirmar Pedido
+                        {{ __('carrito.confirmar_pedido') }}
                     </button>
                 </form>
             </div>
         </div>
     @else
-        <div class="text-center text-gray-600 text-lg mt-10 animate-fade-in">Tu carrito está vacío.</div>
+        <div class="text-center text-gray-600 text-lg mt-10 animate-fade-in">
+            {{ __('carrito.carrito_vacio') }}
+        </div>
     @endif
 </div>
 @endsection
+
 
 
 

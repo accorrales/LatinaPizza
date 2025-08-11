@@ -1,6 +1,3 @@
-@extends('layouts.app')
-
-@section('content')
     <div class="container mx-auto px-4 py-6">
         <div class="text-right px-4 py-2">
             <button 
@@ -147,9 +144,7 @@
             </div>
         </div>
     </div>
-@endsection
 
-@section('scripts')
 <script>
     const API_URL = "{{ config('app.api_url') }}";
 </script>
@@ -490,7 +485,6 @@
         .finally(() => ocultarLoading());
     }
 </script>
-@endsection
 
 <style>
 @keyframes fade-in-down { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }

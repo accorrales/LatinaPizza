@@ -1,51 +1,54 @@
-<div class="bg-white rounded-2xl shadow-md hover:shadow-lg transition p-4 flex flex-col justify-between h-full">
+<div class="relative bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 group border border-gray-100">
 
-    <!-- Imagen -->
-    <img src="{{ $sabor['imagen'] }}"
-         alt="{{ $sabor['sabor_nombre'] }}"
-         class="w-full h-40 object-cover rounded-xl mb-3 border border-gray-200">
+    <div class="relative h-48 sm:h-52 md:h-56">
+        <img src="{{ $sabor['imagen'] }}"
+             alt="{{ $sabor['sabor_nombre'] }}"
+             class="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
 
-    <!-- Título y descripción -->
-    <h3 class="text-lg font-bold text-red-600 mb-1">{{ $sabor['sabor_nombre'] }}</h3>
-    <p class="text-sm text-gray-600 flex-grow">{{ $sabor['descripcion'] }}</p>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent z-10"></div>
 
-    <!-- Estrellas -->
-    <div class="flex items-center mt-2 mb-2">
-        @php
-            $promedio = round($sabor['promedio'], 1);
-        @endphp
+        <div class="absolute bottom-4 left-4 z-20">
+            <h3 class="text-white text-2xl font-bold drop-shadow-sm">{{ $sabor['sabor_nombre'] }}</h3>
+            <p class="text-white text-sm">{{ $sabor['descripcion'] }}</p>
+        </div>
 
-        @for ($i = 1; $i <= 5; $i++)
-            @if ($promedio >= $i)
-                <i class="fas fa-star text-yellow-400"></i>
-            @elseif ($promedio >= $i - 0.5)
-                <i class="fas fa-star-half-alt text-yellow-400"></i>
-            @else
-                <i class="far fa-star text-yellow-400"></i>
-            @endif
-        @endfor
-
-        <span class="ml-2 text-sm text-gray-700">
-            ({{ number_format($promedio, 1) }} / 5 - {{ $sabor['total_resenas'] }} reseñas)
-        </span>
+        <div class="absolute top-3 left-3 z-20">
+            <span class="bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                🔥 {{ __('catalogo.favorito') }}
+            </span>
+        </div>
     </div>
 
-    <!-- Link -->
-    <a href="{{ route('sabor.resenas', $sabor['sabor_id']) }}"
-       class="text-sm text-blue-500 hover:underline mb-3">
-       Ver reseñas
-    </a>
+    <div class="p-4 flex flex-col gap-2">
+        <div class="flex items-center gap-1 text-yellow-400 text-sm">
+            @php $promedio = round($sabor['promedio'], 1); @endphp
+            @for ($i = 1; $i <= 5; $i++)
+                @if ($promedio >= $i)
+                    <i class="fas fa-star"></i>
+                @elseif ($promedio >= $i - 0.5)
+                    <i class="fas fa-star-half-alt"></i>
+                @else
+                    <i class="far fa-star"></i>
+                @endif
+            @endfor
+        </div>
 
-    <!-- Botón -->
+        <a href="{{ route('sabor.resenas', $sabor['sabor_id']) }}"
+           class="text-sm text-blue-600 hover:underline">
+            {{ __('catalogo.ver_resenas') }}
+        </a>
+    </div>
+
     <button
         onclick="abrirModal(this)"
         data-sabor='@json($sabor)'
-        class="mt-auto w-full bg-gradient-to-r from-red-600 to-red-500 text-white px-4 py-2 rounded-full hover:from-red-700 hover:to-red-600 text-sm font-semibold shadow"
+        class="absolute bottom-4 right-4 z-20 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg transition-all duration-300"
     >
-        Ver tamaños y precios
+        {{ __('catalogo.ver_tamanos') }} 🍕
     </button>
-
 </div>
+
+
 
 
 

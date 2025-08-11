@@ -23,6 +23,8 @@ use App\Http\Controllers\Api\MasaController;
 use App\Http\Controllers\Api\ExtraController;
 use App\Http\Controllers\API\ResenaController;
 use App\Http\Controllers\API\DireccionUsuarioController;
+use App\Http\Controllers\API\PedidoTipoController;
+use App\Http\Controllers\API\DetallePedidoExtraController;
 
     Route::middleware([
         'auth:sanctum',
@@ -81,6 +83,8 @@ use App\Http\Controllers\API\DireccionUsuarioController;
     Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
         Route::apiResource('sucursales', SucursalController::class);
     });
+    //Usuarios sin logear
+    Route::get('/sucursales', [SucursalController::class, 'index']);
 
     Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
         Route::get('/resumen-sucursal/{id}', [PedidoAdminController::class, 'resumenSucursal']);
@@ -177,7 +181,7 @@ use App\Http\Controllers\API\DireccionUsuarioController;
 
         // Promociones protegidas 
     });
-    Route::post('/promociones', [PromocionController::class, 'store']);
+    Route::post('/promociones', [PromocionController::class, 'store']); 
         Route::put('/promociones/{id}', [PromocionController::class, 'update']);
         Route::delete('/promociones/{id}', [PromocionController::class, 'destroy']);
 
@@ -186,4 +190,8 @@ use App\Http\Controllers\API\DireccionUsuarioController;
         Route::get('/direcciones', [DireccionUsuarioController::class, 'index']);
         Route::post('/direcciones', [DireccionUsuarioController::class, 'store']);
         Route::delete('/direcciones/{id}', [DireccionUsuarioController::class, 'destroy']);
+    });
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/guardar-tipo-pedido', [PedidoTipoController::class, 'guardar'])->name('guardar.tipo.pedido');
     });
