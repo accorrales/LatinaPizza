@@ -24,7 +24,9 @@ use App\Http\Controllers\Api\ExtraController;
 use App\Http\Controllers\API\ResenaController;
 use App\Http\Controllers\API\DireccionUsuarioController;
 use App\Http\Controllers\API\PedidoTipoController;
-use App\Http\Controllers\API\DetallePedidoExtraController;
+use App\Http\Controllers\API\DetallePedidoExtraController;  
+use App\Http\Controllers\API\EntregaController;
+use App\Http\Controllers\API\ExpressController;
 
     Route::middleware([
         'auth:sanctum',
@@ -189,9 +191,26 @@ use App\Http\Controllers\API\DetallePedidoExtraController;
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/direcciones', [DireccionUsuarioController::class, 'index']);
         Route::post('/direcciones', [DireccionUsuarioController::class, 'store']);
+        Route::get('/direcciones/{id}', [DireccionUsuarioController::class, 'show']);
+        Route::put('/direcciones/{id}', [DireccionUsuarioController::class, 'update']);
         Route::delete('/direcciones/{id}', [DireccionUsuarioController::class, 'destroy']);
     });
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/guardar-tipo-pedido', [PedidoTipoController::class, 'guardar'])->name('guardar.tipo.pedido');
     });
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/carrito/metodo-entrega', [EntregaController::class, 'setMetodoEntrega']);
+    });
+
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/express', [ExpressController::class, 'index'])->name('express.index');
+        Route::post('/express/direcciones', [ExpressController::class, 'store'])->name('express.store');
+        Route::post('/express/seleccionar', [ExpressController::class, 'seleccionar'])->name('express.seleccionar');
+    });
+
+    Route::middleware('auth:sanctum')->get(
+        '/sucursales/cercanas',
+        [SucursalController::class, 'cercanas']
+    );

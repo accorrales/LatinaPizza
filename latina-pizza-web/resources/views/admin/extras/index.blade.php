@@ -3,9 +3,10 @@
 @section('content')
 <div class="container mx-auto px-4">
     <div class="flex justify-between items-center mb-4">
-        <h1 class="text-2xl font-bold">Extras disponibles</h1>
-        <a href="{{ route('admin.extras.create') }}" onclick="mostrarLoading()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">
-            + Nuevo Extra
+        <h1 class="text-2xl font-bold">{{ __('viewAdmin/extras_admin.titulo') }}</h1>
+        <a href="{{ route('admin.extras.create') }}" onclick="mostrarLoading()"
+           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">
+            {{ __('viewAdmin/extras_admin.nuevo') }}
         </a>
     </div>
 
@@ -24,12 +25,12 @@
         <table class="table-auto w-full border border-gray-300 text-sm bg-white shadow rounded">
             <thead class="bg-gray-200 text-gray-800">
                 <tr>
-                    <th class="px-4 py-2 text-left">Nombre</th>
-                    <th class="px-4 py-2 text-center">₡ Pequeña</th>
-                    <th class="px-4 py-2 text-center">₡ Mediana</th>
-                    <th class="px-4 py-2 text-center">₡ Grande</th>
-                    <th class="px-4 py-2 text-center">₡ Extragrande</th>
-                    <th class="px-4 py-2 text-center">Acciones</th>
+                    <th class="px-4 py-2 text-left">{{ __('viewAdmin/extras_admin.nombre') }}</th>
+                    <th class="px-4 py-2 text-center">{{ __('viewAdmin/extras_admin.precio_pequena') }}</th>
+                    <th class="px-4 py-2 text-center">{{ __('viewAdmin/extras_admin.precio_mediana') }}</th>
+                    <th class="px-4 py-2 text-center">{{ __('viewAdmin/extras_admin.precio_grande') }}</th>
+                    <th class="px-4 py-2 text-center">{{ __('viewAdmin/extras_admin.precio_extragrande') }}</th>
+                    <th class="px-4 py-2 text-center">{{ __('viewAdmin/extras_admin.acciones') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -41,16 +42,26 @@
                         <td class="px-4 py-2 text-center">₡{{ number_format($extra['precio_grande'], 0) }}</td>
                         <td class="px-4 py-2 text-center">₡{{ number_format($extra['precio_extragrande'], 0) }}</td>
                         <td class="px-4 py-2 text-center space-x-2">
-                            <a href="{{ route('admin.extras.edit', $extra['id']) }}" onclick="mostrarLoading()" class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded text-xs">Editar</a>
-                            <form action="{{ route('admin.extras.destroy', $extra['id']) }}" method="POST" class="inline-block" onsubmit="mostrarLoading();return confirm('¿Estás seguro de eliminar este extra?')">
+                            <a href="{{ route('admin.extras.edit', $extra['id']) }}" onclick="mostrarLoading()"
+                               class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded text-xs">
+                                {{ __('viewAdmin/extras_admin.editar') }}
+                            </a>
+                            <form action="{{ route('admin.extras.destroy', $extra['id']) }}" method="POST" class="inline-block"
+                                  onsubmit="mostrarLoading();return confirm('{{ __('viewAdmin/extras_admin.confirmar_eliminar') }}')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">Eliminar</button>
+                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">
+                                    {{ __('viewAdmin/extras_admin.eliminar') }}
+                                </button>
                             </form>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="text-center py-4">No hay extras registrados.</td></tr>
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            {{ __('viewAdmin/extras_admin.sin_registros') }}
+                        </td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>

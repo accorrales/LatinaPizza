@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Sucursal;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\DB;
+use App\Models\DireccionUsuario;
+use Illuminate\Support\Facades\Auth;
 class SucursalController extends Controller
 {
     public function index()
@@ -57,6 +59,32 @@ class SucursalController extends Controller
 
         return response()->json([
             'message' => 'Sucursal eliminada correctamente'
+        ]);
+    }
+    public function cercanas(Request $r)
+    {
+        $r->validate(['direccion_usuario_id' => 'required|integer|exists:direcciones_usuario,id']);
+
+        // seguridad: que la dirección sea del user
+        $dir = DireccionUsuario::where('user_id', Auth::id())->findOrFail($r->direccion_usuario_id);
+        if (!$dir->latitud || !$dir->longitud) {
+            return response()->json(['error' => 'La dirección no tiene latitud/longitud'], 422);
+        }
+
+        $lat = (float)$dir->latitud;
+        $lng = (float)$dir->longitud;
+
+        // Haversine (distancia en km)
+        $sucursales = Sucursal::select([
+                'sucursales.*',
+                DB::raw("ROUND(6371 * acos(cos(radians($lat)) * cos(radians(latitud)) * cos(radians(longitud) - radians($lng)) + sin(radians($lat)) * sin(radians(latitud))), 2) as distancia_km")
+            ])
+            ->orderBy('distancia_km')
+            ->get();
+
+        return response()->json([
+            'direccion'  => $dir,
+            'sucursales' => $sucursales,
         ]);
     }
 }

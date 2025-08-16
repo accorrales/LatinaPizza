@@ -13,7 +13,10 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
-
+     'latina_api' => [
+        'base_url' => rtrim(env('APP_API_URL', 'http://127.0.0.1:8001'), '/') . '/api',
+    ],
+    
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],

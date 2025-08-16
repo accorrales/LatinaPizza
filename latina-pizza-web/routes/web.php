@@ -165,6 +165,10 @@ use Illuminate\Support\Facades\App;
         session()->put('locale', $locale);
         return back();
     })->name('cambiar_idioma');
-
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/express', [ExpressController::class, 'index'])->name('express.index');
+        Route::post('/express/direcciones', [ExpressController::class, 'store'])->name('express.store');
+        Route::post('/express/seleccionar', [ExpressController::class, 'seleccionar'])->name('express.seleccionar');
+    });
 require __DIR__.'/auth.php';
 

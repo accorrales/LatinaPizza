@@ -23,6 +23,11 @@ class DireccionUsuario extends Model
         'latitud',
         'longitud',
     ];
+    
+    protected $casts = [
+        'latitud' => 'float',
+        'longitud' => 'float',
+    ];
 
     public function user()
     {
