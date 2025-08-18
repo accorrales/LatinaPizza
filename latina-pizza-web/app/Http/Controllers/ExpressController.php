@@ -43,7 +43,6 @@ class ExpressController extends Controller
     public function store(Request $r)
     {
         $token = Session::get('token');
-        if (!$token) return redirect()->route('login');
 
         $payload = $r->validate([
             'nombre'            => 'required|string|max:255',
@@ -57,24 +56,27 @@ class ExpressController extends Controller
             'longitud'          => 'nullable|numeric|between:-180,180',
         ]);
 
-        Http::withToken($token)->post("{$this->apiBase}/direcciones", $payload)->throw();
+        $resp = Http::withToken($token)
+            ->post("{$this->apiBase}/direcciones", $payload)
+            ->throw();
 
-        return redirect()->route('express.index')->with('ok','Dirección guardada');
+        $dirId = data_get($resp->json(), 'data.id');
+
+        // 👉 Ir a sucursales cercanas para esa dirección
+        return redirect()->route('sucursales.express', ['direccion_usuario_id' => $dirId]);
     }
 
     public function seleccionar(Request $r)
     {
-        $token = Session::get('token');
-        if (!$token) return redirect()->route('login');
+        // 1) Validar que venga la dirección
+        $data = $r->validate([
+            'direccion_usuario_id' => 'required|integer',
+        ]);
 
-        $data = $r->validate(['direccion_usuario_id' => 'required|integer']);
-
-        Http::withToken($token)->post("{$this->apiBase}/carrito/metodo-entrega", [
-            'tipo'                 => 'express',
-            'direccion_usuario_id' => $data['direccion_usuario_id'],
-        ])->throw();
-
-        return redirect()->route('catalogo.index')->with('ok','Entrega Express seleccionada');
+        // 2) NO llamamos al API aquí. Redirigimos a la lista de sucursales cercanas
+        //    para esa dirección. Allí el usuario elige una sucursal y recién entonces
+        //    posteamos ambos IDs al API.
+        return redirect()->route('sucursales.express', $data);
     }
 }
 

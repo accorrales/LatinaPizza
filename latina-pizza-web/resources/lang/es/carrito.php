@@ -17,5 +17,6 @@ return [
     'seguir_comprando' => '🔄 Seguir Comprando',
     'confirmar_pedido' => '✅ Confirmar Pedido',
     'carrito_vacio' => 'Tu carrito está vacío.',
-    'eliminar' => 'Eliminar'
+    'eliminar' => 'Eliminar',
+    'resumen' => 'Resumen'
 ];

@@ -15,7 +15,20 @@ class Pedido extends Model
         'total',
         'estado',
         'tipo_pedido',
+        'payment_provider',
+        'payment_ref',
+        'payment_status',
+        'paid_at',
     ];
+    public function markPaid(string $provider, string $ref): void
+    {
+        $this->forceFill([
+            'payment_provider' => $provider,
+            'payment_ref'      => $ref,
+            'payment_status'   => 'paid',
+            'paid_at'          => now(),
+        ])->save();
+    }
     // En Producto.php
     public function masa()
     {

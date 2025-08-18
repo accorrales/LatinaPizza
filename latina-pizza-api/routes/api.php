@@ -100,7 +100,10 @@ use App\Http\Controllers\API\ExpressController;
         Route::post('/stripe/checkout', [StripeController::class, 'checkout']);
         Route::post('/carrito/agregar-promocion', [CarritoController::class, 'agregarPromocion']);
     });
-
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/pagos/stripe/intent', [PagoController::class, 'createIntent']); // NUEVO
+        // ...tus otras rutas protegidas (carrito, checkout, etc.)
+    });
     Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
         Route::apiResource('usuarios', UserController::class)->only(['index', 'show', 'update', 'destroy']);
     });
@@ -210,7 +213,11 @@ use App\Http\Controllers\API\ExpressController;
         Route::post('/express/seleccionar', [ExpressController::class, 'seleccionar'])->name('express.seleccionar');
     });
 
-    Route::middleware('auth:sanctum')->get(
-        '/sucursales/cercanas',
-        [SucursalController::class, 'cercanas']
-    );
+    Route::middleware('auth:sanctum')->get('/sucursales/cercanas', [SucursalController::class, 'cercanas']);
+
+    Route::middleware('auth:sanctum')->post('/checkout', [CarritoController::class, 'checkout']);
+
+    Route::get('/debug/factura/{pedido}', function (\App\Models\Pedido $pedido) {
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.factura', ['pedido' => $pedido])->setPaper('a4');
+        return $pdf->stream("Factura-{$pedido->id}.pdf");
+    })->middleware('auth');

@@ -13,6 +13,10 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    'maptiler' => [
+        'key' => env('MAPTILER_KEY'),
+    ],
+    
      'latina_api' => [
         'base_url' => rtrim(env('APP_API_URL', 'http://127.0.0.1:8001'), '/') . '/api',
     ],
@@ -36,6 +40,11 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+    ],
+
+    'stripe' => [
+        'key'    => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
     ],
 
 ];

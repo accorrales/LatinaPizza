@@ -8,7 +8,7 @@ return [
         'login',
         'logout',
         'register',
-        'guardar-tipo-pedido', // ← ruta personalizada para guardar tipo de pedido
+        'guardar-tipo-pedido',// ← ruta personalizada para guardar tipo de pedido
     ],
 
     'allowed_methods' => ['*'],

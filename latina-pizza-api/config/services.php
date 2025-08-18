@@ -13,6 +13,9 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    'latina_api' => [
+        'base_url' => rtrim(env('APP_API_URL', 'http://localhost:8001'), '/') . '/api',
+    ],
     
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
@@ -33,6 +36,11 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+    ],
+
+    'stripe' => [
+        'secret'   => env('STRIPE_SECRET'),
+        'currency' => env('STRIPE_CURRENCY', 'crc'),
     ],
 
 ];

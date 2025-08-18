@@ -17,5 +17,6 @@ return [
     'seguir_comprando' => '🔄 Continue Shopping',
     'confirmar_pedido' => '✅ Confirm Order',
     'carrito_vacio' => 'Your cart is empty.',
-    'eliminar' => 'Remove'
+    'eliminar' => 'Remove',
+    'resumen' => 'Resume',
 ];

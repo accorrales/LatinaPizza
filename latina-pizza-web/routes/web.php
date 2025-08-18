@@ -22,6 +22,8 @@ use App\Http\Controllers\PickupController;
 use App\Http\Controllers\ExpressController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\App;
+use App\Http\Controllers\SucursalesExpressController;
+use App\Http\Controllers\PagosFrontController;
 
     Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -150,15 +152,18 @@ use Illuminate\Support\Facades\App;
         return view('catalogo.pickup');
     })->middleware(['auth'])->name('vista.pickup');
 
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/pickup', [PickupController::class, 'index'])->name('pickup.index');
-    });
 
     Route::middleware(['auth'])->group(function () {
         Route::get('/express', [ExpressController::class, 'index'])->name('express.index');
     });
 
-    Route::view('/pickup', 'pedido.pickup')->middleware('auth')->name('pedido.pickup');
+    Route::middleware('auth')->group(function () {
+        // Vista con sucursales (GET)
+        Route::get('/pickup', [PickupController::class, 'index'])->name('pickup.index');
+
+        // Confirmar selección de sucursal (POST)
+        Route::post('/pickup/seleccionar', [PickupController::class, 'seleccionar'])->name('pickup.seleccionar');
+    });
 
     Route::get('/lang/{locale}', function ($locale) {
         if (!in_array($locale, ['en','es'])) abort(400);
@@ -170,5 +175,24 @@ use Illuminate\Support\Facades\App;
         Route::post('/express/direcciones', [ExpressController::class, 'store'])->name('express.store');
         Route::post('/express/seleccionar', [ExpressController::class, 'seleccionar'])->name('express.seleccionar');
     });
+
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/sucursales/express', [SucursalesExpressController::class, 'index'])
+            ->name('sucursales.express');
+
+        Route::post('/sucursales/express/seleccionar', [SucursalesExpressController::class, 'seleccionar'])
+            ->name('sucursales.express.seleccionar');
+    });
+
+    Route::middleware('auth')->group(function () {
+        Route::post('/pagos/stripe/intent', [PagosFrontController::class, 'intent'])->name('pagos.intent');
+    });
+
+    Route::middleware('auth')->group(function () {
+        Route::get('/carrito', [CarritoController::class, 'ver'])->name('carrito.ver');
+        Route::post('/carrito/checkout', [CarritoController::class, 'checkout'])->name('carrito.checkout');
+        Route::post('/carrito/stripe/intent', [CarritoController::class, 'createStripeIntent'])->name('carrito.stripe.intent');
+    });   
+    
 require __DIR__.'/auth.php';
 

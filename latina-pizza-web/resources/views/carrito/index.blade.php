@@ -2,220 +2,388 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-6">
-    <h2 class="text-3xl font-extrabold text-red-600 mb-6 text-center animate-pulse">
-        {{ __('carrito.mi_carrito') }}
-    </h2>
+  <h2 class="text-3xl font-extrabold text-red-600 mb-6 text-center">
+    {{ __('carrito.mi_carrito') }}
+  </h2>
 
-    {{-- Mensajes de sesión --}}
-    @if(session('success'))
-        <div class="bg-green-100 border border-green-300 text-green-800 p-3 mb-5 rounded-lg shadow-sm">
-            {{ session('success') }}
-        </div>
-    @endif
+  {{-- flashes --}}
+  @if(session('success'))
+    <div class="bg-green-100 border border-green-300 text-green-800 p-3 mb-5 rounded-lg">
+      {{ session('success') }}
+    </div>
+  @endif
+  @if(session('error'))
+    <div class="bg-red-100 border border-red-300 text-red-800 p-3 mb-5 rounded-lg">
+      {{ session('error') }}
+    </div>
+  @endif
 
-    @if(session('error'))
-        <div class="bg-red-100 border border-red-300 text-red-800 p-3 mb-5 rounded-lg shadow-sm">
-            {{ session('error') }}
-        </div>
-    @endif
+  @php
+    $data      = $carrito['data'] ?? [];
+    $items     = $data['items'] ?? [];
+    $subtotal  = $carrito['subtotal'] ?? 0;
+    $deliveryF = $carrito['delivery']['fee'] ?? 0;
+    $deliveryC = $carrito['delivery']['currency'] ?? '₡';
+    $distance  = $carrito['delivery']['distance'] ?? null;
+    $total     = $carrito['total'] ?? 0;
+  @endphp
 
-    @php $total = 0; @endphp
-
-    @if ($carrito && isset($carrito['items']) && count($carrito['items']) > 0)
-        {{-- 🌐 Vista Escritorio --}}
-        <div class="hidden sm:block overflow-x-auto rounded-xl shadow-lg mt-4">
-            <table class="min-w-full divide-y divide-gray-200 bg-white border border-gray-200">
-                <thead class="bg-red-100 text-red-700">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-sm font-bold">{{ __('carrito.detalle') }}</th>
-                        <th class="px-6 py-3 text-center text-sm font-bold">{{ __('carrito.cantidad') }}</th>
-                        <th class="px-6 py-3 text-center text-sm font-bold">{{ __('carrito.precio') }}</th>
-                        <th class="px-6 py-3 text-center text-sm font-bold">{{ __('carrito.acciones') }}</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 text-sm text-gray-800">
-                    @foreach ($carrito['items'] as $item)
-                        @php
-                            $subtotal = $item['precio_total'];
-                            $total += $subtotal;
-                            $cantidad = $item['cantidad'] ?? 1;
-                        @endphp
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="px-6 py-4 align-top">
-                                <div class="font-semibold text-red-700 text-base">
-                                    {{ $item['tipo'] === 'producto' ? '🍕' : '🎁' }} {{ $item['nombre'] }}
-                                </div>
-                                <div class="text-xs text-gray-600 mt-2 space-y-1">
-                                    @if($item['tipo'] === 'producto')
-                                        <p><strong>{{ __('carrito.tamano') }}:</strong> {{ $item['tamano'] ?? '-' }}</p>
-                                        <p><strong>{{ __('carrito.sabor') }}:</strong> {{ $item['sabor'] ?? '-' }}</p>
-                                        <p><strong>{{ __('carrito.masa') }}:</strong> {{ $item['masa_nombre'] ?? '-' }}</p>
-                                        @if($item['nota_cliente'])
-                                            <p><strong>{{ __('carrito.nota_cliente') }}:</strong> <em>"{{ $item['nota_cliente'] }}"</em></p>
-                                        @endif
-                                        @if(!empty($item['extras']))
-                                            <p><strong>{{ __('carrito.extras') }}:</strong></p>
-                                            <ul class="list-disc ml-6">
-                                                @foreach($item['extras'] as $extra)
-                                                    <li>{{ $extra['nombre'] }}</li>
-                                                @endforeach
-                                            </ul>
-                                        @endif
-                                    @elseif($item['tipo'] === 'promocion')
-                                        <p class="text-sm text-gray-700 mb-1">{{ $item['descripcion'] }}</p>
-                                        @foreach($item['pizzas'] as $pizza)
-                                            @if($pizza['tipo'] === 'pizza')
-                                                <div class="border p-2 rounded bg-gray-50 mb-1">
-                                                    🍕 <strong>{{ $pizza['sabor']['nombre'] }}</strong> ({{ $pizza['masa']['nombre'] }})<br>
-                                                    @if($pizza['nota_cliente'])<em>"{{ $pizza['nota_cliente'] }}"</em><br>@endif
-                                                    @if(!empty($pizza['extras']))
-                                                        <ul class="list-disc ml-5 text-gray-700">
-                                                            @foreach($pizza['extras'] as $extra)
-                                                                <li>{{ $extra['nombre'] }} <span class="text-gray-500">₡{{ number_format($extra['precio'], 2) }}</span></li>
-                                                            @endforeach
-                                                        </ul>
-                                                    @endif
-                                                </div>
-                                            @elseif($pizza['tipo'] === 'bebida')
-                                                <p class="text-blue-600">{{ __('carrito.bebida') }}: {{ $pizza['producto']['nombre'] }}</p>
-                                            @endif
-                                        @endforeach
-                                        @php
-                                            $extras = 0;
-                                            foreach ($item['pizzas'] as $pizza) {
-                                                if (!empty($pizza['extras'])) {
-                                                    foreach ($pizza['extras'] as $extra) {
-                                                        $extras += $extra['precio'];
-                                                    }
-                                                }
-                                            }
-                                            $base = $item['precio_total'] - $extras;
-                                        @endphp
-                                        <p class="text-sm mt-2">{{ __('carrito.base') }}: ₡{{ number_format($base, 2) }}</p>
-                                        <p class="text-sm">{{ __('carrito.extras') }}: ₡{{ number_format($extras, 2) }}</p>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-center">{{ $cantidad }}</td>
-                            <td class="px-6 py-4 text-center text-green-700 font-bold">₡{{ number_format($subtotal, 2) }}</td>
-                            <td class="px-6 py-4 text-center">
-                                <form method="POST" action="{{ route('carrito.eliminar', ['id' => $item['id']]) }}">
-                                    @csrf @method('DELETE')
-                                    <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded shadow text-sm transition transform hover:scale-105">
-                                        {{ __('carrito.eliminar') }}
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
-        {{-- 📱 Vista Móvil --}}
-        <div class="sm:hidden space-y-4 mt-6">
-            @foreach ($carrito['items'] as $item)
-                @php
-                    $subtotal = $item['precio_total'];
-                    $cantidad = $item['cantidad'] ?? 1;
-                @endphp
-                <div class="bg-white rounded-xl shadow-md border p-4 space-y-2">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-red-700 font-bold text-lg">
-                                {{ $item['tipo'] === 'producto' ? '🍕 ' : '🎁 ' }}{{ $item['nombre'] }}
-                            </h3>
-                            <div class="text-sm text-gray-600 mt-1">
-                                @if($item['tipo'] === 'producto')
-                                    <p>{{ __('carrito.tamano') }}: {{ $item['tamano'] }}</p>
-                                    <p>{{ __('carrito.sabor') }}: {{ $item['sabor'] }}</p>
-                                    <p>{{ __('carrito.masa') }}: {{ $item['masa_nombre'] }}</p>
-                                    @if($item['nota_cliente'])<p><em>"{{ $item['nota_cliente'] }}"</em></p>@endif
-                                    @if (!empty($item['extras']))
-                                        <p class="mt-1">{{ __('carrito.extras') }}:</p>
-                                        <ul class="list-disc ml-5 text-sm">
-                                            @foreach ($item['extras'] as $extra)
-                                                <li>{{ $extra['nombre'] }}</li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
-                                @elseif($item['tipo'] === 'promocion')
-                                    <p class="mb-1">{{ $item['descripcion'] }}</p>
-                                    @foreach($item['pizzas'] as $pizza)
-                                        @if($pizza['tipo'] === 'pizza')
-                                            <div class="border p-2 rounded bg-gray-50 mb-1">
-                                                🍕 <strong>{{ $pizza['sabor']['nombre'] }}</strong> ({{ $pizza['masa']['nombre'] }})<br>
-                                                @if($pizza['nota_cliente']) <em>"{{ $pizza['nota_cliente'] }}"</em><br>@endif
-                                                @if(!empty($pizza['extras']))
-                                                    <ul class="list-disc ml-5 text-sm text-gray-600">
-                                                        @foreach($pizza['extras'] as $extra)
-                                                            <li>{{ $extra['nombre'] }} <span class="text-gray-500">₡{{ number_format($extra['precio'], 2) }}</span></li>
-                                                        @endforeach
-                                                    </ul>
-                                                @endif
-                                            </div>
-                                        @elseif($pizza['tipo'] === 'bebida')
-                                            <p class="text-blue-600">{{ __('carrito.bebida') }}: {{ $pizza['producto']['nombre'] }}</p>
-                                        @endif
-                                    @endforeach
-                                    @php
-                                        $extras = 0;
-                                        foreach ($item['pizzas'] as $pizza) {
-                                            if (!empty($pizza['extras'])) {
-                                                foreach ($pizza['extras'] as $extra) {
-                                                    $extras += $extra['precio'];
-                                                }
-                                            }
-                                        }
-                                        $base = $item['precio_total'] - $extras;
-                                    @endphp
-                                    <div class="text-sm mt-2 text-gray-700">
-                                        {{ __('carrito.base') }}: ₡{{ number_format($base, 2) }}<br>
-                                        {{ __('carrito.extras') }}: ₡{{ number_format($extras, 2) }}
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                        <div class="text-right text-green-700 font-bold">₡{{ number_format($subtotal, 2) }}</div>
-                    </div>
-
-                    <div class="flex justify-between items-center text-sm mt-1">
-                        <span class="text-gray-500">{{ __('carrito.cantidad') }}: {{ $cantidad }}</span>
-                        <form method="POST" action="{{ route('carrito.eliminar', ['id' => $item['id']]) }}">
-                            @csrf @method('DELETE')
-                            <button class="text-red-600 hover:underline">{{ __('carrito.eliminar') }}</button>
-                        </form>
-                    </div>
+  @if(!empty($items))
+    {{-- ======================= DESKTOP / TABLE ======================= --}}
+    <div class="hidden md:block overflow-x-auto rounded-xl shadow-lg mt-4">
+      <table class="min-w-full divide-y divide-gray-200 bg-white border border-gray-200">
+        <thead class="bg-red-100 text-red-700">
+          <tr>
+            <th class="px-6 py-3 text-left text-sm font-bold">{{ __('carrito.detalle') }}</th>
+            <th class="px-6 py-3 text-center text-sm font-bold">{{ __('carrito.cantidad') }}</th>
+            <th class="px-6 py-3 text-center text-sm font-bold">{{ __('carrito.precio') }}</th>
+            <th class="px-6 py-3 text-center text-sm font-bold">{{ __('carrito.acciones') }}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 text-sm text-gray-800">
+          @foreach($items as $it)
+            <tr class="hover:bg-gray-50 transition">
+              <td class="px-6 py-4 align-top">
+                <div class="font-semibold text-red-700 text-base">
+                  {{ $it['tipo']==='producto' ? '🍕' : '🎁' }} {{ $it['nombre'] }}
                 </div>
-            @endforeach
-        </div>
-
-        {{-- 💰 Total y acciones --}}
-        <div class="mt-10 flex flex-col sm:flex-row justify-between items-center gap-6">
-            <div class="text-3xl font-bold text-gray-800">
-                {{ __('carrito.total') }}: <span class="text-green-600">₡{{ number_format($total, 2) }}</span>
-            </div>
-            <div class="flex gap-4">
-                <a href="{{ url('/catalogo') }}"
-                    onclick="mostrarLoading();"
-                    class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-xl font-semibold shadow-md transition hover:scale-105">
-                        {{ __('carrito.seguir_comprando') }}
-                </a>
-                <form method="POST" action="{{ route('carrito.checkout') }}">
-                    @csrf
-                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-semibold shadow-md transition hover:scale-105">
-                        {{ __('carrito.confirmar_pedido') }}
-                    </button>
+                <div class="text-xs text-gray-600 mt-2 space-y-1">
+                  @if($it['tipo']==='producto')
+                    <p><strong>{{ __('carrito.tamano') }}:</strong> {{ $it['tamano'] ?? '-' }}</p>
+                    <p><strong>{{ __('carrito.sabor') }}:</strong> {{ $it['sabor'] ?? '-' }}</p>
+                    <p><strong>{{ __('carrito.masa') }}:</strong> {{ $it['masa_nombre'] ?? '-' }}</p>
+                    @if(!empty($it['nota_cliente']))
+                      <p><strong>{{ __('carrito.nota_cliente') }}:</strong> <em>"{{ $it['nota_cliente'] }}"</em></p>
+                    @endif
+                    @if(!empty($it['extras']))
+                      <p><strong>{{ __('carrito.extras') }}:</strong></p>
+                      <ul class="list-disc ml-6">
+                        @foreach($it['extras'] as $ex) <li>{{ $ex['nombre'] }}</li> @endforeach
+                      </ul>
+                    @endif
+                  @else
+                    <p class="text-sm text-gray-700 mb-1">{{ $it['descripcion'] }}</p>
+                    @foreach($it['pizzas'] as $pz)
+                      @if($pz['tipo']==='pizza')
+                        <div class="border p-2 rounded bg-gray-50 mb-1">
+                          🍕 <strong>{{ $pz['sabor']['nombre'] }}</strong> ({{ $pz['masa']['nombre'] }})
+                          @if(!empty($pz['nota_cliente']))<br><em>"{{ $pz['nota_cliente'] }}"</em>@endif
+                        </div>
+                      @elseif($pz['tipo']==='bebida')
+                        <p class="text-blue-600">{{ __('carrito.bebida') }}: {{ $pz['producto']['nombre'] }}</p>
+                      @endif
+                    @endforeach
+                    <p class="text-sm mt-2">{{ __('carrito.base') }}: {{ $deliveryC }}{{ number_format($it['desglose']['base'] ?? 0, 2) }}</p>
+                    <p class="text-sm">{{ __('carrito.extras') }}: {{ $deliveryC }}{{ number_format($it['desglose']['extras'] ?? 0, 2) }}</p>
+                  @endif
+                </div>
+              </td>
+              <td class="px-6 py-4 text-center">{{ $it['cantidad'] ?? 1 }}</td>
+              <td class="px-6 py-4 text-center text-green-700 font-bold">{{ $deliveryC }}{{ number_format($it['precio_total'], 2) }}</td>
+              <td class="px-6 py-4 text-center">
+                <form method="POST" action="{{ route('carrito.eliminar', ['id'=>$it['id']]) }}">
+                  @csrf @method('DELETE')
+                  <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded shadow text-sm">
+                    {{ __('carrito.eliminar') }}
+                  </button>
                 </form>
+              </td>
+            </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    {{-- ======================= MOBILE / CARDS ======================= --}}
+    <div class="md:hidden space-y-4 mt-6">
+      @foreach($items as $it)
+        <div class="bg-white rounded-xl shadow-md border p-4 space-y-2">
+          <div class="flex justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="text-red-700 font-bold text-lg truncate">
+                {{ $it['tipo']==='producto' ? '🍕' : '🎁' }} {{ $it['nombre'] }}
+              </h3>
+              <div class="text-sm text-gray-600 mt-1 space-y-0.5">
+                @if($it['tipo']==='producto')
+                  <p>{{ __('carrito.tamano') }}: {{ $it['tamano'] ?? '-' }}</p>
+                  <p>{{ __('carrito.sabor') }}: {{ $it['sabor'] ?? '-' }}</p>
+                  <p>{{ __('carrito.masa') }}: {{ $it['masa_nombre'] ?? '-' }}</p>
+                  @if(!empty($it['nota_cliente']))<p><em>"{{ $it['nota_cliente'] }}"</em></p>@endif
+                  @if(!empty($it['extras']))
+                    <p class="mt-1">{{ __('carrito.extras') }}:</p>
+                    <ul class="list-disc ml-5 text-sm">
+                      @foreach($it['extras'] as $ex) <li>{{ $ex['nombre'] }}</li> @endforeach
+                    </ul>
+                  @endif
+                @else
+                  <p class="mb-1">{{ $it['descripcion'] }}</p>
+                  @foreach($it['pizzas'] as $pz)
+                    @if($pz['tipo']==='pizza')
+                      <div class="border p-2 rounded bg-gray-50 mb-1">
+                        🍕 <strong>{{ $pz['sabor']['nombre'] }}</strong> ({{ $pz['masa']['nombre'] }})
+                        @if(!empty($pz['nota_cliente']))<br><em>"{{ $pz['nota_cliente'] }}"</em>@endif
+                      </div>
+                    @elseif($pz['tipo']==='bebida')
+                      <p class="text-blue-600">{{ __('carrito.bebida') }}: {{ $pz['producto']['nombre'] }}</p>
+                    @endif
+                  @endforeach
+                  <div class="text-sm mt-1 text-gray-700">
+                    {{ __('carrito.base') }}: {{ $deliveryC }}{{ number_format($it['desglose']['base'] ?? 0, 2) }}<br>
+                    {{ __('carrito.extras') }}: {{ $deliveryC }}{{ number_format($it['desglose']['extras'] ?? 0, 2) }}
+                  </div>
+                @endif
+              </div>
             </div>
+            <div class="text-right">
+              <div class="text-green-700 font-bold">{{ $deliveryC }}{{ number_format($it['precio_total'], 2) }}</div>
+              <div class="text-xs text-gray-500">{{ __('carrito.cantidad') }}: {{ $it['cantidad'] ?? 1 }}</div>
+            </div>
+          </div>
+
+          <div class="flex justify-end">
+            <form method="POST" action="{{ route('carrito.eliminar', ['id'=>$it['id']]) }}">
+              @csrf @method('DELETE')
+              <button class="text-red-600 hover:underline text-sm">{{ __('carrito.eliminar') }}</button>
+            </form>
+          </div>
         </div>
-    @else
-        <div class="text-center text-gray-600 text-lg mt-10 animate-fade-in">
-            {{ __('carrito.carrito_vacio') }}
+      @endforeach
+    </div>
+
+    {{-- ======================= TOTALS + PAGO ======================= --}}
+    <div class="mt-8 grid md:grid-cols-2 gap-6 items-start">
+      {{-- Resumen --}}
+      <div class="bg-white rounded-xl border p-4 shadow-sm">
+        <h4 class="font-semibold text-gray-800 mb-3">{{ __('carrito.resumen') }}</h4>
+        <div class="space-y-1 text-sm">
+          <div class="flex justify-between">
+            <span>Subtotal</span>
+            <span class="font-semibold">{{ $deliveryC }}{{ number_format($subtotal,2) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Delivery @if($distance) <span class="text-gray-500">({{ number_format($distance,1) }} km)</span> @endif</span>
+            <span class="font-semibold">{{ $deliveryC }}{{ number_format($deliveryF,2) }}</span>
+          </div>
+          <hr class="my-2">
+          <div class="flex justify-between text-lg">
+            <span>Total</span>
+            <span class="font-bold text-green-700">{{ $deliveryC }}{{ number_format($total,2) }}</span>
+          </div>
         </div>
-    @endif
+      </div>
+
+      {{-- Métodos de pago + Confirmar --}}
+      <div class="bg-white rounded-xl border p-4 shadow-sm">
+        <form id="checkout-form" method="POST" action="{{ route('carrito.checkout') }}">
+          @csrf
+
+          {{-- Radios --}}
+          <h4 class="font-semibold text-gray-800 mb-2">Método de pago</h4>
+          <div class="space-y-2 mb-4">
+            <label class="flex items-center gap-2">
+              <input type="radio" name="metodo_pago" value="efectivo" checked>
+              <span>Efectivo (pagás al recibir o retirar)</span>
+            </label>
+            <label class="flex items-center gap-2">
+              <input type="radio" name="metodo_pago" value="datafono">
+              <span>Datáfono (tarjeta en el local o con el repartidor)</span>
+            </label>
+            <label class="flex items-center gap-2">
+              <input type="radio" name="metodo_pago" value="stripe">
+              <span>Tarjeta en línea (Stripe)</span>
+            </label>
+          </div>
+
+          {{-- Stripe Elements (se muestra solo si eligen "stripe") --}}
+          <div id="stripe-box" class="hidden border rounded p-4 mb-4">
+            <div id="payment-element"><!-- Stripe montará aquí el Payment Element --></div>
+            <div id="payment-error" class="text-red-600 text-sm mt-2 hidden"></div>
+          </div>
+
+          <input type="hidden" name="payment_intent_id" id="payment_intent_id">
+
+          <div class="flex flex-wrap gap-3 justify-end">
+            <a href="{{ url('/catalogo') }}"
+               class="px-5 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow">
+              {{ __('carrito.seguir_comprando') }}
+            </a>
+            <button id="btn-submit" type="submit"
+                    class="relative px-6 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold shadow
+                          disabled:opacity-60 disabled:cursor-not-allowed">
+              {{-- Spinner oculto por defecto --}}
+              <svg id="btn-spinner" class="hidden animate-spin h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2"
+                  xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+              <span id="btn-text">{{ __('carrito.confirmar_pedido') }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  @else
+    <div class="text-center text-gray-600 text-lg mt-10">
+      {{ __('carrito.carrito_vacio') }}
+    </div>
+    <div class="text-center mt-4">
+      <a href="{{ url('/catalogo') }}" class="px-5 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow">
+        {{ __('carrito.seguir_comprando') }}
+      </a>
+    </div>
+  @endif
 </div>
+
+{{-- Stripe JS --}}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+(() => {
+  const STRIPE_PK = "{{ config('services.stripe.key') }}"; // publishable key
+  const INTENT_URL = "{{ route('carrito.stripe.intent') }}"; // endpoint que crea/recicla el PaymentIntent
+
+  // --- Elementos del DOM ---
+  const form           = document.getElementById('checkout-form');
+  const radios         = form.querySelectorAll('input[name="metodo_pago"]');
+  const stripeBox      = document.getElementById('stripe-box');
+  const paymentErrorEl = document.getElementById('payment-error');
+  const hiddenPIInput  = document.getElementById('payment_intent_id');
+  const btn            = document.getElementById('btn-submit');
+  const btnText        = document.getElementById('btn-text');
+  const btnSpinner     = document.getElementById('btn-spinner');
+
+  // --- Estado Stripe ---
+  let stripe        = null;
+  let elements      = null;
+  let paymentElement= null;
+  let clientSecret  = null;
+  let paymentIntentId = null;
+  let mounted       = false;
+  let loading       = false;
+
+  function setLoading(v){
+    loading = v;
+    btn.disabled = v;
+    btnSpinner.classList.toggle('hidden', !v);
+    btnText.textContent = v ? 'Procesando...' : "{{ __('carrito.confirmar_pedido') }}";
+  }
+
+  function showStripeBox(show){
+    stripeBox.classList.toggle('hidden', !show);
+  }
+
+  function showPaymentError(msg){
+    paymentErrorEl.textContent = msg || '';
+    paymentErrorEl.classList.toggle('hidden', !msg);
+  }
+
+  async function ensureStripeMounted(){
+    if (mounted) return;
+
+    // 1) Crear/reciclar PaymentIntent en tu backend
+    const resp = await fetch(INTENT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+      },
+      body: JSON.stringify({})
+    });
+    if(!resp.ok){
+      throw new Error('No se pudo inicializar el pago.');
+    }
+    const data = await resp.json();
+    clientSecret     = data.client_secret;
+    paymentIntentId  = data.id;
+
+    // 2) Inicializar Stripe + Elements
+    stripe   = Stripe(STRIPE_PK);
+    elements = stripe.elements({ clientSecret });
+
+    // 3) Montar Payment Element
+    paymentElement = elements.create('payment');
+    paymentElement.mount('#payment-element');
+
+    mounted = true;
+  }
+
+  // Toggle segun método
+  radios.forEach(r => {
+    r.addEventListener('change', async (e) => {
+      const metodo = e.target.value;
+      showPaymentError('');
+      if (metodo === 'stripe') {
+        showStripeBox(true);
+        try {
+          await ensureStripeMounted();
+        } catch(err){
+          console.error(err);
+          showPaymentError('No se pudo inicializar Stripe. Intenta de nuevo.');
+        }
+      } else {
+        showStripeBox(false);
+      }
+    });
+  });
+
+  // Por si el default cambia a stripe vía servidor
+  (async () => {
+    const checked = [...radios].find(r => r.checked)?.value;
+    if (checked === 'stripe') {
+      showStripeBox(true);
+      try { await ensureStripeMounted(); } catch(e){ showPaymentError('No se pudo inicializar Stripe.'); }
+    }
+  })();
+
+  // Submit del formulario
+  form.addEventListener('submit', async (e) => {
+    const metodo = [...radios].find(r => r.checked)?.value || 'efectivo';
+    if (metodo !== 'stripe') {
+      // Efectivo / Datáfono: enviar normal
+      return true;
+    }
+
+    e.preventDefault();
+    showPaymentError('');
+    setLoading(true);
+
+    try {
+      await ensureStripeMounted();
+
+      // Confirmar el pago. Evitamos redirecciones en test con redirect: 'if_required'
+      const { error } = await stripe.confirmPayment({
+        elements,
+        // Si usas retorno por URL (3DS real), podrías pasar return_url aquí
+        redirect: 'if_required',
+      });
+
+      if (error) {
+        showPaymentError(error.message || 'Se ha producido un error de procesamiento.');
+        setLoading(false);
+        return;
+      }
+
+      // Opcional: verificar estado del intent
+      const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+      if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing' || paymentIntent.status === 'requires_capture')) {
+        // Embebe el id y envía el form a tu backend
+        hiddenPIInput.value = paymentIntentId;
+        form.submit();
+        return;
+      }
+
+      showPaymentError('No se pudo confirmar el pago. Intenta de nuevo.');
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      showPaymentError('No se pudo procesar el pago.');
+      setLoading(false);
+    }
+  });
+})();
+</script>
 @endsection
+
 
 
 
