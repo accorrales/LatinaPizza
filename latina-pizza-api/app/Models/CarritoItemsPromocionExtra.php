@@ -14,6 +14,10 @@ class CarritoItemsPromocionExtra extends Model
         'precio',
     ];
 
+    protected $casts = [
+        'precio' => 'float',
+    ];
+
     public function detalle()
     {
         return $this->belongsTo(CarritoItemPromocionDetalle::class, 'detalle_id');

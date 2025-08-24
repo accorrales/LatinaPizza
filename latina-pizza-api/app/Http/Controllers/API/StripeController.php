@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 class StripeController extends Controller
 {
+    /*
     public function checkout(Request $request)
     {
         $user = Auth::user();
@@ -74,6 +75,6 @@ class StripeController extends Controller
             DB::rollBack();
             return response()->json(['message' => 'Error al procesar el pago', 'error' => $e->getMessage()], 500);
         }
-    }
+    } */
 }
 

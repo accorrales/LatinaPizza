@@ -185,10 +185,6 @@ use App\Http\Controllers\PagosFrontController;
     });
 
     Route::middleware('auth')->group(function () {
-        Route::post('/pagos/stripe/intent', [PagosFrontController::class, 'intent'])->name('pagos.intent');
-    });
-
-    Route::middleware('auth')->group(function () {
         Route::get('/carrito', [CarritoController::class, 'ver'])->name('carrito.ver');
         Route::post('/carrito/checkout', [CarritoController::class, 'checkout'])->name('carrito.checkout');
         Route::post('/carrito/stripe/intent', [CarritoController::class, 'createStripeIntent'])->name('carrito.stripe.intent');

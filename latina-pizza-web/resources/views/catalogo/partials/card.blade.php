@@ -47,7 +47,7 @@
         {{ __('catalogo.ver_tamanos') }} 🍕
     </button>
 </div>
-
+                   
 
 
 

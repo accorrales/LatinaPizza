@@ -11,86 +11,114 @@ use Stripe\Stripe;
 use Stripe\PaymentIntent;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Carrito;
+use App\Support\Money;
+use Stripe\StripeClient;
 class PagoController extends Controller
 {
     public function createIntent(Request $request)
     {
         $user = $request->user();
-
-        /** @var \App\Models\Carrito|null $carrito */
         $carrito = $user->carrito()->with('items')->first();
+
         if (!$carrito || $carrito->items->isEmpty()) {
             return response()->json(['error' => 'Carrito vacío'], 422);
         }
 
-        // Totales (mismo cálculo que usas en checkout)
-        $subtotal    = round($carrito->calcSubtotal(), 2);
+        // ✅ Usa el breakdown que suma items + extras de promo
+        $bd          = $carrito->subtotalBreakdown();               // <-- asegúrate de tener este método en el modelo
+        $subtotal    = (float) $bd['subtotal'];                     // items + extras
         $deliveryFee = ($carrito->tipo_entrega === 'express') ? (float) ($carrito->delivery_fee ?? 0) : 0.0;
         $total       = round($subtotal + $deliveryFee, 2);
 
-        // Stripe trabaja en la mínima unidad (colones → céntimos)
+        // Stripe (centavos)
         $amount   = (int) round($total * 100);
         $currency = config('services.stripe.currency', 'crc');
 
-        Stripe::setApiKey(config('services.stripe.secret'));
+        \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
 
-        // Si guardas el intent en el carrito, puedes reutilizarlo
         $intentId = $carrito->stripe_payment_intent_id ?? null;
 
         try {
             if ($intentId) {
-                $intent = PaymentIntent::retrieve($intentId);
-                // Si cambió el monto o la moneda, actualiza
-                if ($intent->amount !== $amount || $intent->currency !== $currency) {
-                    $intent = PaymentIntent::update($intent->id, [
+                $intent = \Stripe\PaymentIntent::retrieve($intentId);
+
+                // Si el monto o moneda no coinciden, actualiza
+                if ((int)$intent->amount !== $amount || strtolower($intent->currency) !== strtolower($currency)) {
+                    $intent = \Stripe\PaymentIntent::update($intent->id, [
                         'amount'   => $amount,
                         'currency' => $currency,
                     ]);
                 }
             } else {
-                $intent = PaymentIntent::create([
-                    'amount'                   => $amount,
-                    'currency'                 => $currency,
-                    'metadata'                 => [
-                        'user_id' => (string) $user->id,
+                $intent = \Stripe\PaymentIntent::create([
+                    'amount'   => $amount,
+                    'currency' => $currency,
+                    'automatic_payment_methods' => ['enabled' => true],
+                    'metadata' => [
+                        'user_id'    => (string) $user->id,
                         'carrito_id' => (string) $carrito->id,
                     ],
-                    // Esto habilita métodos automáticos (tarjeta, etc.)
-                    'automatic_payment_methods' => ['enabled' => true],
                 ]);
-                // (opcional) guardarlo para reusar
-                if ($carrito->isFillable('stripe_payment_intent_id') || \Schema::hasColumn($carrito->getTable(), 'stripe_payment_intent_id')) {
+                if (\Schema::hasColumn($carrito->getTable(), 'stripe_payment_intent_id')) {
                     $carrito->update(['stripe_payment_intent_id' => $intent->id]);
                 }
             }
 
+            // Log opcional de control
+            \Log::debug('PI_INTENT_READY', [
+                'pi_id'     => $intent->id,
+                'pi_amount' => $intent->amount,
+                'pi_curr'   => $intent->currency,
+                'calc'      => ['subtotal'=>$subtotal, 'delivery'=>$deliveryFee, 'total'=>$total, 'amount'=>$amount],
+            ]);
+
             return response()->json([
-                'client_secret'      => $intent->client_secret,
-                'payment_intent_id'  => $intent->id,
-                'amount'             => $amount,
-                'currency'           => $currency,
+                'client_secret'     => $intent->client_secret,
+                'payment_intent_id' => $intent->id,
+                'amount'            => $amount,
+                'currency'          => $currency,
             ]);
         } catch (\Throwable $e) {
-            return response()->json(['error' => 'No se pudo iniciar el pago: '.$e->getMessage()], 500);
+            \Log::error('createIntent error', ['e' => $e->getMessage()]);
+            return response()->json(['error' => 'No se pudo iniciar el pago'], 500);
         }
     }
     public function intent(Request $request)
     {
         $user = Auth::user();
         $carrito = $user->carrito()->with('items')->first();
+
         if (!$carrito || $carrito->items->isEmpty()) {
             return response()->json(['error' => 'Carrito vacío'], 400);
         }
 
-        $subtotal    = round($carrito->calcSubtotal(), 2);
-        $deliveryFee = $carrito->tipo_entrega === 'express' ? (float)($carrito->delivery_fee ?? 0) : 0.0;
-        $total       = round($subtotal + $deliveryFee, 2);
+        // === DEBUG: breakdown exacto desde BD ===
+        $bd         = $carrito->subtotalBreakdown(); // <- paso 1
+        $deliveryFee= ($carrito->tipo_entrega === 'express') ? (float)($carrito->delivery_fee ?? 0) : 0.0;
+        $subtotal   = round($carrito->calcSubtotal(), 2);
+        $total      = round($subtotal + $deliveryFee, 2);
+        $totalCalc  = round($bd['subtotal'] + $deliveryFee, 2);
+
+        \Illuminate\Support\Facades\Log::debug('PI_INTENT_CREATE_BREAKDOWN', [
+            'user_id'         => $user->id,
+            'carrito_id'      => $carrito->id,
+            'sum_items_raw'   => $bd['sum_items_raw'],
+            'sum_items_x_qty' => $bd['sum_items_x_qty'],
+            'sum_extras'      => $bd['sum_extras'],
+            'subtotal_bd'     => $bd['subtotal'],
+            'delivery'        => $deliveryFee,
+            'total_calc'      => $totalCalc,
+            'subtotal_view'   => $subtotal,
+            'total_view'      => $total,
+            'items'           => $bd['items'],
+            'extras'          => $bd['extras'],
+        ]);
 
         if ($total < 0.5) {
             return response()->json(['error' => 'Total muy bajo para tarjeta'], 400);
         }
 
-        // PRUEBA con USD primero. Luego, si todo bien, vuelve a tu moneda si tu cuenta la soporta.
+        // Moneda original (la tuya)
         $currency = 'crc';
         $amount   = (int) round($total * 100);
 
@@ -107,6 +135,13 @@ class PagoController extends Controller
                 ],
             ]);
 
+            \Illuminate\Support\Facades\Log::debug('PI_INTENT_CREATED', [
+                'pi_id'     => $intent->id,
+                'pi_amount' => $intent->amount,
+                'pi_curr'   => $intent->currency,
+                'status'    => $intent->status,
+            ]);
+
             return response()->json([
                 'client_secret' => $intent->client_secret,
                 'id'            => $intent->id,
@@ -118,4 +153,5 @@ class PagoController extends Controller
             return response()->json(['error' => 'No se pudo crear el intento de pago'], 500);
         }
     }
+
 }

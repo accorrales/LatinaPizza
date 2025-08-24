@@ -21,6 +21,10 @@ class CarritoItem extends Model
         'precio_total',
     ];
 
+    protected $casts = [
+        'precio_total' => 'float',
+    ];
+
     public function carrito()
     {
         return $this->belongsTo(Carrito::class);

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class StripeWebhookController extends Controller
 {
-    public function handle(Request $request)
+    /*public function handle(Request $request)
     {
         Stripe::setApiKey(env('STRIPE_SECRET'));
 
@@ -60,6 +60,6 @@ class StripeWebhookController extends Controller
         }
 
         return response()->json(['status' => 'success']);
-    }
+    }*/
 }
 

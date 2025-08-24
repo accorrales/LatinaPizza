@@ -239,10 +239,11 @@
 <script src="https://js.stripe.com/v3/"></script>
 <script>
 (() => {
-  const STRIPE_PK = "{{ config('services.stripe.key') }}"; // publishable key
-  const INTENT_URL = "{{ route('carrito.stripe.intent') }}"; // endpoint que crea/recicla el PaymentIntent
+  const STRIPE_PK  = "{{ config('services.stripe.key') }}";
+  // Asegúrate que esta ruta apunte al PagoController@createIntent
+  const INTENT_URL = "{{ route('carrito.stripe.intent') }}";
 
-  // --- Elementos del DOM ---
+  // --- DOM ---
   const form           = document.getElementById('checkout-form');
   const radios         = form.querySelectorAll('input[name="metodo_pago"]');
   const stripeBox      = document.getElementById('stripe-box');
@@ -253,13 +254,13 @@
   const btnSpinner     = document.getElementById('btn-spinner');
 
   // --- Estado Stripe ---
-  let stripe        = null;
-  let elements      = null;
-  let paymentElement= null;
-  let clientSecret  = null;
+  let stripe          = null;
+  let elements        = null;
+  let paymentElement  = null;
+  let clientSecret    = null;
   let paymentIntentId = null;
-  let mounted       = false;
-  let loading       = false;
+  let mounted         = false;
+  let loading         = false;
 
   function setLoading(v){
     loading = v;
@@ -277,37 +278,52 @@
     paymentErrorEl.classList.toggle('hidden', !msg);
   }
 
-  async function ensureStripeMounted(){
-    if (mounted) return;
-
-    // 1) Crear/reciclar PaymentIntent en tu backend
+  // Llama a tu backend, recibe (id|payment_intent_id) y client_secret
+  async function fetchIntentAndSyncElements({ forceRemount = false } = {}) {
     const resp = await fetch(INTENT_URL, {
       method: 'POST',
+      credentials: 'include', // quítalo si NO usás cookies/Sanctum
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
       },
       body: JSON.stringify({})
     });
-    if(!resp.ok){
-      throw new Error('No se pudo inicializar el pago.');
-    }
+    if (!resp.ok) throw new Error('No se pudo sincronizar el monto del pago.');
     const data = await resp.json();
-    clientSecret     = data.client_secret;
-    paymentIntentId  = data.id;
 
-    // 2) Inicializar Stripe + Elements
-    stripe   = Stripe(STRIPE_PK);
-    elements = stripe.elements({ clientSecret });
+    const newId = data.id || data.payment_intent_id;
+    const newCS = data.client_secret;
+    if (!newId || !newCS) throw new Error('Respuesta inválida del intent.');
 
-    // 3) Montar Payment Element
-    paymentElement = elements.create('payment');
-    paymentElement.mount('#payment-element');
+    if (!stripe) stripe = Stripe(STRIPE_PK);
+
+    // Si cambió el PI, re-montamos Elements con el nuevo client_secret
+    if (forceRemount || newId !== paymentIntentId || !elements) {
+      paymentIntentId = newId;
+      clientSecret    = newCS;
+
+      if (paymentElement && paymentElement.unmount) {
+        paymentElement.unmount();
+      }
+
+      elements       = stripe.elements({ clientSecret });
+      paymentElement = elements.create('payment');
+      paymentElement.mount('#payment-element');
+    } else {
+      // mismo PI, puede venir un client_secret fresco
+      clientSecret = newCS;
+    }
 
     mounted = true;
   }
 
-  // Toggle segun método
+  async function ensureStripeMounted(){
+    if (mounted) return;
+    await fetchIntentAndSyncElements({ forceRemount: true });
+  }
+
+  // Toggle por método de pago
   radios.forEach(r => {
     r.addEventListener('change', async (e) => {
       const metodo = e.target.value;
@@ -316,7 +332,7 @@
         showStripeBox(true);
         try {
           await ensureStripeMounted();
-        } catch(err){
+        } catch (err) {
           console.error(err);
           showPaymentError('No se pudo inicializar Stripe. Intenta de nuevo.');
         }
@@ -326,34 +342,33 @@
     });
   });
 
-  // Por si el default cambia a stripe vía servidor
+  // Si ya viene seleccionado “stripe”
   (async () => {
     const checked = [...radios].find(r => r.checked)?.value;
     if (checked === 'stripe') {
       showStripeBox(true);
-      try { await ensureStripeMounted(); } catch(e){ showPaymentError('No se pudo inicializar Stripe.'); }
+      try { await ensureStripeMounted(); }
+      catch(e){ showPaymentError('No se pudo inicializar Stripe.'); }
     }
   })();
 
   // Submit del formulario
   form.addEventListener('submit', async (e) => {
     const metodo = [...radios].find(r => r.checked)?.value || 'efectivo';
-    if (metodo !== 'stripe') {
-      // Efectivo / Datáfono: enviar normal
-      return true;
-    }
+    if (metodo !== 'stripe') return true; // efectivo/datáfono: submit normal
 
     e.preventDefault();
+    if (loading) return; // evita doble submit
     showPaymentError('');
     setLoading(true);
 
     try {
-      await ensureStripeMounted();
+      // *** REFRESCO JUST-IN-TIME ***
+      await fetchIntentAndSyncElements();
 
-      // Confirmar el pago. Evitamos redirecciones en test con redirect: 'if_required'
+      // Confirmar pago
       const { error } = await stripe.confirmPayment({
         elements,
-        // Si usas retorno por URL (3DS real), podrías pasar return_url aquí
         redirect: 'if_required',
       });
 
@@ -363,10 +378,9 @@
         return;
       }
 
-      // Opcional: verificar estado del intent
+      // Verificar estado y enviar checkout
       const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
-      if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing' || paymentIntent.status === 'requires_capture')) {
-        // Embebe el id y envía el form a tu backend
+      if (paymentIntent && ['succeeded','processing','requires_capture'].includes(paymentIntent.status)) {
         hiddenPIInput.value = paymentIntentId;
         form.submit();
         return;
@@ -376,12 +390,13 @@
       setLoading(false);
     } catch (err) {
       console.error(err);
-      showPaymentError('No se pudo procesar el pago.');
+      showPaymentError(err?.message || 'No se pudo procesar el pago.');
       setLoading(false);
     }
   });
 })();
 </script>
+
 @endsection
 
 

@@ -26,10 +26,17 @@ use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use App\Mail\FacturaPedidoMail;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
+use App\Support\Money;
 
 class CarritoController extends Controller
 {
     // Ver el carrito del usuario
+    private function invalidateStripePI(Carrito $carrito): void
+    {
+        if (\Schema::hasColumn($carrito->getTable(), 'stripe_payment_intent_id')) {
+            $carrito->update(['stripe_payment_intent_id' => null]);
+        }
+    }
     public function index()
     {
         $user = Auth::user();
@@ -168,24 +175,22 @@ class CarritoController extends Controller
             ? (float) ($carrito->delivery_fee ?? 0)
             : 0.0;
 
+        // 👇 ESTA ES LA CLAVE: usa el mismo cálculo que checkout (suma base + extras de promos)
+        $subtotalOk = round($carrito->calcSubtotal(), 2);
+        $totalOk    = round($subtotalOk + $deliveryFee, 2);
+
         return response()->json([
             'data' => [
-                'id'                   => $carrito->id,
-                'tipo_entrega'         => $carrito->tipo_entrega,
-                'sucursal_id'          => $carrito->sucursal_id,
-                'direccion_usuario_id' => $carrito->direccion_usuario_id,
-                'delivery_fee'         => (float) ($carrito->delivery_fee ?? 0),
-                'delivery_distance_km' => (float) ($carrito->delivery_distance_km ?? 0),
-                'delivery_currency'    => $carrito->delivery_currency,
-                'items'                => $items,
+                // ...
+                'items' => $items,
             ],
-            'subtotal' => round($subtotal, 2),
+            'subtotal' => $subtotalOk,         // 👈 ya incluye extras de promo
             'delivery' => [
                 'fee'      => $deliveryFee,
                 'currency' => $carrito->delivery_currency,
                 'distance' => (float) ($carrito->delivery_distance_km ?? 0),
             ],
-            'total' => round($subtotal + $deliveryFee, 2),
+            'total' => $totalOk,               // 👈 ya correcto
         ]);
     }
 
@@ -208,14 +213,12 @@ class CarritoController extends Controller
         $tamano   = $producto->tamano;
         $precioProducto = (float) ($tamano->precio_base ?? 0);
 
-        // Masa
         $precioMasa = 0.0;
         if ($request->filled('masa_id')) {
             $masa = Masa::find($request->masa_id);
             $precioMasa = (float) ($masa->precio_extra ?? 0);
         }
 
-        // Extras (según tamaño)
         $precioExtras = 0.0;
         $extras = collect();
         if ($request->filled('extras')) {
@@ -224,10 +227,10 @@ class CarritoController extends Controller
 
             foreach ($extras as $extra) {
                 $precioExtras += match (true) {
-                    str_contains($tn, 'extra')     => (float) ($extra->precio_extragrande ?? 0),
-                    str_contains($tn, 'grande')     => (float) ($extra->precio_grande      ?? 0),
-                    str_contains($tn, 'mediana')    => (float) ($extra->precio_mediana     ?? 0),
-                    default                         => (float) ($extra->precio_pequena     ?? 0),
+                    str_contains($tn, 'extra')  => (float) ($extra->precio_extragrande ?? 0),
+                    str_contains($tn, 'grande') => (float) ($extra->precio_grande      ?? 0),
+                    str_contains($tn, 'mediana')=> (float) ($extra->precio_mediana     ?? 0),
+                    default                     => (float) ($extra->precio_pequena     ?? 0),
                 };
             }
         }
@@ -247,8 +250,12 @@ class CarritoController extends Controller
             $item->extras()->sync($extras->pluck('id')->all());
         }
 
+        // 👇 invalida el intent porque el carrito cambió
+        $this->invalidateStripePI($carrito);
+
         return response()->json(['message' => 'Producto agregado al carrito']);
     }
+
     public function agregarPromocion(Request $request)
     {
         DB::beginTransaction();
@@ -271,7 +278,6 @@ class CarritoController extends Controller
                         'masa_id'      => $producto['masa_id'],
                         'nota_cliente' => $producto['nota_cliente'] ?? null,
                     ]);
-                    // tamaño temporal (no existe en BD)
                     $detalle->tamano = strtolower($producto['tamano'] ?? 'mediana');
                     $detalles[] = ['detalle' => $detalle, 'extras' => $producto['extras'] ?? []];
                 } elseif ($producto['tipo'] === 'bebida') {
@@ -287,7 +293,7 @@ class CarritoController extends Controller
                 'carrito_id'   => $carrito->id,
                 'promocion_id' => $promocion->id,
                 'cantidad'     => 1,
-                'precio_total' => 0, // luego actualizamos
+                'precio_total' => 0,
             ]);
 
             foreach ($detalles as $data) {
@@ -322,7 +328,11 @@ class CarritoController extends Controller
             $precioTotal = $precioBase + $precioExtras;
             $item->update(['precio_total' => $precioTotal]);
 
+            // 👇 invalida el intent porque el carrito cambió
+            $this->invalidateStripePI($carrito);
+
             DB::commit();
+
             return response()->json([
                 'message'         => '✅ Promoción agregada correctamente al carrito',
                 'carrito_item_id' => $item->id,
@@ -349,22 +359,21 @@ class CarritoController extends Controller
         $user = Auth::user();
         $carrito = Carrito::firstOrCreate(['user_id' => $user->id]);
 
-        /** @var CarritoItem|null $item */
         $item = CarritoItem::where('carrito_id', $carrito->id)->find($id);
         if (!$item) {
             return response()->json(['error' => 'No se pudo eliminar este producto.'], 404);
         }
 
-        // Limpia relaciones de promo (extras) si aplica
         $item->detallesPromocion()->each(function ($det) {
             CarritoItemsPromocionExtra::where('detalle_id', $det->id)->delete();
             $det->delete();
         });
 
-        // Limpia pivot de extras normales
         $item->extras()->detach();
-
         $item->delete();
+
+        // 👇 invalida el intent porque el carrito cambió
+        $this->invalidateStripePI($carrito);
 
         return response()->json(['success' => 'Producto eliminado correctamente.']);
     }
@@ -376,18 +385,18 @@ class CarritoController extends Controller
         $user = Auth::user();
         $carrito = Carrito::firstOrCreate(['user_id' => $user->id]);
 
-        // Borra correctamente detalles de promo + extras
         $itemsIds = $carrito->items()->pluck('id');
 
         $detallesIds = CarritoItemPromocionDetalle::whereIn('carrito_item_id', $itemsIds)->pluck('id');
         CarritoItemsPromocionExtra::whereIn('detalle_id', $detallesIds)->delete();
         CarritoItemPromocionDetalle::whereIn('id', $detallesIds)->delete();
 
-        // Limpia pivot de extras normales
         DB::table('carrito_item_extra')->whereIn('carrito_item_id', $itemsIds)->delete();
 
-        // Finalmente items
         CarritoItem::whereIn('id', $itemsIds)->delete();
+
+        // 👇 invalida el intent porque el carrito cambió
+        $this->invalidateStripePI($carrito);
 
         return response()->json(['message' => 'Carrito vaciado.']);
     }
@@ -415,12 +424,33 @@ class CarritoController extends Controller
             return response()->json(['message' => 'Tu carrito está vacío.'], 400);
         }
 
-        // Totales
+        // === Totales (como los tenías) ===
         $subtotal    = round($carrito->calcSubtotal(), 2);
         $deliveryFee = ($carrito->tipo_entrega === 'express') ? (float) ($carrito->delivery_fee ?? 0) : 0.0;
         $total       = round($subtotal + $deliveryFee, 2);
 
-        // === NUEVO: validar pago según método ===
+        // === DEBUG: breakdown exacto desde BD para detectar desajustes de promociones/extras ===
+        if (method_exists($carrito, 'subtotalBreakdown')) {
+            $bd        = $carrito->subtotalBreakdown();
+            $totalCalc = round(($bd['subtotal'] ?? 0) + $deliveryFee, 2);
+
+            \Illuminate\Support\Facades\Log::debug('CHECKOUT_BREAKDOWN', [
+                'user_id'         => $user->id,
+                'carrito_id'      => $carrito->id,
+                'sum_items_raw'   => $bd['sum_items_raw']   ?? null,
+                'sum_items_x_qty' => $bd['sum_items_x_qty'] ?? null,
+                'sum_extras'      => $bd['sum_extras']      ?? null,
+                'subtotal_bd'     => $bd['subtotal']        ?? null,
+                'delivery'        => $deliveryFee,
+                'total_calc'      => $totalCalc,
+                'subtotal_view'   => $subtotal,
+                'total_view'      => $total,
+                'items'           => $bd['items']  ?? [],
+                'extras'          => $bd['extras'] ?? [],
+            ]);
+        }
+
+        // === Validar método de pago ===
         $metodo = $request->input('metodo_pago', 'efectivo');
         if (!in_array($metodo, ['efectivo', 'datafono', 'stripe'], true)) {
             return response()->json(['message' => 'Método de pago inválido'], 422);
@@ -432,28 +462,39 @@ class CarritoController extends Controller
                 return response()->json(['message' => 'Falta payment_intent_id para Stripe'], 422);
             }
 
-            Stripe::setApiKey(config('services.stripe.secret'));
+            \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
 
             try {
-                $intent = PaymentIntent::retrieve($pi);
+                $intent = \Stripe\PaymentIntent::retrieve($pi);
             } catch (\Throwable $e) {
                 return response()->json(['message' => 'PaymentIntent inválido'], 422);
             }
 
+            // Estados aceptables
             if ($intent->status !== 'succeeded') {
-                // 402 Payment Required cuando no está aprobado
                 return response()->json(['message' => 'El pago no está confirmado'], 402);
             }
 
-            // (Opcional pero recomendado) validar monto y moneda
+            // (Opcional pero recomendado) validar monto/moneda (tu lógica original)
             $expectedAmount   = (int) round($total * 100);
             $expectedCurrency = config('services.stripe.currency', 'crc');
+
             if ((int)$intent->amount !== $expectedAmount || $intent->currency !== $expectedCurrency) {
+                \Illuminate\Support\Facades\Log::warning('CHECKOUT_MISMATCH_AMOUNT', [
+                    'pi_id'     => $intent->id,
+                    'pi_amount' => $intent->amount,
+                    'pi_curr'   => $intent->currency,
+                    'expected'  => $expectedAmount,
+                    'exp_curr'  => $expectedCurrency,
+                    'subtotal'  => $subtotal,
+                    'delivery'  => $deliveryFee,
+                    'total'     => $total,
+                ]);
                 return response()->json(['message' => 'Monto o moneda no coinciden'], 422);
             }
         }
 
-        // Snapshot de items (igual que ya lo tenías)
+        // ===== Snapshot de items (igual que ya lo tenías) =====
         $itemsPayload = [];
         foreach ($carrito->items as $item) {
             if ($item->producto_id && $item->producto) {
@@ -524,7 +565,7 @@ class CarritoController extends Controller
 
             $pedido = new \App\Models\Pedido();
             $pedido->user_id               = $user->id;
-            $pedido->estado                = ($metodo === 'stripe') ? 'pagado' : 'pendiente'; // ← si querés diferenciar
+            $pedido->estado                = ($metodo === 'stripe') ? 'pagado' : 'pendiente';
             $pedido->tipo_pedido           = $carrito->tipo_entrega ?? 'pickup';
             $pedido->metodo_pago           = $metodo;
 
@@ -540,7 +581,7 @@ class CarritoController extends Controller
             $pedido->subtotal              = $subtotal;
             $pedido->total                 = $total;
 
-            // === NUEVO: guardar info de pago si es Stripe (si tu tabla tiene estos campos)
+            // Info de pago Stripe (si aplica)
             if ($metodo === 'stripe') {
                 $pedido->payment_provider = 'stripe';
                 $pedido->payment_ref      = $request->input('payment_intent_id');
@@ -570,27 +611,26 @@ class CarritoController extends Controller
             DB::table('carrito_item_extra')->whereIn('carrito_item_id', $itemsIds)->delete();
             CarritoItem::whereIn('id', $itemsIds)->delete();
 
-            // (Opcional) si guardaste intent en carritos, límpialo para no reusarlo
+            // (Opcional) limpiar intent en carrito para no reusarlo
             if (\Schema::hasColumn($carrito->getTable(), 'stripe_payment_intent_id')) {
                 $carrito->update(['stripe_payment_intent_id' => null]);
             }
 
             DB::commit();
 
-            // === Enviar PDF por email (fuera de la transacción)
+            // Enviar factura PDF (fuera de la transacción)
             try {
                 $pdf = PDF::loadView('pdf.factura', ['pedido' => $pedido])->setPaper('a4');
-
                 if (!empty($user->email)) {
                     Mail::to($user->email)->send(new FacturaPedidoMail($pedido, $pdf->output()));
                 } else {
-                    Log::warning('Pedido creado sin email de usuario', [
+                    \Illuminate\Support\Facades\Log::warning('Pedido creado sin email de usuario', [
                         'pedido_id' => $pedido->id,
                         'user_id'   => $user->id
                     ]);
                 }
             } catch (\Throwable $mailErr) {
-                Log::error('Error enviando factura PDF', [
+                \Illuminate\Support\Facades\Log::error('Error enviando factura PDF', [
                     'pedido_id' => $pedido->id,
                     'error'     => $mailErr->getMessage(),
                 ]);
