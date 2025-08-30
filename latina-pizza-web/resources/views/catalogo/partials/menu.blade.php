@@ -1,13 +1,4 @@
     <div class="container mx-auto px-4 py-6">
-        <div class="text-right px-4 py-2">
-            <button 
-                onclick="cambiarMetodoEntrega()"
-                class="text-sm text-red-600 hover:underline font-medium"
-            >
-                {{ __('catalogo.cambiar_metodo_entrega') }}
-            </button>
-        </div>
-
         <!-- ✅ Título -->
         <h2 class="text-3xl font-bold text-center text-red-600 mb-8">{{ __('catalogo.menu_latina') }}</h2>
 
@@ -91,58 +82,6 @@
                 .then(() => console.log("🟢 " + (window.i18n.csrf_ok || 'CSRF OK')))
                 .catch(err => console.error("❌ " + (window.i18n.csrf_error || 'CSRF error'), err));
         </script>
-
-        <div 
-            x-data="{ abierto: localStorage.getItem('tipo_pedido') === null }" 
-            x-show="abierto"
-            x-transition 
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
-        >
-            <div class="bg-white rounded-xl p-8 w-full max-w-md shadow-lg text-center">
-                <h2 class="text-2xl font-bold mb-4 text-gray-800">{{ __('catalogo.como_recibir_pedido') }}</h2>
-                <p class="text-gray-600 mb-6">{{ __('catalogo.selecciona_opcion') }}</p>
-
-                <div class="flex flex-col gap-4">
-                    <!-- Botón Pickup -->
-                    <button
-                        @click="
-                            localStorage.setItem('tipo_pedido', 'pickup');
-                            fetch('http://127.0.0.1:8001/guardar-tipo-pedido', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                                credentials: 'include',
-                                body: JSON.stringify({ tipo: 'pickup' })
-                            }).then(() => {
-                                abierto = false;
-                                window.location.href = '/pickup';
-                            });
-                        "
-                        class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition"
-                    >
-                        {{ __('catalogo.para_llevar') }}
-                    </button>
-
-                    <!-- Botón Express -->
-                    <button
-                        @click="
-                            localStorage.setItem('tipo_pedido', 'express');
-                            fetch('http://127.0.0.1:8001/guardar-tipo-pedido', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                                credentials: 'include',
-                                body: JSON.stringify({ tipo: 'express' })
-                            }).then(() => {
-                                abierto = false;
-                                window.location.href = '/express';
-                            });
-                        "
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition"
-                    >
-                        {{ __('catalogo.express') }}
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
 
 <script>
@@ -290,111 +229,119 @@
     let precioBasePromocion = 0;
     let datosExtras = [];
 
+    const API_BASE = 'http://127.0.0.1:8001/api';
+
+    // GET genérico: agrega Authorization solo si hay token
+    async function apiGet(path) {
+        const headers = { 'Accept': 'application/json' };
+        const token = (localStorage.getItem('token') || "{{ session('token') }}")?.trim();
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(`${API_BASE}${path}`, { headers, credentials: 'include' });
+        if (!res.ok) throw new Error(`${path} -> ${res.status}`);
+        const json = await res.json();
+        return json?.data ?? json; // por si el API viene envuelto en {data: ...}
+    }
+
     async function abrirModalPromocion(id) {
         mostrarLoading();
         promocionSeleccionadaId = id;
         document.getElementById('modalPromocion').classList.remove('hidden');
 
-        const token = localStorage.getItem('token') || "{{ session('token') }}";
-
         try {
-            const [promoRes, masasRes, saboresRes, refrescosRes, extrasRes] = await Promise.all([
-                fetch(`http://127.0.0.1:8001/api/promociones/${id}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`http://127.0.0.1:8001/api/masas`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`http://127.0.0.1:8001/api/sabores`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`http://127.0.0.1:8001/api/admin/productos?categoria_id=2`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`http://127.0.0.1:8001/api/extras`, { headers: { 'Authorization': `Bearer ${token}` } }),
-            ]);
+        // ✅ Endpoints públicos (sin /admin)
+        const [promo, masas, sabores, refrescos, extras] = await Promise.all([
+            apiGet(`/promociones/${id}`),
+            apiGet(`/masas`),
+            apiGet(`/sabores`),
+            apiGet(`/bebidas`),     // ← antes usabas /admin/productos?categoria_id=2
+            apiGet(`/extras`),
+        ]);
 
-            const promoData = await promoRes.json();
-            if (!promoData.data) throw new Error("no promo");
-            const promo = promoData.data;
+        // guarda extras global si lo necesitás en otros handlers
+        datosExtras = extras;
 
-            const masas = await masasRes.json();
-            const sabores = await saboresRes.json();
-            const refrescos = await refrescosRes.json();
-            datosExtras = await extrasRes.json();
+        // Precio base de la promo
+        precioBasePromocion = parseFloat(promo.precio_base ?? promo.precio_total ?? 0);
 
-            precioBasePromocion = parseFloat(promo.precio_base || promo.precio_total || 0);
-            const contieneBebida = promo.incluye_bebida === true;
-            const componentesPizza = promo.componentes.filter(c => c.tipo === 'pizza');
+        const contieneBebida   = promo.incluye_bebida === true;
+        const componentesPizza = (promo.componentes || []).filter(c => c.tipo === 'pizza');
 
-            let bloquesPizza = '';
-            let contadorGlobal = 1;
+        let bloquesPizza = '';
+        let contadorGlobal = 1;
 
-            componentesPizza.forEach((c, i) => {
-                const tamanoTexto = c.tamano?.nombre?.toLowerCase() || 'grande';
-                let clavePrecio = 'precio_grande';
-                if (tamanoTexto.includes('peque')) clavePrecio = 'precio_pequena';
-                else if (tamanoTexto.includes('mediana')) clavePrecio = 'precio_mediana';
-                else if (tamanoTexto.includes('extra')) clavePrecio = 'precio_extragrande';
+        componentesPizza.forEach((c, i) => {
+            const tamanoTexto = (c.tamano?.nombre || 'grande').toLowerCase();
+            let clavePrecio = 'precio_grande';
+            if (tamanoTexto.includes('peque'))      clavePrecio = 'precio_pequena';
+            else if (tamanoTexto.includes('mediana')) clavePrecio = 'precio_mediana';
+            else if (tamanoTexto.includes('extra'))   clavePrecio = 'precio_extragrande';
 
-                for (let j = 0; j < c.cantidad; j++) {
-                    const index = `${i}_${j}`;
-                    const pizzaLabel = (window.i18n.pizza_label || 'Pizza :num - Size :tamano')
-                        .replace(':num', contadorGlobal++)
-                        .replace(':tamano', c.tamano?.nombre || '');
+            for (let j = 0; j < (c.cantidad || 1); j++) {
+            const index = `${i}_${j}`;
+            const pizzaLabel = (window.i18n.pizza_label || 'Pizza :num - Size :tamano')
+                .replace(':num', contadorGlobal++)
+                .replace(':tamano', c.tamano?.nombre || '');
 
-                    const saborSelect = sabores.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
-                    const masaSelect = masas.map(m => `<option value="${m.id}">${m.tipo}</option>`).join('');
-                    const extrasHTML = datosExtras.map(e => {
-                        const precio = parseFloat(e[clavePrecio]) || 0;
-                        return `
-                            <label class="block text-sm">
-                                <input type="checkbox" name="extrasPizza${index}[]" value="${e.id}" data-precio="${precio}">
-                                ${e.nombre} (+₡${precio})
-                            </label>`;
-                    }).join('');
+            const saborSelect = (sabores || []).map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+            const masaSelect  = (masas || []).map(m => `<option value="${m.id}">${m.tipo}</option>`).join('');
 
-                    bloquesPizza += `
-                        <div class="mb-6 border-b pb-4">
-                            <h3 class="text-sm font-bold text-gray-800 mb-2">🍕 ${pizzaLabel}</h3>
+            const extrasHTML = (datosExtras || []).map(e => {
+                const precio = parseFloat(e[clavePrecio]) || 0;
+                return `
+                <label class="block text-sm">
+                    <input type="checkbox" name="extrasPizza${index}[]" value="${e.id}" data-precio="${precio}">
+                    ${e.nombre} (+₡${precio})
+                </label>`;
+            }).join('');
 
-                            <label class="text-sm">${window.i18n.label_sabor}</label>
-                            <select id="promoSabor${index}" class="w-full border rounded px-2 py-1 mb-2">${saborSelect}</select>
+            bloquesPizza += `
+                <div class="mb-6 border-b pb-4">
+                <h3 class="text-sm font-bold text-gray-800 mb-2">🍕 ${pizzaLabel}</h3>
 
-                            <label class="text-sm">${window.i18n.label_masa}</label>
-                            <select id="promoMasa${index}" class="w-full border rounded px-2 py-1 mb-2">${masaSelect}</select>
+                <label class="text-sm">${window.i18n.label_sabor}</label>
+                <select id="promoSabor${index}" class="w-full border rounded px-2 py-1 mb-2">${saborSelect}</select>
 
-                            <label class="text-sm">${window.i18n.label_extras}</label>
-                            <div class="mb-2 text-sm" id="extrasPromo${index}">${extrasHTML}</div>
+                <label class="text-sm">${window.i18n.label_masa}</label>
+                <select id="promoMasa${index}" class="w-full border rounded px-2 py-1 mb-2">${masaSelect}</select>
 
-                            <label class="text-sm">${window.i18n.label_nota}</label>
-                            <textarea id="notaPizza${index}" class="w-full border rounded px-2 py-1 text-sm mb-2"></textarea>
-                        </div>`;
-                }
-            });
+                <label class="text-sm">${window.i18n.label_extras}</label>
+                <div class="mb-2 text-sm" id="extrasPromo${index}">${extrasHTML}</div>
 
-            const refrescoSelect = refrescos.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
-            const bebidaHTML = contieneBebida ? `
-                <div class="mt-4">
-                    <label class="text-sm font-bold text-gray-700">🥤 ${window.i18n.refresco_incluido}</label>
-                    <select id="selectBebida" class="w-full border px-3 py-2 rounded text-sm mt-1">
-                        <option value="">${window.i18n.seleccione_refresco}</option>
-                        ${refrescoSelect}
-                    </select>
-                </div>` : '';
+                <label class="text-sm">${window.i18n.label_nota}</label>
+                <textarea id="notaPizza${index}" class="w-full border rounded px-2 py-1 text-sm mb-2"></textarea>
+                </div>`;
+            }
+        });
 
-            document.getElementById('contenedorPizzaPersonalizada').innerHTML = bloquesPizza + bebidaHTML;
+        const refrescoSelect = (refrescos || []).map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
+        const bebidaHTML = contieneBebida ? `
+            <div class="mt-4">
+            <label class="text-sm font-bold text-gray-700">🥤 ${window.i18n.refresco_incluido}</label>
+            <select id="selectBebida" class="w-full border px-3 py-2 rounded text-sm mt-1">
+                <option value="">${window.i18n.seleccione_refresco}</option>
+                ${refrescoSelect}
+            </select>
+            </div>` : '';
 
-            // Listeners para actualizar total
-            componentesPizza.forEach((c, i) => {
-                for (let j = 0; j < c.cantidad; j++) {
-                    const index = `${i}_${j}`;
-                    document.querySelectorAll(`#extrasPromo${index} input[type="checkbox"]`).forEach(input => {
-                        input.addEventListener('change', calcularTotalPromo);
-                    });
-                }
-            });
+        document.getElementById('contenedorPizzaPersonalizada').innerHTML = bloquesPizza + bebidaHTML;
 
-            calcularTotalPromo();
+        // Listeners para actualizar total con extras
+        componentesPizza.forEach((c, i) => {
+            for (let j = 0; j < (c.cantidad || 1); j++) {
+            const index = `${i}_${j}`;
+            document.querySelectorAll(`#extrasPromo${index} input[type="checkbox"]`)
+                .forEach(input => input.addEventListener('change', calcularTotalPromo));
+            }
+        });
+
+        calcularTotalPromo();
 
         } catch (error) {
-            console.error('❌', error);
-            document.getElementById('contenedorPizzaPersonalizada').innerHTML =
-                `<p class="text-red-500">${window.i18n.error_cargar_promocion}</p>`;
+        console.error('❌ abrirModalPromocion:', error);
+        document.getElementById('contenedorPizzaPersonalizada').innerHTML =
+            `<p class="text-red-500">${window.i18n.error_cargar_promocion || 'Error al cargar datos de la promoción.'}</p>`;
         } finally {
-            ocultarLoading();
+        ocultarLoading();
         }
     }
 

@@ -23,14 +23,13 @@ return [
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+    'allowed_headers' => ['*', 'Content-Type','Authorization','X-Requested-With'],
 
     'exposed_headers' => [],
 
     'max_age' => 0,
 
     'supports_credentials' => true, // ← necesario para cookies o sesión
-
 ];
 
 

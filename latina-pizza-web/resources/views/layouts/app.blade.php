@@ -13,6 +13,9 @@
 
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    {{-- Modal Escoger Express o llevar --}}
+    <style>[x-cloak]{display:none!important}</style>
+
     <style>
         html, body { height: 100%; }
         body { display:flex; flex-direction:column; min-height:100vh; }
@@ -61,7 +64,21 @@
                class="relative hover:text-red-600 transition after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[2px] after:bg-red-600 hover:after:w-full after:transition-all after:duration-300">
                 🍕 {{ __('layout.menu') }}
             </a>
+            <a  href="/?cambiar_entrega=1"
+                    onclick="event.preventDefault(); if (window.abrirSelectorEntrega) { window.abrirSelectorEntrega(); } else { window.location.href='/?cambiar_entrega=1'; }"
+                    class="relative inline-flex items-center gap-2 hover:text-red-600 transition after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[2px] after:bg-red-600 hover:after:w-full after:transition-all after:duration-300">
 
+                    <span class="text-base"></span>
+                    <span class="hidden sm:inline">Tipo Entrega</span>
+
+                    {{-- (Opcional) chip con selección actual leída de localStorage --}}
+                    <span x-data="{ t: localStorage.getItem('tipo_pedido') || '' }"
+                        x-cloak
+                        class="ml-1 text-xs px-2 py-0.5 rounded-full border"
+                        :class="t==='express' ? 'border-blue-500 text-blue-600' : (t==='pickup' ? 'border-red-500 text-red-600' : 'border-gray-300 text-gray-500')"
+                        x-text="t==='express' ? 'Express' : (t==='pickup' ? 'Pickup' : 'Elegir')">
+                    </span>
+                </a>
             @auth
                 <a href="{{ route('usuario.pedidos') }}"
                    class="relative hover:text-red-700 transition after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[2px] after:bg-red-600 hover:after:w-full after:transition-all after:duration-300">
@@ -87,6 +104,13 @@
                                 <a href="{{ route('admin.extras.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">{{ __('layout.extras') }}</a>
                                 <a href="{{ route('admin.resenas.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">{{ __('layout.reviews') }}</a>
                                 <a href="{{ route('admin.promociones.index') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">{{ __('layout.promos') }}</a>
+                                <a href="{{ route('kitchen.index') }}"
+                                    class="relative hover:text-red-600 transition after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[2px] after:bg-red-600 hover:after:w-full after:transition-all after:duration-300">
+                                    👩‍🍳 Cocina
+                                </a>
+                                <a href="{{ route('admin.ventas') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">
+                                📈 Ventas
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -127,11 +151,29 @@
          class="sm:hidden hidden flex flex-col gap-3 px-4 pb-4 text-sm text-gray-800 font-medium animate-slide-down">
         <a href="/catalogo" class="hover:text-red-600 transition">🍕 {{ __('layout.menu') }}</a>
         <a href="{{ route('carrito.ver') }}" class="hover:text-red-600 transition">🛒 {{ __('layout.cart') }}</a>
-
+        <a  href="/?cambiar_entrega=1"
+            onclick="event.preventDefault(); if (window.abrirSelectorEntrega) { window.abrirSelectorEntrega(); } else { window.location.href='/?cambiar_entrega=1'; }"
+            class="hover:text-red-600 transition">
+            Tipo Entrega
+            <span x-data="{ t: localStorage.getItem('tipo_pedido') || '' }"
+                x-cloak
+                class="ml-2 text-xs px-2 py-0.5 rounded-full border align-middle"
+                :class="t==='express' ? 'border-blue-500 text-blue-600' : (t==='pickup' ? 'border-red-500 text-red-600' : 'border-gray-300 text-gray-500')"
+                x-text="t==='express' ? 'Express' : (t==='pickup' ? 'Pickup' : 'Elegir')">
+            </span>
+        </a>
         @auth
             <a href="{{ route('usuario.pedidos') }}" class="hover:text-blue-700 transition">🧾 {{ __('layout.my_orders') }}</a>
-
+            @auth
+                @if(in_array(Auth::user()->role, ['admin','cocina']))
+                    <a href="{{ route('kitchen.index') }}"
+                    class="relative hover:text-red-600 transition after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[2px] after:bg-red-600 hover:after:w-full after:transition-all after:duration-300">
+                    👩‍🍳 Cocina
+                    </a>
+                @endif
+            @endauth
             @if(Auth::user()->role === 'admin')
+            
                 {{-- 🛠️ Mantenimientos --}}
                 <div x-data="{ openAdmin: false }" class="relative">
                     <button @click="openAdmin = !openAdmin"
@@ -153,6 +195,9 @@
                         <a href="{{ route('admin.pedidos.index') }}" class="block px-4 py-2 hover:bg-gray-100">📋 {{ __('layout.orders') }}</a>
                         <a href="{{ url('/admin/tiempo-estimado') }}" class="block px-4 py-2 hover:bg-gray-100">⏱️ {{ __('layout.eta') }}</a>
                         <a href="{{ url('/admin/resumen-sucursal/' . Auth::user()->sucursal_id) }}" class="block px-4 py-2 hover:bg-gray-100">📊 {{ __('layout.branch_summary') }}</a>
+                        <a href="{{ route('admin.ventas') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">
+                        📈 Ventas
+                        </a>
                     </div>
                 </div>
             @endif
@@ -178,6 +223,7 @@
                 🇺🇸 {{ __('layout.english') }}
             </a>
         </div>
+        
     </div>
 
     {{-- SCRIPTS INTERACTIVOS --}}
@@ -299,6 +345,84 @@
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script> window.isAuthenticated = @json(Auth::check()); </script>
 @stack('scripts')
+<script>
+function entregaModal() {
+  const API_BASE = @json(rtrim(config('services.latina_api.base_url'), '/')); // p.ej. http://127.0.0.1:8001
+  return {
+    abierto: false,
+
+    async init() {
+      // Forzar apertura con ?cambiar_entrega=1 (o ?cambiar=1 / ?force=1)
+      const params = new URLSearchParams(window.location.search);
+      const force = params.has('cambiar_entrega') || params.has('cambiar') || params.get('force') === '1';
+
+      const hasChoice       = !!localStorage.getItem('tipo_pedido');
+      const pending         = localStorage.getItem('pending_tipo_pedido');
+      const pendingRedirect = localStorage.getItem('pending_redirect');
+
+      // Si venimos del login con elección pendiente: persistir y redirigir sin mostrar modal
+      if (pending && window.isAuthenticated) {
+        await this.persistTipo(pending);
+        localStorage.removeItem('pending_tipo_pedido');
+
+        const url = pendingRedirect || (pending === 'pickup' ? '/pickup' : '/express');
+        localStorage.removeItem('pending_redirect');
+
+        window.location.replace(url);
+        return;
+      }
+
+      // Mostrar si no hay elección o si se fuerza por query param
+      this.abierto = force || !hasChoice;
+    },
+
+    async choose(tipo) {
+      const urlDestino = (tipo === 'pickup') ? '/pickup' : '/express';
+
+      if (window.isAuthenticated) {
+        await this.persistTipo(tipo);
+        this.abierto = false;
+        window.location.assign(urlDestino);
+      } else {
+        // Guardar intención y mandar a login
+        localStorage.setItem('pending_tipo_pedido', tipo);
+        localStorage.setItem('pending_redirect', urlDestino);
+        window.location.assign('/login');
+      }
+    },
+
+    async persistTipo(tipo) {
+      try {
+        await fetch(`${API_BASE}/guardar-tipo-pedido`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '' // ← FIX
+          },
+          credentials: 'include',
+          body: JSON.stringify({ tipo })
+        });
+        localStorage.setItem('tipo_pedido', tipo);
+      } catch (e) {
+        console.warn('No se pudo guardar tipo_pedido en backend:', e);
+        // Igual guardamos en localStorage para no volver a mostrar
+        localStorage.setItem('tipo_pedido', tipo);
+      }
+    }
+  }
+}
+
+// (Opcional) función global para “cambiar” después:
+// llama a abrirSelectorEntrega() desde un botón/link en el header
+window.abrirSelectorEntrega = () => {
+  localStorage.removeItem('tipo_pedido');
+  const url = new URL(window.location.href);
+  url.searchParams.set('cambiar_entrega', '1');
+  window.location.href = url.toString();
+};
+</script>
+
 </body>
 </html>
 

@@ -7,33 +7,28 @@ use App\Models\Carrito;
 use App\Models\Producto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Pedido;
-use App\Models\PedidoProducto;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PedidoConfirmadoMail;
 use App\Models\User;
 use App\Models\Masa;
 use App\Models\Extra;
-use Illuminate\Support\Facades\Log;
 use App\Models\Tamano;
 use App\Models\CarritoItem;
-use App\Models\CarritoItemExtra;
 use App\Models\Promocion;
 use App\Models\CarritoItemPromocionDetalle;
 use App\Models\CarritoItemsPromocionExtra;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use App\Mail\FacturaPedidoMail;
 use Stripe\Stripe;
-use Stripe\PaymentIntent;
-use App\Support\Money;
+use Illuminate\Support\Facades\Schema;
 
 class CarritoController extends Controller
 {
     // Ver el carrito del usuario
     private function invalidateStripePI(Carrito $carrito): void
     {
-        if (\Schema::hasColumn($carrito->getTable(), 'stripe_payment_intent_id')) {
+        if (Schema::hasColumn($carrito->getTable(), 'stripe_payment_intent_id')) {
             $carrito->update(['stripe_payment_intent_id' => null]);
         }
     }
@@ -462,7 +457,7 @@ class CarritoController extends Controller
                 return response()->json(['message' => 'Falta payment_intent_id para Stripe'], 422);
             }
 
-            \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+            Stripe::setApiKey(config('services.stripe.secret'));
 
             try {
                 $intent = \Stripe\PaymentIntent::retrieve($pi);
@@ -581,6 +576,20 @@ class CarritoController extends Controller
             $pedido->subtotal              = $subtotal;
             $pedido->total                 = $total;
 
+            // === Kitchen defaults ===
+            // Estado inicial del panel de cocina
+            $pedido->kitchen_status = 'nuevo';
+            // SLA por defecto según tipo de entrega (ajústalo a tu operación)
+            if (is_null($pedido->sla_minutes)) {
+                $pedido->sla_minutes = ($pedido->tipo_entrega === 'express') ? 35 : 20;
+            }
+            // Promesa de salida/entrega
+            if (empty($pedido->promised_at) && !empty($pedido->sla_minutes)) {
+                $pedido->promised_at = now()->addMinutes($pedido->sla_minutes);
+            }
+            // Opcional: marcar prioridad para pedidos express
+            $pedido->priority = ($pedido->tipo_entrega === 'express');
+
             // Info de pago Stripe (si aplica)
             if ($metodo === 'stripe') {
                 $pedido->payment_provider = 'stripe';
@@ -601,6 +610,28 @@ class CarritoController extends Controller
                 'total' => $total,
             ], JSON_UNESCAPED_UNICODE);
 
+            // === Cocina: estado y promesa de alistado ===
+            $sla = config('kitchen.sla_by_tipo.' . ($carrito->tipo_entrega ?? 'pickup'))
+                ?? config('kitchen.default_sla', 25);
+
+            // Si quieres ajustar por cantidad de items, puedes sumar algo:
+            $itemsCount = $carrito->items->sum('cantidad') ?: 1;
+
+            $pedido->kitchen_status = $pedido->kitchen_status ?: 'nuevo';
+            $pedido->priority       = false;
+
+            // SLA por tipo (ajústalo a tu operación)
+            $pedido->sla_minutes = $pedido->sla_minutes ?: (
+                ($pedido->tipo_pedido === 'express') ? 35 : 25
+            );
+
+            // Si no tiene promised_at aún, fíjalo desde ahora + SLA
+            if (empty($pedido->promised_at) && $pedido->sla_minutes) {
+                $pedido->promised_at = now()->addMinutes($pedido->sla_minutes);
+            }
+            if (empty($pedido->sucursal_id) && !empty($user->sucursal_id)) {
+                $pedido->sucursal_id = $user->sucursal_id;
+            }
             $pedido->save();
 
             // Limpiar carrito (promos + extras + pivots + items)
@@ -612,7 +643,7 @@ class CarritoController extends Controller
             CarritoItem::whereIn('id', $itemsIds)->delete();
 
             // (Opcional) limpiar intent en carrito para no reusarlo
-            if (\Schema::hasColumn($carrito->getTable(), 'stripe_payment_intent_id')) {
+            if (Schema::hasColumn($carrito->getTable(), 'stripe_payment_intent_id')) {
                 $carrito->update(['stripe_payment_intent_id' => null]);
             }
 
@@ -649,5 +680,6 @@ class CarritoController extends Controller
             ], 500);
         }
     }
+
 }
 

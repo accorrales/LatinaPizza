@@ -24,6 +24,10 @@ use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\App;
 use App\Http\Controllers\SucursalesExpressController;
 use App\Http\Controllers\PagosFrontController;
+use App\Http\Controllers\KitchenBoardController;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Middleware\CheckRole;
+use App\Http\Controllers\AnalyticsBoardController;
 
     Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -190,5 +194,13 @@ use App\Http\Controllers\PagosFrontController;
         Route::post('/carrito/stripe/intent', [CarritoController::class, 'createStripeIntent'])->name('carrito.stripe.intent');
     });   
     
+    Route::middleware('auth')->get('/kitchen', function () {
+        abort_unless(in_array(Auth::user()->role, ['admin','cocina']), 403);
+        return view('kitchen.index');
+    })->name('kitchen.index');
+
+    Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
+        Route::get('/ventas', [AnalyticsBoardController::class, 'index'])->name('ventas');
+    });
 require __DIR__.'/auth.php';
 

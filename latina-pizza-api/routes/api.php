@@ -27,6 +27,8 @@ use App\Http\Controllers\API\PedidoTipoController;
 use App\Http\Controllers\API\DetallePedidoExtraController;  
 use App\Http\Controllers\API\EntregaController;
 use App\Http\Controllers\API\ExpressController;
+use App\Http\Controllers\API\KitchenOrderController;
+use App\Http\Controllers\API\AnalyticsController;
 
     Route::middleware([
         'auth:sanctum',
@@ -186,6 +188,11 @@ use App\Http\Controllers\API\ExpressController;
 
         // Promociones protegidas 
     });
+
+    Route::get('/productos', [ProductoController::class, 'publicIndex']);
+    Route::get('/bebidas', [ProductoController::class, 'bebidas']); // ya tienes el método
+    Route::get('/sabores-con-tamanos', [ProductoController::class, 'saboresConTamanos']); // si lo usa tu UI
+
     Route::post('/promociones', [PromocionController::class, 'store']); 
         Route::put('/promociones/{id}', [PromocionController::class, 'update']);
         Route::delete('/promociones/{id}', [PromocionController::class, 'destroy']);
@@ -221,3 +228,29 @@ use App\Http\Controllers\API\ExpressController;
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.factura', ['pedido' => $pedido])->setPaper('a4');
         return $pdf->stream("Factura-{$pedido->id}.pdf");
     })->middleware('auth');
+
+    Route::middleware(['auth:sanctum', CheckRole::class . ':admin,cocina'])
+    ->prefix('kitchen')->group(function () {
+        Route::get('/orders', [KitchenOrderController::class,'index']);
+        Route::get('/orders/{pedido}', [KitchenOrderController::class,'show']);
+
+        Route::patch('/orders/{pedido}/status',   [KitchenOrderController::class,'updateStatus']);
+        Route::patch('/orders/{pedido}/priority', [KitchenOrderController::class,'updatePriority']);
+        Route::patch('/orders/{pedido}/notes',    [KitchenOrderController::class,'updateNotes']);
+        Route::patch('/orders/{pedido}/sla',      [KitchenOrderController::class,'updateSla']);
+        Route::patch('/orders/{pedido}/promised', [KitchenOrderController::class,'updatePromised']);
+        Route::patch('/orders/{pedido}/ready',    [KitchenOrderController::class,'markReady']);
+
+        Route::post('/orders/{pedido}/take',    [KitchenOrderController::class,'take']);
+        Route::post('/orders/{pedido}/release', [KitchenOrderController::class,'release']);
+        Route::post('/orders/bulk/status',      [KitchenOrderController::class,'bulkStatus']);
+    });
+
+    Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])
+    ->prefix('analytics')
+    ->group(function () {
+        Route::get('/sales/daily',   [AnalyticsController::class, 'daily']);
+        Route::get('/sales/weekly',  [AnalyticsController::class, 'weekly']);
+        Route::get('/sales/monthly', [AnalyticsController::class, 'monthly']);
+        Route::get('/products/top',  [AnalyticsController::class, 'topProducts']); // ?range=day|week|month
+    });

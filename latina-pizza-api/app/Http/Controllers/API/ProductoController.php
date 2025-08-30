@@ -177,5 +177,39 @@ class ProductoController extends Controller
 
         return response()->json($bebidas);
     }
+    public function publicIndex(Request $request)
+    {
+        $q = Producto::query()
+            ->where('estado', true)
+            ->select('id','nombre','imagen','categoria_id','sabor_id','tamano_id')
+            ->with([
+                'sabor:id,nombre',
+                'tamano:id,nombre',
+            ]);
+
+        if ($request->filled('categoria_id')) {
+            $q->where('categoria_id', (int) $request->categoria_id);
+        }
+
+        if ($s = trim((string) $request->input('search', ''))) {
+            $q->where('nombre', 'like', "%{$s}%");
+        }
+
+        $items = $q->orderBy('nombre')->get()->map(function ($p) {
+            return [
+                'id'           => $p->id,
+                'nombre'       => $p->nombre,
+                'imagen'       => $p->imagen,
+                'categoria_id' => $p->categoria_id,
+                'sabor'        => $p->sabor?->nombre,
+                'tamano'       => $p->tamano?->nombre,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $items,
+        ]);
+    }
 }
 

@@ -12,14 +12,64 @@ class Pedido extends Model
     protected $fillable = [
         'user_id',
         'sucursal_id',
+
+        // Totales / logística
+        'tipo_entrega',              // pickup | express
+        'direccion_usuario_id',
+        'subtotal',
+        'delivery_fee',
+        'delivery_currency',
+        'delivery_distance_km',
         'total',
-        'estado',
-        'tipo_pedido',
+
+        // Estado comercial
+        'estado',                    // pagado | pendiente | cancelado ...
+        'tipo_pedido',               // alias de tipo_entrega si lo usas
+
+        // Pago
+        'metodo_pago',               // efectivo | datafono | stripe
         'payment_provider',
         'payment_ref',
         'payment_status',
         'paid_at',
+
+        // Cocina
+        'kitchen_status',            // nuevo | preparacion | listo | entregado
+        'priority',                  // bool
+        'sla_minutes',
+        'promised_at',
+        'ready_at',
+        'taken_by_user_id',
+        'kitchen_notes',
+
+        // Snapshot
+        'detalle_json',
     ];
+
+    protected $casts = [
+        // tiempos
+        'paid_at'      => 'datetime',
+        'promised_at'  => 'datetime',
+        'ready_at'     => 'datetime',
+
+        // flags y números
+        'priority'             => 'boolean',
+        'subtotal'             => 'float',
+        'total'                => 'float',
+        'delivery_fee'         => 'float',
+        'delivery_distance_km' => 'float',
+
+        // snapshot
+        'detalle_json' => 'array',
+    ];
+
+    // Defaults útiles (opcional)
+    protected $attributes = [
+        'kitchen_status' => 'nuevo',
+        'priority'       => false,
+    ];
+
+    /* ----------------- Helpers de pago ----------------- */
     public function markPaid(string $provider, string $ref): void
     {
         $this->forceFill([
@@ -29,44 +79,69 @@ class Pedido extends Model
             'paid_at'          => now(),
         ])->save();
     }
-    // En Producto.php
-    public function masa()
-    {
-        return $this->belongsTo(Masa::class, 'masa_id');
-    }
 
-    public function productos()
-    {
-        return $this->belongsToMany(Producto::class, 'pedido_producto')
-                    ->withPivot('cantidad')
-                    ->withTimestamps();
-    }
-
+    /* ----------------- Relaciones ----------------- */
     public function usuario()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
-    public function guardarHistorial($estado)
-    {
-        $this->historial()->create([
-            'estado' => $estado,
-        ]);
-    }
-    public function historial()
-    {
-        return $this->hasMany(HistorialPedido::class);
-    }
+
     public function sucursal()
     {
         return $this->belongsTo(Sucursal::class);
     }
-    public function promociones()
+
+    public function takenBy()
     {
-        return $this->hasMany(DetallePedidoPromocion::class);
+        return $this->belongsTo(User::class, 'taken_by_user_id');
     }
+
+    // Detalles del pedido (si los usas)
     public function detalles()
     {
         return $this->hasMany(DetallePedido::class);
     }
-}
 
+    public function promociones()
+    {
+        return $this->hasMany(DetallePedidoPromocion::class);
+    }
+
+    public function historial()
+    {
+        return $this->hasMany(HistorialPedido::class);
+    }
+
+    /* ----------------- Scopes para cocina ----------------- */
+    public function scopeKitchenOpen($q)
+    {
+        return $q->whereIn('kitchen_status', ['nuevo','preparacion','listo']);
+    }
+
+    public function scopeByStatus($q, string $status)
+    {
+        return $q->where('kitchen_status', $status);
+    }
+
+    /* ----------------- Helpers de cocina ----------------- */
+    public function markKitchenStatus(string $status): void
+    {
+        $this->update(['kitchen_status' => $status]);
+
+        // opcional: guardar en historial automáticamente
+        if (method_exists($this, 'guardarHistorial')) {
+            $this->guardarHistorial($status);
+        }
+    }
+
+    public function isLate(): bool
+    {
+        return $this->promised_at && !$this->ready_at && now()->greaterThan($this->promised_at);
+    }
+
+    public function dueInMinutes(): ?int
+    {
+        if (!$this->promised_at) return null;
+        return now()->diffInMinutes($this->promised_at, false); // negativo si ya se pasó
+    }
+}

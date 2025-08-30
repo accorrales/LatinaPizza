@@ -2,15 +2,6 @@
 
 @section('content')
     <div class="container mx-auto px-4 py-6">
-        <div class="text-right px-4 py-2">
-            <button 
-                onclick="cambiarMetodoEntrega()"
-                class="text-sm text-red-600 hover:underline font-medium"
-            >
-                {{ __('catalogo.cambiar_metodo_entrega') }}
-            </button>
-        </div>
-
         <!-- ✅ Título -->
         <h2 class="text-3xl font-bold text-center text-red-600 mb-8">{{ __('catalogo.menu_latina') }}</h2>
 
@@ -94,58 +85,6 @@
                 .then(() => console.log("🟢 " + (window.i18n.csrf_ok || 'CSRF OK')))
                 .catch(err => console.error("❌ " + (window.i18n.csrf_error || 'CSRF error'), err));
         </script>
-
-        <div 
-            x-data="{ abierto: localStorage.getItem('tipo_pedido') === null }" 
-            x-show="abierto"
-            x-transition 
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
-        >
-            <div class="bg-white rounded-xl p-8 w-full max-w-md shadow-lg text-center">
-                <h2 class="text-2xl font-bold mb-4 text-gray-800">{{ __('catalogo.como_recibir_pedido') }}</h2>
-                <p class="text-gray-600 mb-6">{{ __('catalogo.selecciona_opcion') }}</p>
-
-                <div class="flex flex-col gap-4">
-                    <!-- Botón Pickup -->
-                    <button
-                        @click="
-                            localStorage.setItem('tipo_pedido', 'pickup');
-                            fetch('http://127.0.0.1:8001/guardar-tipo-pedido', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                                credentials: 'include',
-                                body: JSON.stringify({ tipo: 'pickup' })
-                            }).then(() => {
-                                abierto = false;
-                                window.location.href = '/pickup';
-                            });
-                        "
-                        class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition"
-                    >
-                        {{ __('catalogo.para_llevar') }}
-                    </button>
-
-                    <!-- Botón Express -->
-                    <button
-                        @click="
-                            localStorage.setItem('tipo_pedido', 'express');
-                            fetch('http://127.0.0.1:8001/guardar-tipo-pedido', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                                credentials: 'include',
-                                body: JSON.stringify({ tipo: 'express' })
-                            }).then(() => {
-                                abierto = false;
-                                window.location.href = '/express';
-                            });
-                        "
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition"
-                    >
-                        {{ __('catalogo.express') }}
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
 @endsection
 
