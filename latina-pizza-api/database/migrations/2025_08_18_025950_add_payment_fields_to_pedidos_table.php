@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-     public function up(): void
+    public function up(): void
     {
         Schema::table('pedidos', function (Blueprint $table) {
             // proveedor del pago (p.ej., stripe, cash, pos)

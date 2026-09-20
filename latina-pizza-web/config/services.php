@@ -16,11 +16,11 @@ return [
     'maptiler' => [
         'key' => env('MAPTILER_KEY'),
     ],
-    
-     'latina_api' => [
-        'base_url' => rtrim(env('APP_API_URL', 'http://127.0.0.1:8001'), '/') . '/api',
+
+    'latina_api' => [
+        'base_url' => rtrim(env('APP_API_URL', 'http://127.0.0.1:8001'), '/').'/api',
     ],
-    
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
@@ -43,8 +43,7 @@ return [
     ],
 
     'stripe' => [
-        'key'    => env('STRIPE_KEY'),
-        'secret' => env('STRIPE_SECRET'),
+        'key' => env('STRIPE_KEY'),
     ],
 
 ];

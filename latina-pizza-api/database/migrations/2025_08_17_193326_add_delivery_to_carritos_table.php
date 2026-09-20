@@ -14,18 +14,18 @@ return new class extends Migration
         Schema::table('carritos', function (Blueprint $table) {
             // Monto del envío (numeric(10,2) en Postgres)
             $table->decimal('delivery_fee', 10, 2)
-                  ->nullable()
-                  ->after('direccion_usuario_id');
+                ->nullable()
+                ->after('direccion_usuario_id');
 
             // Distancia usada para calcular el envío (km)
             $table->decimal('delivery_distance_km', 8, 2)
-                  ->nullable()
-                  ->after('delivery_fee');
+                ->nullable()
+                ->after('delivery_fee');
 
             // Moneda (ej: ₡, CRC, USD)
             $table->string('delivery_currency', 8)
-                  ->nullable()
-                  ->after('delivery_distance_km');
+                ->nullable()
+                ->after('delivery_distance_km');
         });
     }
 

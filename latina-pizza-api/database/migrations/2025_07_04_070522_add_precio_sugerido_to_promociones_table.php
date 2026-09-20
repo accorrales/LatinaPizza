@@ -15,6 +15,7 @@ return new class extends Migration
             $table->decimal('precio_sugerido', 10, 2)->nullable()->after('precio_total');
         });
     }
+
     /**
      * Reverse the migrations.
      */

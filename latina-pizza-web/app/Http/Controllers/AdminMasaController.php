@@ -8,13 +8,11 @@ use Illuminate\Support\Facades\Session;
 
 class AdminMasaController extends Controller
 {
-    private $apiBase = 'http://127.0.0.1:8001/api/admin';
-
     public function index()
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -22,6 +20,7 @@ class AdminMasaController extends Controller
 
         if ($response->successful()) {
             $masas = $response->json();
+
             return view('admin.masas.index', compact('masas'));
         }
 
@@ -37,7 +36,7 @@ class AdminMasaController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -59,7 +58,7 @@ class AdminMasaController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -67,6 +66,7 @@ class AdminMasaController extends Controller
 
         if ($response->successful()) {
             $masa = (object) $response->json();
+
             return view('admin.masas.edit', compact('masa'));
         }
 
@@ -77,7 +77,7 @@ class AdminMasaController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -97,7 +97,7 @@ class AdminMasaController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 

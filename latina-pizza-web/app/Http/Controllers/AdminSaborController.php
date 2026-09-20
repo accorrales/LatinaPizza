@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
+
 class AdminSaborController extends Controller
 {
-    private $apiBase = 'http://127.0.0.1:8001/api/admin';
-
     public function index()
     {
-        
+
         $token = Session::get('token');
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
         $response = Http::withToken($token)->get("$this->apiBase/sabores");
 
         if ($response->successful()) {
             $sabores = $response->json();
+
             return view('admin.sabores.index', compact('sabores'));
         }
 
@@ -34,13 +34,13 @@ class AdminSaborController extends Controller
     public function store(Request $request)
     {
         $token = Session::get('token');
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
         $validated = $request->validate([
-            'nombre'      => 'required|string|max:255',
+            'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
-            'imagen'      => 'nullable|url',
+            'imagen' => 'nullable|url',
         ]);
 
         if (array_key_exists('imagen', $validated) && $validated['imagen'] === '') {
@@ -60,7 +60,7 @@ class AdminSaborController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -68,6 +68,7 @@ class AdminSaborController extends Controller
 
         if ($response->successful()) {
             $sabor = (object) $response->json(); // <-- convertir a objeto
+
             return view('admin.sabores.edit', compact('sabor'));
         } else {
             return redirect()->route('admin.sabores.index')->with('error', 'No se pudo cargar el sabor.');
@@ -78,7 +79,7 @@ class AdminSaborController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -95,11 +96,10 @@ class AdminSaborController extends Controller
         }
     }
 
-
     public function destroy($id)
     {
         $token = Session::get('token');
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
         $response = Http::withToken($token)->delete("$this->apiBase/sabores/$id");
@@ -111,5 +111,3 @@ class AdminSaborController extends Controller
         return back()->with('error', 'Error al eliminar el sabor.');
     }
 }
-
-

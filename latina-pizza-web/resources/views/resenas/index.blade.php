@@ -35,6 +35,7 @@
 
     {{-- Formulario para crear reseña (solo si está logueado) --}}
     @auth
+      @if($puedeCalificar)
         <div class="mt-8">
             <h3 class="text-xl font-semibold mb-4">{{ __('resenas.escribe_resena') }}</h3>
             <form action="{{ route('resenas.store') }}" method="POST" class="space-y-4">
@@ -64,6 +65,9 @@
                 </div>
             </form>
         </div>
+      @else
+        <p class="mt-6 rounded bg-amber-50 p-4 text-amber-800">Solo podés reseñar sabores incluidos en un pedido pagado.</p>
+      @endif
     @else
         <p class="mt-6 text-center text-gray-500">
             <a href="{{ route('login') }}" class="text-blue-600 hover:underline">

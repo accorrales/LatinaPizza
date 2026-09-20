@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('pedidos', function (Blueprint $t) {
             // índices útiles para el panel
             $t->index('sucursal_id');
-            $t->index(['kitchen_status','sucursal_id']);
+            $t->index(['kitchen_status', 'sucursal_id']);
             $t->index('created_at');
             $t->index('paid_at');
 
@@ -22,10 +22,12 @@ return new class extends Migration
             // Nota: usar change() requiere que la columna soporte default en tu DB.
             try {
                 $t->boolean('priority')->default(false)->change();
-            } catch (\Throwable $e) {}
+            } catch (Throwable $e) {
+            }
             try {
                 $t->string('kitchen_status', 255)->default('nuevo')->change();
-            } catch (\Throwable $e) {}
+            } catch (Throwable $e) {
+            }
         });
     }
 

@@ -1,4 +1,5 @@
 <?php
+
 return [
     'index' => [
         'titulo' => '📏 Size Management',
@@ -26,4 +27,3 @@ return [
         'cancelar' => 'Cancel',
     ],
 ];
-

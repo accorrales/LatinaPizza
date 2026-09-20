@@ -99,14 +99,12 @@
 @push('scripts')
 <script>
 function kitchenPanel(){
-  // Debe terminar en /api
-  const API_BASE = "{{ rtrim(config('services.latina_api.base_url'), '/') }}";
-  const TOKEN    = (localStorage.getItem('token') || @json(session('token') ?? '')).toString().trim();
+  const API_BASE = "{{ url('/kitchen/api') }}";
 
   const authHeaders = (json = true) => {
     const h = { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
     if (json) h['Content-Type'] = 'application/json';
-    if (TOKEN) h['Authorization'] = `Bearer ${TOKEN}`;
+    h['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]')?.content || '';
     return h;
   };
 
@@ -120,8 +118,7 @@ function kitchenPanel(){
   async function getJson(path) {
     const res = await fetch(`${API_BASE}${path}`, {
       method: 'GET',
-      mode: 'cors',
-      credentials: 'omit',
+      credentials: 'same-origin',
       headers: authHeaders(false),
     });
     if (!res.ok) throw await asErr(res);
@@ -131,8 +128,7 @@ function kitchenPanel(){
   async function patchJson(path, body = {}) {
     const res = await fetch(`${API_BASE}${path}`, {
       method: 'PATCH',
-      mode: 'cors',
-      credentials: 'omit',     // <- para NO mandar cookies
+      credentials: 'same-origin',
       headers: authHeaders(true),
       body: JSON.stringify(body),
     });

@@ -39,7 +39,7 @@
 
                             <!-- Imagen protagonista -->
                             <div class="relative">
-                                <img src="{{ $promo['imagen'] ?? 'https://via.placeholder.com/600x400?text=Promoción' }}"
+                                <img src="{{ $promo['imagen'] ?? asset('images/promociones_grade_extragrande.jpg') }}"
                                      alt="{{ $promo['nombre'] }}"
                                      class="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105">
 
@@ -80,11 +80,6 @@
             window.i18n = @json(trans('catalogo'));
         </script>
 
-        <script>
-            fetch('http://127.0.0.1:8001/sanctum/csrf-cookie', { credentials: 'include' })
-                .then(() => console.log("🟢 " + (window.i18n.csrf_ok || 'CSRF OK')))
-                .catch(err => console.error("❌ " + (window.i18n.csrf_error || 'CSRF error'), err));
-        </script>
     </div>
 @endsection
 
@@ -101,12 +96,7 @@
             localStorage.removeItem('sucursal_id');
             localStorage.removeItem('direccion_id');
 
-            fetch('http://127.0.0.1:8001/guardar-tipo-pedido', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ tipo: null })
-            }).then(() => location.reload());
+            location.reload();
         }
     }
 </script>
@@ -115,6 +105,14 @@
     let extrasData = [];
     let precioBase = 0;
     let precioMasa = 0;
+
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;'
+    })[character]);
+
+    const positiveInteger = (value) => Number.isInteger(Number(value)) && Number(value) > 0
+        ? Number(value)
+        : 0;
 
     window.abrirModal = async function(element) {
         mostrarLoading();
@@ -131,18 +129,18 @@
         // Tamaños
         const tamanosHtml = sabor.tamanos.map(t => `
             <label class="flex items-center gap-2 border px-3 py-1 rounded cursor-pointer text-sm text-gray-700">
-                <input type="radio" name="producto_id" value="${t.producto_id}" data-precio="${t.precio_base}" onchange="cambiarTamano(${t.precio_base}, '${t.tamano_nombre.toLowerCase()}')" required>
-                ${t.tamano_nombre} - ₡${parseFloat(t.precio_base).toFixed(2)}
+                <input type="radio" name="producto_id" value="${positiveInteger(t.producto_id)}" data-precio="${Number(t.precio_base) || 0}" onchange="cambiarTamano(${Number(t.precio_base) || 0}, '${escapeHtml(String(t.tamano_nombre).toLowerCase())}')" required>
+                ${escapeHtml(t.tamano_nombre)} - ₡${parseFloat(t.precio_base).toFixed(2)}
             </label>
         `).join('');
         document.getElementById('modalTamanos').innerHTML = tamanosHtml;
 
         // Masas
         try {
-            const res = await fetch(`http://127.0.0.1:8001/api/masas`);
+            const res = await fetch(`{{ config('app.api_url') }}/api/masas`);
             const masas = await res.json();
             const masaSelect = document.getElementById('masa');
-            masaSelect.innerHTML = masas.map(m => `<option value="${m.id}" data-precio="${m.precio_extra}">${m.tipo} (+₡${m.precio_extra})</option>`).join('');
+            masaSelect.innerHTML = masas.map(m => `<option value="${positiveInteger(m.id)}" data-precio="${Number(m.precio_extra) || 0}">${escapeHtml(m.tipo)} (+₡${Number(m.precio_extra) || 0})</option>`).join('');
             masaSelect.onchange = function () {
                 const precio = parseFloat(this.selectedOptions[0].dataset.precio);
                 precioMasa = isNaN(precio) ? 0 : precio;
@@ -154,7 +152,7 @@
 
         // Extras
         try {
-            const res = await fetch(`http://127.0.0.1:8001/api/extras`);
+            const res = await fetch(`{{ config('app.api_url') }}/api/extras`);
             extrasData = await res.json();
             renderizarExtras('precio_pequena'); // default
         } catch {
@@ -182,8 +180,8 @@
             const precio = parseFloat(extra[clave]) || 0;
             return `
                 <label class="flex items-center gap-2 text-sm">
-                    <input type="checkbox" name="extras[]" value="${extra.id}" data-precio="${precio}" onchange="actualizarTotal()">
-                    ${extra.nombre} (+₡${precio.toFixed(0)})
+                    <input type="checkbox" name="extras[]" value="${positiveInteger(extra.id)}" data-precio="${precio}" onchange="actualizarTotal()">
+                    ${escapeHtml(extra.nombre)} (+₡${precio.toFixed(0)})
                 </label>
             `;
         }).join('');
@@ -274,15 +272,13 @@
         promocionSeleccionadaId = id;
         document.getElementById('modalPromocion').classList.remove('hidden');
 
-        const token = localStorage.getItem('token') || "{{ session('token') }}";
-
         try {
             const [promoRes, masasRes, saboresRes, refrescosRes, extrasRes] = await Promise.all([
-                fetch(`http://127.0.0.1:8001/api/promociones/${id}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`http://127.0.0.1:8001/api/masas`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`http://127.0.0.1:8001/api/sabores`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`http://127.0.0.1:8001/api/admin/productos?categoria_id=2`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`http://127.0.0.1:8001/api/extras`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${API_URL}/api/promociones/${positiveInteger(id)}`),
+                fetch(`${API_URL}/api/masas`),
+                fetch(`${API_URL}/api/sabores`),
+                fetch(`${API_URL}/api/bebidas`),
+                fetch(`${API_URL}/api/extras`),
             ]);
 
             const promoData = await promoRes.json();
@@ -314,20 +310,20 @@
                         .replace(':num', contadorGlobal++)
                         .replace(':tamano', c.tamano?.nombre || '');
 
-                    const saborSelect = sabores.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
-                    const masaSelect = masas.map(m => `<option value="${m.id}">${m.tipo}</option>`).join('');
+                    const saborSelect = sabores.map(s => `<option value="${positiveInteger(s.id)}">${escapeHtml(s.nombre)}</option>`).join('');
+                    const masaSelect = masas.map(m => `<option value="${positiveInteger(m.id)}">${escapeHtml(m.tipo)}</option>`).join('');
                     const extrasHTML = datosExtras.map(e => {
                         const precio = parseFloat(e[clavePrecio]) || 0;
                         return `
                             <label class="block text-sm">
-                                <input type="checkbox" name="extrasPizza${index}[]" value="${e.id}" data-precio="${precio}">
-                                ${e.nombre} (+₡${precio})
+                                <input type="checkbox" name="extrasPizza${index}[]" value="${positiveInteger(e.id)}" data-precio="${precio}">
+                                ${escapeHtml(e.nombre)} (+₡${precio})
                             </label>`;
                     }).join('');
 
                     bloquesPizza += `
                         <div class="mb-6 border-b pb-4">
-                            <h3 class="text-sm font-bold text-gray-800 mb-2">🍕 ${pizzaLabel}</h3>
+                            <h3 class="text-sm font-bold text-gray-800 mb-2">🍕 ${escapeHtml(pizzaLabel)}</h3>
 
                             <label class="text-sm">${window.i18n.label_sabor}</label>
                             <select id="promoSabor${index}" class="w-full border rounded px-2 py-1 mb-2">${saborSelect}</select>
@@ -344,7 +340,7 @@
                 }
             });
 
-            const refrescoSelect = refrescos.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
+            const refrescoSelect = refrescos.map(r => `<option value="${positiveInteger(r.id)}">${escapeHtml(r.nombre)}</option>`).join('');
             const bebidaHTML = contieneBebida ? `
                 <div class="mt-4">
                     <label class="text-sm font-bold text-gray-700">🥤 ${window.i18n.refresco_incluido}</label>

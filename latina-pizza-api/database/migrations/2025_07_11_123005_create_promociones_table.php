@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('promociones');
+        // This historical migration did not create anything in up().
     }
 };

@@ -1,224 +1,101 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\CatalogoController;
-use App\Http\Controllers\CarritoController;
 use App\Http\Controllers\AdminCategoriaController;
-use App\Http\Controllers\AdminProductoController;
-use App\Http\Controllers\AdminUsuarioController;
-use App\Http\Controllers\PedidoPromocionController;
-use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\AdminExtraController;
+use App\Http\Controllers\AdminMasaController;
 use App\Http\Controllers\AdminPedidoController;
-use App\Http\Controllers\PromocionesController;
+use App\Http\Controllers\AdminProductoController;
+use App\Http\Controllers\AdminPromocionController;
+use App\Http\Controllers\AdminResenaController;
 use App\Http\Controllers\AdminSaborController;
 use App\Http\Controllers\AdminTamanoController;
-use App\Http\Controllers\AdminMasaController;
-use App\Http\Controllers\AdminExtraController;
-use App\Http\Controllers\ResenaController;
-use App\Http\Controllers\AdminResenaController;
-use App\Http\Controllers\AdminPromocionController;
-use App\Http\Controllers\PickupController;
+use App\Http\Controllers\AdminUsuarioController;
+use App\Http\Controllers\AnalyticsBoardController;
+use App\Http\Controllers\CarritoController;
+use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\ExpressController;
 use App\Http\Controllers\HomeController;
-use Illuminate\Support\Facades\App;
-use App\Http\Controllers\SucursalesExpressController;
-use App\Http\Controllers\PagosFrontController;
 use App\Http\Controllers\KitchenBoardController;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\PickupController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ResenaController;
+use App\Http\Controllers\SucursalesExpressController;
 use App\Http\Middleware\CheckRole;
-use App\Http\Controllers\AnalyticsBoardController;
+use Illuminate\Support\Facades\Route;
 
-    Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
+Route::get('/lang/{locale}', function (string $locale) {
+    abort_unless(in_array($locale, ['en', 'es'], true), 400);
+    session()->put('locale', $locale);
 
-    // Authentication routes
-    Route::middleware('auth')->group(function () {
-        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-        Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    });
-    //catalogo routes
-    Route::get('/catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
+    return back();
+})->name('cambiar_idioma');
 
-    // Carrito routes
-    // routes/web.php
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', fn () => redirect()->route('home'))->name('dashboard');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::post('/carrito/agregar', [CarritoController::class, 'agregar'])
-        ->name('carrito.agregar');
-
-    // 🔒 Nuevo: consumidor de “pendiente” (solo logueados)
-    Route::middleware('auth')->group(function () {
-        Route::get('/carrito/consume-pending', [CarritoController::class, 'consumePending'])
-            ->name('carrito.consume_pending');
-
-        Route::get('/carrito', [CarritoController::class, 'ver'])->name('carrito.ver');
-        Route::post('/carrito/checkout', [CarritoController::class, 'checkout'])->name('carrito.checkout');
-        Route::post('/carrito/stripe/intent', [CarritoController::class, 'createStripeIntent'])->name('carrito.stripe.intent');
-    });
-    // (si también exponés eliminar/actualizar sin auth middleware, puedes dejarlas como estaban)
+    Route::post('/carrito/agregar', [CarritoController::class, 'agregar'])->name('carrito.agregar');
+    Route::get('/carrito/consume-pending', [CarritoController::class, 'consumePending'])->name('carrito.consume_pending');
+    Route::get('/carrito', [CarritoController::class, 'ver'])->name('carrito.ver');
     Route::delete('/carrito/eliminar/{id}', [CarritoController::class, 'eliminar'])->name('carrito.eliminar');
     Route::put('/carrito/update/{id}', [CarritoController::class, 'actualizarCantidad'])->name('carrito.update');
     Route::post('/carrito/agregar-promocion', [CarritoController::class, 'agregarPromocion'])->name('carrito.agregarPromocion');
+    Route::post('/carrito/checkout', [CarritoController::class, 'checkout'])->name('carrito.checkout');
+    Route::post('/carrito/stripe/intent', [CarritoController::class, 'createStripeIntent'])->name('carrito.stripe.intent');
 
-    Route::middleware('auth')->group(function () {
-        Route::get('/carrito/consume-pending', [CarritoController::class, 'consumePending'])
-            ->name('carrito.consume_pending');
-    });
-
-    // Admin routes
-    // This route is for the admin to manage categories
-    Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
-
-        // 🛠 Categorías
-        Route::resource('categorias', AdminCategoriaController::class);
-
-        // 🍕 Productos
-        Route::resource('productos', AdminProductoController::class);
-
-        // 👤 Usuarios
-        Route::resource('usuarios', AdminUsuarioController::class)->only(['index', 'destroy', 'edit', 'update']);
-
-        // 📦 Pedidos
-        Route::prefix('pedidos')->name('pedidos.')->group(function () {
-            Route::get('/', [AdminPedidoController::class, 'index'])->name('index');
-            Route::get('/{id}', [AdminPedidoController::class, 'show'])->name('show');
-            Route::put('/{id}/estado', [AdminPedidoController::class, 'cambiarEstado'])->name('estado');
-            Route::get('/{id}/historial', [AdminPedidoController::class, 'verHistorial'])->name('historial');
-        });
-    });
-
-
-    Route::get('/pedido-promocion/{id}/resumen', [PedidoPromocionController::class, 'mostrarResumen'])->name('pedido.promocion.resumen');
-
-    Route::get('/pedido/{id}/resumen', [PedidoController::class, 'mostrarResumen'])->name('pedido.resumen');
-    // Historial y detalles
-    Route::get('/mis-pedidos', [PedidoController::class, 'vistaHistorial'])
-        ->name('usuario.pedidos')       // 👈 este es el que espera tu vista
-        ->middleware('auth');           // 👈 seguís protegiendo con auth
-    Route::get('/pedido/{id}/detalle', [PedidoController::class, 'detalleHistorial'])->name('usuario.pedidos.detalle');
-    Route::get('/pedido/{id}/promocion', [PedidoController::class, 'detallePromocion'])->name('usuario.pedidos.promocion');
-
+    Route::get('/mis-pedidos', [PedidoController::class, 'vistaHistorial'])->name('usuario.pedidos');
     Route::get('/mis-pedidos/{id}', [PedidoController::class, 'detalleHistorial'])->name('usuario.pedidos.detalle');
+    Route::get('/mis-pedidos/{id}/promocion', [PedidoController::class, 'detallePromocion'])->name('usuario.pedidos.promocion');
 
-    Route::get('/mis-pedidos/{id}/promocion', [PedidoController::class, 'detallePromocion'])
-        ->name('pedidos.detalle.promocion');
+    Route::get('/pickup', [PickupController::class, 'index'])->name('pickup.index');
+    Route::post('/pickup/seleccionar', [PickupController::class, 'seleccionar'])->name('pickup.seleccionar');
+    Route::get('/express', [ExpressController::class, 'index'])->name('express.index');
+    Route::post('/express/direcciones', [ExpressController::class, 'store'])->name('express.store');
+    Route::post('/express/seleccionar', [ExpressController::class, 'seleccionar'])->name('express.seleccionar');
+    Route::get('/sucursales/express', [SucursalesExpressController::class, 'index'])->name('sucursales.express');
+    Route::post('/sucursales/express/seleccionar', [SucursalesExpressController::class, 'seleccionar'])->name('sucursales.express.seleccionar');
 
-    Route::get('/promociones', [PromocionesController::class, 'index'])->name('promociones.index');
-    Route::middleware(['web','auth'])->prefix('admin/sabores')->name('admin.sabores.')->group(function () {
-        Route::get('/',            [AdminSaborController::class, 'index'])->name('index');
-        Route::get('/create',      [AdminSaborController::class, 'create'])->name('create');
-        Route::post('/',           [AdminSaborController::class, 'store'])->name('store');
-        Route::get('/{id}/edit',   [AdminSaborController::class, 'edit'])->name('edit');
-        Route::put('/{id}',        [AdminSaborController::class, 'update'])->name('update');
-        Route::delete('/{id}',     [AdminSaborController::class, 'destroy'])->name('destroy');
-    });
-    Route::prefix('admin/tamanos')->name('admin.tamanos.')->group(function () {
-        Route::get('/', [AdminTamanoController::class, 'index'])->name('index');
-        Route::get('/create', [AdminTamanoController::class, 'create'])->name('create');
-        Route::post('/', [AdminTamanoController::class, 'store'])->name('store');
-        Route::get('/{id}/edit', [AdminTamanoController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [AdminTamanoController::class, 'update'])->name('update');
-        Route::delete('/{id}', [AdminTamanoController::class, 'destroy'])->name('destroy');
-    });
-    Route::prefix('admin/masas')->name('admin.masas.')->group(function () {
-        Route::get('/', [AdminMasaController::class, 'index'])->name('index');
-        Route::get('/create', [AdminMasaController::class, 'create'])->name('create');
-        Route::post('/', [AdminMasaController::class, 'store'])->name('store');
-        Route::get('/{id}/edit', [AdminMasaController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [AdminMasaController::class, 'update'])->name('update');
-        Route::delete('/{id}', [AdminMasaController::class, 'destroy'])->name('destroy');
-    });
-
-
-    Route::prefix('admin/extras')->name('admin.extras.')->group(function () {
-        Route::get('/', [AdminExtraController::class, 'index'])->name('index');
-        Route::get('/create', [AdminExtraController::class, 'create'])->name('create');
-        Route::post('/', [AdminExtraController::class, 'store'])->name('store');
-        Route::get('/{id}/edit', [AdminExtraController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [AdminExtraController::class, 'update'])->name('update');
-        Route::delete('/{id}', [AdminExtraController::class, 'destroy'])->name('destroy');
-    });
-
-    Route::prefix('admin/productos')->name('admin.productos.')->group(function () {
-        Route::get('/', [AdminProductoController::class, 'index'])->name('index');
-        Route::get('/create', [AdminProductoController::class, 'create'])->name('create');
-        Route::post('/', [AdminProductoController::class, 'store'])->name('store');
-        Route::get('/{id}/edit', [AdminProductoController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [AdminProductoController::class, 'update'])->name('update');
-        Route::delete('/{id}', [AdminProductoController::class, 'destroy'])->name('destroy');
-    });
-    // Reseñas: eliminación para usuarios autenticados
-    Route::delete('/resenas/{id}', [ResenaController::class, 'destroy'])->name('resenas.destroy')->middleware('auth');
     Route::get('/sabor/{id}/resenas', [ResenaController::class, 'verResenas'])->name('sabor.resenas');
-    Route::get('/resenas/crear/{saborId}', [ResenaController::class, 'crear'])->name('resenas.crear')->middleware('auth');
-    Route::post('/resenas', [ResenaController::class, 'store'])->name('resenas.store')->middleware('auth');
+    Route::post('/resenas', [ResenaController::class, 'store'])->name('resenas.store');
+    Route::put('/resenas/{id}', [ResenaController::class, 'update'])->name('resenas.update');
+    Route::delete('/resenas/{id}', [ResenaController::class, 'destroy'])->name('resenas.destroy');
+});
 
-    Route::prefix('admin/resenas')->name('admin.resenas.')->middleware('auth')->group(function () {
-        Route::get('/', [AdminResenaController::class, 'index'])->name('index');
-        Route::get('/{id}/edit', [AdminResenaController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [AdminResenaController::class, 'update'])->name('update');
-        Route::delete('/{id}', [AdminResenaController::class, 'destroy'])->name('destroy');
-    });
-    Route::put('/resenas/{id}', [ResenaController::class, 'update'])->name('resenas.update')->middleware('auth');
+Route::middleware(['auth', 'verified', CheckRole::class.':admin,cocina'])->group(function () {
+    Route::get('/kitchen', [KitchenBoardController::class, 'index'])->name('kitchen.index');
+    Route::match(['get', 'post', 'patch'], '/kitchen/api/{path?}', [KitchenBoardController::class, 'proxy'])
+        ->where('path', '.*')
+        ->name('kitchen.proxy');
+});
 
-    Route::prefix('admin/promociones')->name('admin.promociones.')->middleware('auth')->group(function () {
-        Route::get('/', [AdminPromocionController::class, 'index'])->name('index');
-        Route::get('/create', [AdminPromocionController::class, 'create'])->name('create');
-        Route::post('/', [AdminPromocionController::class, 'store'])->name('store');
-        Route::get('/{id}/edit', [AdminPromocionController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [AdminPromocionController::class, 'update'])->name('update');
-        Route::delete('/{id}', [AdminPromocionController::class, 'destroy'])->name('destroy');
-    });
-    Route::get('/pickup', function () {
-        return view('catalogo.pickup');
-    })->middleware(['auth'])->name('vista.pickup');
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', 'verified', CheckRole::class.':admin'])
+    ->group(function () {
+        Route::resource('categorias', AdminCategoriaController::class);
+        Route::resource('productos', AdminProductoController::class);
+        Route::resource('usuarios', AdminUsuarioController::class)->only(['index', 'destroy', 'edit', 'update']);
+        Route::resource('sabores', AdminSaborController::class)->except(['show']);
+        Route::resource('tamanos', AdminTamanoController::class)->except(['show']);
+        Route::resource('masas', AdminMasaController::class)->except(['show']);
+        Route::resource('extras', AdminExtraController::class)->except(['show']);
+        Route::resource('promociones', AdminPromocionController::class)->except(['show']);
+        Route::resource('resenas', AdminResenaController::class)->only(['index', 'destroy']);
 
-
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/express', [ExpressController::class, 'index'])->name('express.index');
-    });
-
-    Route::middleware('auth')->group(function () {
-        // Vista con sucursales (GET)
-        Route::get('/pickup', [PickupController::class, 'index'])->name('pickup.index');
-
-        // Confirmar selección de sucursal (POST)
-        Route::post('/pickup/seleccionar', [PickupController::class, 'seleccionar'])->name('pickup.seleccionar');
-    });
-
-    Route::get('/lang/{locale}', function ($locale) {
-        if (!in_array($locale, ['en','es'])) abort(400);
-        session()->put('locale', $locale);
-        return back();
-    })->name('cambiar_idioma');
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/express', [ExpressController::class, 'index'])->name('express.index');
-        Route::post('/express/direcciones', [ExpressController::class, 'store'])->name('express.store');
-        Route::post('/express/seleccionar', [ExpressController::class, 'seleccionar'])->name('express.seleccionar');
-    });
-
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/sucursales/express', [SucursalesExpressController::class, 'index'])
-            ->name('sucursales.express');
-
-        Route::post('/sucursales/express/seleccionar', [SucursalesExpressController::class, 'seleccionar'])
-            ->name('sucursales.express.seleccionar');
-    });
-
-    Route::middleware('auth')->group(function () {
-        Route::get('/carrito', [CarritoController::class, 'ver'])->name('carrito.ver');
-        Route::post('/carrito/checkout', [CarritoController::class, 'checkout'])->name('carrito.checkout');
-        Route::post('/carrito/stripe/intent', [CarritoController::class, 'createStripeIntent'])->name('carrito.stripe.intent');
-    });   
-    
-    Route::middleware('auth')->get('/kitchen', function () {
-        abort_unless(in_array(Auth::user()->role, ['admin','cocina']), 403);
-        return view('kitchen.index');
-    })->name('kitchen.index');
-
-    Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
+        Route::get('/pedidos', [AdminPedidoController::class, 'index'])->name('pedidos.index');
+        Route::get('/pedidos/{id}', [AdminPedidoController::class, 'show'])->name('pedidos.show');
+        Route::put('/pedidos/{id}/estado', [AdminPedidoController::class, 'cambiarEstado'])->name('pedidos.estado');
+        Route::post('/pedidos/{id}/refund', [AdminPedidoController::class, 'refund'])->name('pedidos.refund');
+        Route::get('/pedidos/{id}/historial', [AdminPedidoController::class, 'verHistorial'])->name('pedidos.historial');
         Route::get('/ventas', [AnalyticsBoardController::class, 'index'])->name('ventas');
+        Route::get('/ventas/api/{report?}', [AnalyticsBoardController::class, 'proxy'])
+            ->where('report', '.*')
+            ->name('ventas.proxy');
     });
-require __DIR__.'/auth.php';
 
-    
+require __DIR__.'/auth.php';

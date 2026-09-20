@@ -11,10 +11,13 @@ class DetallePedidoPromocion extends Model
     protected $fillable = [
         'pedido_id',
         'promocion_id',
+        'producto_id',
         'sabor_id',
         'tamano_id',
         'masa_id',
         'nota_cliente',
+        'cantidad',
+        'precio_total',
     ];
 
     public function pedido()
@@ -32,6 +35,11 @@ class DetallePedidoPromocion extends Model
         return $this->belongsTo(Sabor::class);
     }
 
+    public function producto()
+    {
+        return $this->belongsTo(Producto::class);
+    }
+
     public function tamano()
     {
         return $this->belongsTo(Tamano::class);
@@ -41,10 +49,11 @@ class DetallePedidoPromocion extends Model
     {
         return $this->belongsTo(Masa::class);
     }
+
     public function extras()
     {
         return $this->belongsToMany(Extra::class, 'detalle_promocion_extra')
-                    ->withPivot('precio_extra')
-                    ->withTimestamps();
+            ->withPivot('precio_extra')
+            ->withTimestamps();
     }
 }

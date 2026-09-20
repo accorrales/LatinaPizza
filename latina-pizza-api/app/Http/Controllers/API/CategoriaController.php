@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Categoria;
+use App\Models\Producto;
+use Illuminate\Http\Request;
 
 class CategoriaController extends Controller
 {
@@ -15,12 +16,12 @@ class CategoriaController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'nombre' => 'required|string|max:255',
-            'descripcion' => 'nullable|string'
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:255|unique:categorias,nombre',
+            'descripcion' => 'nullable|string',
         ]);
 
-        $categoria = Categoria::create($request->all());
+        $categoria = Categoria::create($validated);
 
         return response()->json($categoria, 201);
     }
@@ -34,19 +35,24 @@ class CategoriaController extends Controller
     {
         $categoria = Categoria::findOrFail($id);
 
-        $request->validate([
-            'nombre' => 'sometimes|required|string|max:255',
-            'descripcion' => 'nullable|string'
+        $validated = $request->validate([
+            'nombre' => 'sometimes|required|string|max:255|unique:categorias,nombre,'.$categoria->id,
+            'descripcion' => 'nullable|string',
         ]);
 
-        $categoria->update($request->all());
+        $categoria->update($validated);
 
         return response()->json($categoria);
     }
 
     public function destroy($id)
     {
-        Categoria::destroy($id);
+        $categoria = Categoria::findOrFail($id);
+        if (Producto::where('categoria_id', $categoria->id)->exists()) {
+            return response()->json(['message' => 'La categoría contiene productos y no se puede eliminar.'], 409);
+        }
+        $categoria->delete();
+
         return response()->json(['message' => 'Categoría eliminada.']);
     }
 }

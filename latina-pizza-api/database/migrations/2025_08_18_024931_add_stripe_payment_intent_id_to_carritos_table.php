@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('carritos', function (Blueprint $table) {
             // después de delivery_currency; ajusta el "after" si tu esquema es distinto
-            if (!Schema::hasColumn('carritos', 'stripe_payment_intent_id')) {
+            if (! Schema::hasColumn('carritos', 'stripe_payment_intent_id')) {
                 $table->string('stripe_payment_intent_id')->nullable()->after('delivery_currency');
             }
         });

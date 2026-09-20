@@ -18,5 +18,5 @@ return [
     'confirmar_pedido' => '✅ Confirmar Pedido',
     'carrito_vacio' => 'Tu carrito está vacío.',
     'eliminar' => 'Eliminar',
-    'resumen' => 'Resumen'
+    'resumen' => 'Resumen',
 ];

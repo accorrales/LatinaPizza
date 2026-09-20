@@ -4,21 +4,23 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
 class AdminProductoController extends Controller
 {
-    private $apiBase = 'http://127.0.0.1:8001/api/admin';
-
     public function index()
     {
         $token = Session::get('token');
-        if (!$token) return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        if (! $token) {
+            return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        }
 
-        $response = Http::withToken($token)->get("{$this->apiBase}/productos");
+        $response = Http::withToken($token)->get($this->apiUrl('/admin/productos'));
 
         if ($response->successful()) {
             $productos = $response->json();
+
             return view('admin.productos.index', compact('productos'));
         }
 
@@ -29,21 +31,21 @@ class AdminProductoController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
         try {
             $categorias = Http::withToken($token)
-                ->get('http://127.0.0.1:8001/api/categorias')
+                ->get($this->apiUrl('/categorias'))
                 ->json();
 
             $sabores = Http::withToken($token)
-                ->get('http://127.0.0.1:8001/api/admin/sabores')
+                ->get($this->apiUrl('/admin/sabores'))
                 ->json();
 
             $tamanos = Http::withToken($token)
-                ->get('http://127.0.0.1:8001/api/admin/tamanos')
+                ->get($this->apiUrl('/admin/tamanos'))
                 ->json()['data'] ?? [];
 
             return view('admin.productos.create', compact('categorias', 'sabores', 'tamanos'));
@@ -53,12 +55,11 @@ class AdminProductoController extends Controller
         }
     }
 
-
     public function store(Request $request)
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -67,7 +68,7 @@ class AdminProductoController extends Controller
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
-            'imagen' => 'nullable|string',
+            'imagen' => 'nullable|url:http,https|max:2048',
             'categoria_id' => 'required|exists:categorias,id',
             'estado' => 'nullable|boolean',
         ];
@@ -83,7 +84,7 @@ class AdminProductoController extends Controller
         try {
             // Enviar los datos a la API backend
             $response = Http::withToken($token)
-                ->post('http://127.0.0.1:8001/api/admin/productos', $validated);
+                ->post($this->apiUrl('/admin/productos'), $validated);
 
             if ($response->successful()) {
                 return redirect()->route('admin.productos.index')->with('success', 'Producto creado correctamente');
@@ -100,37 +101,39 @@ class AdminProductoController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
         try {
             // Obtener el producto
-            $productoResponse = Http::withToken($token)->get("http://127.0.0.1:8001/api/admin/productos/{$id}");
-            if (!$productoResponse->successful()) {
+            $productoResponse = Http::withToken($token)->get($this->apiUrl("/admin/productos/{$id}"));
+            if (! $productoResponse->successful()) {
                 return back()->with('error', 'No se pudo cargar el producto');
             }
             $producto = $productoResponse->json();
 
             // Obtener categorías
             $categorias = Http::withToken($token)
-                ->get('http://127.0.0.1:8001/api/categorias')
+                ->get($this->apiUrl('/categorias'))
                 ->json();
 
             // Obtener sabores
             $sabores = Http::withToken($token)
-                ->get('http://127.0.0.1:8001/api/admin/sabores')
+                ->get($this->apiUrl('/admin/sabores'))
                 ->json();
 
             // Obtener tamaños
             $tamanos = Http::withToken($token)
-                ->get('http://127.0.0.1:8001/api/admin/tamanos')
+                ->get($this->apiUrl('/admin/tamanos'))
                 ->json()['data'] ?? [];
 
             return view('admin.productos.edit', compact('producto', 'categorias', 'sabores', 'tamanos'));
 
         } catch (\Exception $e) {
-            return back()->with('error', 'Error al cargar los datos: ' . $e->getMessage());
+            Log::error('No se pudo cargar el producto para editarlo.', ['exception' => $e]);
+
+            return back()->with('error', 'No se pudieron cargar los datos del producto.');
         }
     }
 
@@ -139,17 +142,17 @@ class AdminProductoController extends Controller
         $token = Session::get('token');
 
         $data = $request->validate([
-            'nombre'       => 'nullable|string|max:255',
-            'descripcion'  => 'nullable|string',
-            'precio'       => 'required|numeric|min:0',
-            'imagen'       => 'nullable|string',
+            'nombre' => 'nullable|string|max:255',
+            'descripcion' => 'nullable|string',
+            'precio' => 'required|numeric|min:0',
+            'imagen' => 'nullable|url:http,https|max:2048',
             'categoria_id' => 'required|integer',
-            'sabor_id'     => 'nullable|integer',
-            'tamano_id'    => 'nullable|integer',
-            'estado'       => 'nullable|boolean',
+            'sabor_id' => 'nullable|integer',
+            'tamano_id' => 'nullable|integer',
+            'estado' => 'nullable|boolean',
         ]);
 
-        $response = Http::withToken($token)->put("http://127.0.0.1:8001/api/admin/productos/{$id}", $data);
+        $response = Http::withToken($token)->put($this->apiUrl("/admin/productos/{$id}"), $data);
 
         if ($response->successful()) {
             return redirect()->route('admin.productos.index')->with('success', 'Producto actualizado correctamente');
@@ -158,14 +161,14 @@ class AdminProductoController extends Controller
         return back()->with('error', 'No se pudo actualizar el producto');
     }
 
-
-
     public function destroy($id)
     {
         $token = Session::get('token');
-        if (!$token) return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        if (! $token) {
+            return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        }
 
-        $response = Http::withToken($token)->delete("{$this->apiBase}/productos/{$id}");
+        $response = Http::withToken($token)->delete($this->apiUrl("/admin/productos/{$id}"));
 
         if ($response->successful()) {
             return redirect()->route('admin.productos.index')->with('success', 'Producto eliminado correctamente');
@@ -174,4 +177,3 @@ class AdminProductoController extends Controller
         return back()->with('error', 'Hubo un problema al eliminar el producto');
     }
 }
-

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Tamano;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TamanoController extends Controller
 {
@@ -14,14 +15,14 @@ class TamanoController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $tamanos
+            'data' => $tamanos,
         ]);
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255', // ← corregido
+            'nombre' => 'required|string|max:255|unique:tamanos,nombre',
             'precio_base' => 'required|numeric|min:0',
         ]);
 
@@ -32,9 +33,11 @@ class TamanoController extends Controller
 
         return response()->json($tamano, 201);
     }
+
     public function show($id)
     {
         $tamano = Tamano::findOrFail($id);
+
         return response()->json($tamano);
     }
 
@@ -43,7 +46,7 @@ class TamanoController extends Controller
         $tamano = Tamano::findOrFail($id);
 
         $request->validate([
-            'nombre' => 'required|string|max:255', // ← corregido
+            'nombre' => 'required|string|max:255|unique:tamanos,nombre,'.$tamano->id,
             'precio_base' => 'required|numeric|min:0',
         ]);
 
@@ -58,10 +61,15 @@ class TamanoController extends Controller
     public function destroy($id)
     {
         $tamano = Tamano::findOrFail($id);
+        $inUse = DB::table('productos')->where('tamano_id', $tamano->id)->exists()
+            || DB::table('detalle_pedidos')->where('tamano_id', $tamano->id)->exists()
+            || DB::table('detalle_pedido_promocion')->where('tamano_id', $tamano->id)->exists()
+            || DB::table('promocion_componentes')->where('tamano_id', $tamano->id)->exists();
+        if ($inUse) {
+            return response()->json(['message' => 'El tamaño está en uso y no se puede eliminar.'], 409);
+        }
         $tamano->delete();
 
         return response()->json(['message' => 'Eliminado correctamente']);
     }
-    
 }
-

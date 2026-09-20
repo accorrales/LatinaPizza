@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+
 class Carrito extends Model
 {
     use HasFactory;
@@ -23,14 +24,14 @@ class Carrito extends Model
     ];
 
     protected $casts = [
-        'sucursal_id'           => 'integer',
-        'direccion_usuario_id'  => 'integer',
+        'sucursal_id' => 'integer',
+        'direccion_usuario_id' => 'integer',
 
         // 🔽 nuevos
-        'delivery_fee'          => 'decimal:2',
-        'delivery_distance_km'  => 'decimal:2',
+        'delivery_fee' => 'decimal:2',
+        'delivery_distance_km' => 'decimal:2',
         'precio_total' => 'float',
-        'precio'       => 'float',
+        'precio' => 'float',
     ];
 
     // (Opcional) relaciones directas
@@ -69,10 +70,12 @@ class Carrito extends Model
             'extra_id'
         );
     }
+
     public function items()
     {
         return $this->hasMany(CarritoItem::class);
     }
+
     /** Subtotal sin envío: suma de precio_total de items + extras de promo */
     public function calcSubtotal(): float
     {
@@ -87,16 +90,17 @@ class Carrito extends Model
     public function calcTotal(): float
     {
         $subtotal = $this->calcSubtotal();
-        $envio    = ($this->tipo_entrega === 'express')
+        $envio = ($this->tipo_entrega === 'express')
                     ? (float) ($this->delivery_fee ?? 0)
                     : 0.0;
 
         return round($subtotal + $envio, 2);
     }
+
     public function subtotalBreakdown(): array
     {
         $items = DB::table('carrito_items')
-            ->select('id','producto_id','promocion_id','cantidad','precio_total')
+            ->select('id', 'producto_id', 'promocion_id', 'cantidad', 'precio_total')
             ->where('carrito_id', $this->id)
             ->get();
 
@@ -104,24 +108,25 @@ class Carrito extends Model
 
         // Extras de promos solo para inspección (no se suman al subtotal)
         $extras = DB::table('carrito_items_promocion_extras as x')
-            ->join('carrito_items_promocion_detalles as d','d.id','=','x.detalle_id')
-            ->join('carrito_items as ci','ci.id','=','d.carrito_item_id')
+            ->join('carrito_items_promocion_detalles as d', 'd.id', '=', 'x.detalle_id')
+            ->join('carrito_items as ci', 'ci.id', '=', 'd.carrito_item_id')
             ->where('ci.carrito_id', $this->id)
-            ->select('x.detalle_id','ci.id as carrito_item_id','ci.cantidad as cantidad_item','x.precio')
+            ->select('x.detalle_id', 'ci.id as carrito_item_id', 'ci.cantidad as cantidad_item', 'x.precio')
             ->get()
-            ->map(function($row){
-                $row->precio_x_qty = (float)$row->precio * (int)$row->cantidad_item;
+            ->map(function ($row) {
+                $row->precio_x_qty = (float) $row->precio * (int) $row->cantidad_item;
+
                 return $row;
             });
 
         $sum_extras = (float) $extras->sum('precio_x_qty');
 
         return [
-            'items'          => $items,
-            'extras'         => $extras,
-            'sum_items_raw'  => $sum_items_raw,
-            'sum_extras'     => $sum_extras,
-            'subtotal'       => $sum_items_raw, // ¡clave! no volver a sumar extras
+            'items' => $items,
+            'extras' => $extras,
+            'sum_items_raw' => $sum_items_raw,
+            'sum_extras' => $sum_extras,
+            'subtotal' => $sum_items_raw, // ¡clave! no volver a sumar extras
         ];
     }
 }

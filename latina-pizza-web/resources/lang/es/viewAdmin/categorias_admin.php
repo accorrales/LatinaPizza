@@ -18,7 +18,7 @@ return [
     'sin_registros' => 'No hay categorías para mostrar.',
     'exito' => 'Operación exitosa',
 
-    //editar categoria
+    // editar categoria
     'editar_categoria' => '✏️ Editar Categoría',
     'actualizar' => 'Actualizar',
     'volver' => 'Volver',

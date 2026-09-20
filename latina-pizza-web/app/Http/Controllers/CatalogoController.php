@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Auth;
-use App\Models\Resena;
+
 class CatalogoController extends Controller
 {
     public function index(Request $request)
@@ -19,9 +17,14 @@ class CatalogoController extends Controller
 
         try {
             // 🌐 Llamadas a la API pública
-            $responseSabores     = Http::get('http://127.0.0.1:8001/api/productos-sabores-tamanos');
-            $responseCategorias  = Http::get('http://127.0.0.1:8001/api/categorias');
-            $responsePromociones = Http::get('http://127.0.0.1:8001/api/promociones');
+            $responses = Http::pool(fn (Pool $pool) => [
+                $pool->as('sabores')->timeout(5)->get($this->apiUrl('/productos-sabores-tamanos')),
+                $pool->as('categorias')->timeout(5)->get($this->apiUrl('/categorias')),
+                $pool->as('promociones')->timeout(5)->get($this->apiUrl('/promociones')),
+            ]);
+            $responseSabores = $responses['sabores'];
+            $responseCategorias = $responses['categorias'];
+            $responsePromociones = $responses['promociones'];
 
             // ✅ Si todo se obtuvo correctamente
             if (
@@ -29,8 +32,9 @@ class CatalogoController extends Controller
                 $responseCategorias->successful() &&
                 $responsePromociones->successful()
             ) {
-                $sabores     = $responseSabores->json();
-                $categorias  = $responseCategorias->json()['data'] ?? [];
+                $sabores = $responseSabores->json();
+                $categoriasPayload = $responseCategorias->json();
+                $categorias = $categoriasPayload['data'] ?? $categoriasPayload;
                 $promociones = $responsePromociones->json()['data'] ?? [];
 
                 // 🔍 Filtrar por categoría si viene en la query
@@ -41,19 +45,6 @@ class CatalogoController extends Controller
                         ->all();
                 }
 
-                // ⭐ Agregar promedio de reseñas por sabor
-                foreach ($sabores as $index => $sabor) {
-                    try {
-                        $resPromedio = Http::get("http://127.0.0.1:8001/api/resenas-promedio/{$sabor['sabor_id']}");
-                        $data = $resPromedio->json();
-
-                        $sabores[$index]['promedio']       = $data['promedio'] ?? 0;
-                        $sabores[$index]['total_resenas'] = $data['total'] ?? 0;
-                    } catch (\Exception $e) {
-                        $sabores[$index]['promedio'] = 0;
-                        $sabores[$index]['total_resenas'] = 0;
-                    }
-                }
             } else {
                 session()->flash('error', 'No se pudieron obtener los datos del catálogo.');
             }
@@ -69,5 +60,3 @@ class CatalogoController extends Controller
         ));
     }
 }
-
-

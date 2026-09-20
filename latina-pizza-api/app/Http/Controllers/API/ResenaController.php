@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\DetallePedido;
+use App\Models\DetallePedidoPromocion;
 use App\Models\Resena;
-use App\Models\Sabor;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Validation\ValidationException;
-use App\Models\DetallePedido;
 
 class ResenaController extends Controller
 {
@@ -17,9 +16,9 @@ class ResenaController extends Controller
     public function index($saborId): JsonResponse
     {
         $resenas = Resena::with('user')
-                        ->where('sabor_id', $saborId) // ✅ Arreglado aquí
-                        ->orderBy('created_at', 'desc')
-                        ->get();
+            ->where('sabor_id', $saborId) // ✅ Arreglado aquí
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return response()->json($resenas);
     }
@@ -28,11 +27,21 @@ class ResenaController extends Controller
     {
         $user = Auth::user();
 
-        $comprado = DetallePedido::whereHas('producto', function ($query) use ($saborId) {
-            $query->where('sabor_id', $saborId);
-        })->whereHas('pedido', function ($query) use ($user) {
-            $query->where('user_id', $user->id);
+        $comprado = DetallePedido::where('sabor_id', $saborId)->whereHas('pedido', function ($query) use ($user) {
+            $query->where('user_id', $user->id)
+                ->where(function ($status) {
+                    $status->where('payment_status', 'paid')
+                        ->orWhereIn('estado', ['pagado', 'entregado']);
+                });
         })->exists();
+        $comprado = $comprado || DetallePedidoPromocion::where('sabor_id', $saborId)
+            ->whereHas('pedido', function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->where(function ($status) {
+                        $status->where('payment_status', 'paid')
+                            ->orWhereIn('estado', ['pagado', 'entregado']);
+                    });
+            })->exists();
 
         return response()->json(['comprado' => $comprado]);
     }
@@ -46,7 +55,30 @@ class ResenaController extends Controller
             'calificacion' => 'required|integer|min:1|max:5',
         ]);
 
-        $resena = Resena::create([
+        $compraVerificada = DetallePedido::where('sabor_id', $request->integer('sabor_id'))->whereHas('pedido', function ($query) {
+            $query->where('user_id', Auth::id())
+                ->where(function ($status) {
+                    $status->where('payment_status', 'paid')
+                        ->orWhereIn('estado', ['pagado', 'entregado']);
+                });
+        })->exists();
+        $compraVerificada = $compraVerificada || DetallePedidoPromocion::where('sabor_id', $request->integer('sabor_id'))
+            ->whereHas('pedido', function ($query) {
+                $query->where('user_id', Auth::id())
+                    ->where(function ($status) {
+                        $status->where('payment_status', 'paid')
+                            ->orWhereIn('estado', ['pagado', 'entregado']);
+                    });
+            })->exists();
+
+        if (! $compraVerificada) {
+            return response()->json(['message' => 'Solo puede reseñar sabores que haya comprado.'], 403);
+        }
+
+        $resena = Resena::updateOrCreate([
+            'sabor_id' => $request->sabor_id,
+            'user_id' => Auth::id(),
+        ], [
             'sabor_id' => $request->sabor_id,
             'user_id' => Auth::id(),
             'comentario' => $request->comentario,
@@ -55,7 +87,7 @@ class ResenaController extends Controller
 
         return response()->json([
             'message' => 'Reseña creada exitosamente',
-            'resena' => $resena
+            'resena' => $resena,
         ], 201);
     }
 
@@ -67,7 +99,7 @@ class ResenaController extends Controller
         $user = Auth::user();
 
         // Solo permitir si es el autor o si es admin
-        if ($resena->user_id !== $user->id && $user->rol !== 'admin') {
+        if ($resena->user_id !== $user->id && $user->role !== 'admin') {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
@@ -84,13 +116,13 @@ class ResenaController extends Controller
         return response()->json(['message' => 'Reseña actualizada']);
     }
 
-
     // ✅ Eliminar reseña
     public function destroy($id): JsonResponse
     {
         $resena = Resena::findOrFail($id);
 
-        if ($resena->user_id !== Auth::id()) {
+        $user = Auth::user();
+        if ($resena->user_id !== $user->id && $user->role !== 'admin') {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
@@ -107,16 +139,7 @@ class ResenaController extends Controller
 
         return response()->json([
             'promedio' => round($promedio ?? 0, 1),
-            'total' => $total
+            'total' => $total,
         ]);
     }
-    public function indexAdmin()
-    {
-        $resenas = Resena::with(['sabor', 'user'])
-                    ->orderBy('created_at', 'desc')
-                    ->get();
-
-        return view('admin.resenas.index', compact('resenas'));
-    }
 }
-

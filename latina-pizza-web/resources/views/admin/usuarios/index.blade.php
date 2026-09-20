@@ -9,6 +9,11 @@
             {{ session('error') }}
         </div>
     @endif
+    @if(session('success'))
+        <div class="bg-green-200 text-green-800 p-3 mb-4 rounded">
+            {{ session('success') }}
+        </div>
+    @endif
 
     <div class="overflow-x-auto">
         <table class="min-w-full bg-white border border-gray-200 rounded shadow">
@@ -30,6 +35,8 @@
                         <td class="py-2 px-4 border-b">
                             @if($usuario['role'] === 'admin')
                                 <span class="bg-blue-200 text-blue-800 px-2 py-1 rounded text-sm">{{ __('viewAdmin/usuarios_admin.index.rol_admin') }}</span>
+                            @elseif($usuario['role'] === 'cocina')
+                                <span class="bg-orange-200 text-orange-800 px-2 py-1 rounded text-sm">Cocina</span>
                             @else
                                 <span class="bg-green-200 text-green-800 px-2 py-1 rounded text-sm">{{ __('viewAdmin/usuarios_admin.index.rol_cliente') }}</span>
                             @endif
@@ -61,9 +68,22 @@
             </tbody>
         </table>
     </div>
+
+    @if (($pagination['last_page'] ?? 1) > 1)
+        <nav class="mt-6 flex items-center justify-center gap-4" aria-label="Paginación de usuarios">
+            @if ($pagination['current_page'] > 1)
+                <a class="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
+                   href="{{ route('admin.usuarios.index', ['page' => $pagination['current_page'] - 1]) }}">Anterior</a>
+            @endif
+            <span class="text-sm text-gray-600">Página {{ $pagination['current_page'] }} de {{ $pagination['last_page'] }}</span>
+            @if ($pagination['current_page'] < $pagination['last_page'])
+                <a class="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
+                   href="{{ route('admin.usuarios.index', ['page' => $pagination['current_page'] + 1]) }}">Siguiente</a>
+            @endif
+        </nav>
+    @endif
 </div>
 @endsection
-
 
 
 

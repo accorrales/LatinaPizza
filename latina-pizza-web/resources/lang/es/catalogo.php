@@ -13,7 +13,7 @@ return [
     'express' => 'Express (entrega a domicilio)',
     'confirmar_cambio_metodo' => '¿Estás seguro de que deseas cambiar el método de entrega? Esto vaciará tu configuración actual.',
 
-    //card productos
+    // card productos
     'favorito' => 'Favorito',
     'ver_resenas' => 'Ver reseñas',
     'ver_tamanos' => 'Ver tamaños',
@@ -28,7 +28,7 @@ return [
     'ir_carrito' => 'Ir al carrito',
     'agregar_carrito' => 'Agregar al carrito',
 
-    //Modal Producto
+    // Modal Producto
     // Nuevas:
     'tamano' => 'Tamaño',
     'tipo_masa' => 'Tipo de masa',

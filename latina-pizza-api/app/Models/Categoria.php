@@ -19,4 +19,3 @@ class Categoria extends Model
         return $this->hasMany(Producto::class);
     }
 }
-

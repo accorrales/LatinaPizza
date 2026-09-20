@@ -12,9 +12,9 @@ return [
     | other UI elements where an application name needs to be displayed.
     |
     */
-    
+
     'api_url' => env('APP_API_URL', 'http://127.0.0.1:8001'),
-    
+
     'name' => env('APP_NAME', 'Latina Pizza'),
 
     /*
@@ -67,7 +67,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'America/Costa_Rica'),
 
     /*
     |--------------------------------------------------------------------------
@@ -81,7 +81,7 @@ return [
     */
 
     'locale' => 'es',
-    
+
     'fallback_locale' => 'en',
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),

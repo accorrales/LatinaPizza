@@ -26,6 +26,7 @@
     $deliveryC = $carrito['delivery']['currency'] ?? '₡';
     $distance  = $carrito['delivery']['distance'] ?? null;
     $total     = $carrito['total'] ?? 0;
+    $stripeEnabled = filled(config('services.stripe.key'));
   @endphp
 
   @if(!empty($items))
@@ -188,10 +189,12 @@
               <input type="radio" name="metodo_pago" value="datafono">
               <span>Datáfono (tarjeta en el local o con el repartidor)</span>
             </label>
-            <label class="flex items-center gap-2">
-              <input type="radio" name="metodo_pago" value="stripe">
-              <span>Tarjeta en línea (Stripe)</span>
-            </label>
+            @if ($stripeEnabled)
+              <label class="flex items-center gap-2">
+                <input type="radio" name="metodo_pago" value="stripe">
+                <span>Tarjeta en línea (Stripe)</span>
+              </label>
+            @endif
           </div>
 
           {{-- Stripe Elements (se muestra solo si eligen "stripe") --}}
@@ -235,7 +238,8 @@
   @endif
 </div>
 
-{{-- Stripe JS --}}
+@if (!empty($items))
+  @if ($stripeEnabled)
 <script src="https://js.stripe.com/v3/"></script>
 <script>
 (() => {
@@ -252,6 +256,8 @@
   const btn            = document.getElementById('btn-submit');
   const btnText        = document.getElementById('btn-text');
   const btnSpinner     = document.getElementById('btn-spinner');
+
+  if (!form || typeof Stripe !== 'function') return;
 
   // --- Estado Stripe ---
   let stripe          = null;
@@ -355,10 +361,16 @@
   // Submit del formulario
   form.addEventListener('submit', async (e) => {
     const metodo = [...radios].find(r => r.checked)?.value || 'efectivo';
-    if (metodo !== 'stripe') return true; // efectivo/datáfono: submit normal
+    if (loading) {
+      e.preventDefault();
+      return;
+    }
+    if (metodo !== 'stripe') {
+      setLoading(true);
+      return;
+    }
 
     e.preventDefault();
-    if (loading) return; // evita doble submit
     showPaymentError('');
     setLoading(true);
 
@@ -380,7 +392,7 @@
 
       // Verificar estado y enviar checkout
       const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
-      if (paymentIntent && ['succeeded','processing','requires_capture'].includes(paymentIntent.status)) {
+      if (paymentIntent?.status === 'succeeded') {
         hiddenPIInput.value = paymentIntentId;
         form.submit();
         return;
@@ -396,10 +408,23 @@
   });
 })();
 </script>
+  @else
+<script>
+  document.getElementById('checkout-form')?.addEventListener('submit', event => {
+    const button = document.getElementById('btn-submit');
+    if (button.disabled) {
+      event.preventDefault();
+      return;
+    }
+    button.disabled = true;
+    document.getElementById('btn-spinner').classList.remove('hidden');
+    document.getElementById('btn-text').textContent = 'Procesando...';
+  });
+</script>
+  @endif
+@endif
 
 @endsection
-
-
 
 
 

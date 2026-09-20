@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Pedido;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
 {
@@ -15,7 +14,7 @@ class AnalyticsController extends Controller
        ======================= */
     protected function baseQuery(Request $request)
     {
-        $q = Pedido::query()->whereNotNull('paid_at'); // o ->where('payment_status','paid')
+        $q = Pedido::query()->where('payment_status', 'paid')->whereNotNull('paid_at');
 
         // Filtros opcionales por querystring
         if ($suc = $request->query('sucursal_id')) {
@@ -34,7 +33,7 @@ class AnalyticsController extends Controller
     public function daily(Request $request)
     {
         $from = Carbon::now()->startOfDay()->subDays(29);
-        $to   = Carbon::now()->endOfDay();
+        $to = Carbon::now()->endOfDay();
 
         $rows = $this->baseQuery($request)
             ->whereBetween('paid_at', [$from, $to])
@@ -51,9 +50,10 @@ class AnalyticsController extends Controller
 
         $data = $dates->map(function ($d) use ($rows) {
             $r = $rows->firstWhere('d', $d);
+
             return [
-                'date'    => $d,
-                'orders'  => (int) ($r->orders ?? 0),
+                'date' => $d,
+                'orders' => (int) ($r->orders ?? 0),
                 'revenue' => (float) ($r->revenue ?? 0.0),
             ];
         });
@@ -68,7 +68,7 @@ class AnalyticsController extends Controller
     {
         // Semanas ISO: comienzan en lunes en PostgreSQL con date_trunc('week', ...)
         $from = Carbon::now()->startOfWeek(Carbon::MONDAY)->subWeeks(11);
-        $to   = Carbon::now()->endOfWeek(Carbon::MONDAY);
+        $to = Carbon::now()->endOfWeek(Carbon::MONDAY);
 
         $rows = $this->baseQuery($request)
             ->whereBetween('paid_at', [$from, $to])
@@ -77,9 +77,9 @@ class AnalyticsController extends Controller
             ->orderBy('week_start')
             ->get();
 
-        $data = $rows->map(fn($r) => [
-            'week'    => Carbon::parse($r->week_start)->toDateString(), // lunes de esa semana
-            'orders'  => (int) $r->orders,
+        $data = $rows->map(fn ($r) => [
+            'week' => Carbon::parse($r->week_start)->toDateString(), // lunes de esa semana
+            'orders' => (int) $r->orders,
             'revenue' => (float) $r->revenue,
         ]);
 
@@ -92,7 +92,7 @@ class AnalyticsController extends Controller
     public function monthly(Request $request)
     {
         $from = Carbon::now()->startOfMonth()->subMonths(11);
-        $to   = Carbon::now()->endOfMonth();
+        $to = Carbon::now()->endOfMonth();
 
         $rows = $this->baseQuery($request)
             ->whereBetween('paid_at', [$from, $to])
@@ -109,9 +109,10 @@ class AnalyticsController extends Controller
 
         $data = $months->map(function ($m) use ($rows) {
             $r = $rows->firstWhere('ym', $m);
+
             return [
-                'month'   => $m,
-                'orders'  => (int) ($r->orders ?? 0),
+                'month' => $m,
+                'orders' => (int) ($r->orders ?? 0),
                 'revenue' => (float) ($r->revenue ?? 0.0),
             ];
         });
@@ -128,7 +129,7 @@ class AnalyticsController extends Controller
         $now = Carbon::now();
 
         [$from, $to] = match ($range) {
-            'day'  => [$now->copy()->startOfDay(),  $now->copy()->endOfDay()],
+            'day' => [$now->copy()->startOfDay(),  $now->copy()->endOfDay()],
             'week' => [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()],
             default => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
         };
@@ -142,15 +143,15 @@ class AnalyticsController extends Controller
         foreach ($pedidos as $p) {
             $det = $p->detalle_json ?? [];
             foreach (($det['items'] ?? []) as $it) {
-                if (($it['tipo'] ?? '') !== 'producto') continue;
-
-                $qty  = (int) ($it['cantidad'] ?? 1);
-                $name = trim(
-                    ($it['nombre'] ?? 'Producto') . ' ' .
-                    ($it['tamano'] ?? '') . ' ' .
-                    ($it['sabor'] ?? '') . ' ' .
-                    ($it['masa_nombre'] ?? '')
-                );
+                $qty = (int) ($it['cantidad'] ?? 1);
+                $name = ($it['tipo'] ?? '') === 'promocion'
+                    ? 'Promoción: '.($it['nombre'] ?? 'Sin nombre')
+                    : trim(
+                        ($it['nombre'] ?? 'Producto').' '.
+                        ($it['tamano'] ?? '').' '.
+                        ($it['sabor'] ?? '').' '.
+                        ($it['masa'] ?? $it['masa_nombre'] ?? '')
+                    );
                 $name = preg_replace('/\s+/', ' ', $name);
 
                 $lineRevenue = 0.0;
@@ -160,10 +161,10 @@ class AnalyticsController extends Controller
                     $lineRevenue = (float) $it['precio'] * $qty;
                 }
 
-                if (!isset($map[$name])) {
+                if (! isset($map[$name])) {
                     $map[$name] = ['name' => $name, 'qty' => 0, 'revenue' => 0.0];
                 }
-                $map[$name]['qty']     += $qty;
+                $map[$name]['qty'] += $qty;
                 $map[$name]['revenue'] += $lineRevenue;
             }
         }
@@ -173,11 +174,10 @@ class AnalyticsController extends Controller
         return response()->json([
             'data' => $top,
             'meta' => [
-                'from'  => $from->toDateString(),
-                'to'    => $to->toDateString(),
-                'range' => $range
-            ]
+                'from' => $from->toDateString(),
+                'to' => $to->toDateString(),
+                'range' => $range,
+            ],
         ]);
     }
 }
-

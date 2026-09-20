@@ -2,17 +2,16 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use App\Models\Sucursal;
-use App\Models\Carrito;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
@@ -25,6 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'sucursal_id',
     ];
 
     /**
@@ -49,17 +49,29 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
     public function sucursal()
     {
         return $this->belongsTo(Sucursal::class);
     }
+
     public function carrito()
     {
         return $this->hasOne(Carrito::class);
     }
+
     public function resenas()
     {
         return $this->hasMany(Resena::class);
     }
 
+    public function pedidos()
+    {
+        return $this->hasMany(Pedido::class);
+    }
+
+    public function hasAnyRole(string ...$roles): bool
+    {
+        return in_array($this->role, $roles, true);
+    }
 }

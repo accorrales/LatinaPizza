@@ -14,7 +14,7 @@ class HistorialPedido extends Model
     protected $fillable = [
         'pedido_id',
         'estado',
-        'fecha'
+        'fecha',
     ];
 
     public $timestamps = true; // ✅ Esto permite que se llenen automáticamente
@@ -25,4 +25,3 @@ class HistorialPedido extends Model
         return $this->belongsTo(Pedido::class);
     }
 }
-

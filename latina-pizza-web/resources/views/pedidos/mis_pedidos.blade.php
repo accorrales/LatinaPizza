@@ -13,10 +13,8 @@
                     {{-- Mostrar totales si es promoción --}}
                     @if ($pedido['tipo_contenido'] === 'promocion')
                         <p class="text-sm text-purple-700 font-semibold">🎁 Este pedido es una promoción.</p>
-                        <p class="text-sm text-gray-600 italic">💡 Ver detalle para precio con descuento.</p>
-                    @else
-                        <p class="text-sm text-gray-600">💰 <strong>Total:</strong> ₡{{ number_format($pedido['total'], 0, ',', '.') }}</p>
                     @endif
+                    <p class="text-sm text-gray-600">💰 <strong>Total:</strong> ₡{{ number_format($pedido['total'], 0, ',', '.') }}</p>
 
                     <p class="text-sm text-gray-600">📦 <strong>Estado:</strong>
                         <span class="font-semibold {{ match($pedido['estado']) {
@@ -51,8 +49,22 @@
     @empty
         <p class="text-center text-gray-400">Todavía no tenés pedidos realizados.</p>
     @endforelse
+
+    @if (($pagination['last_page'] ?? 1) > 1)
+        <nav class="mt-6 flex items-center justify-center gap-4" aria-label="Paginación de pedidos">
+            @if ($pagination['current_page'] > 1)
+                <a class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+                   href="{{ route('usuario.pedidos', ['page' => $pagination['current_page'] - 1]) }}">Anterior</a>
+            @endif
+            <span class="text-sm text-gray-600">
+                Página {{ $pagination['current_page'] }} de {{ $pagination['last_page'] }}
+            </span>
+            @if ($pagination['current_page'] < $pagination['last_page'])
+                <a class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+                   href="{{ route('usuario.pedidos', ['page' => $pagination['current_page'] + 1]) }}">Siguiente</a>
+            @endif
+        </nav>
+    @endif
 </div>
 
 @endsection
-
-

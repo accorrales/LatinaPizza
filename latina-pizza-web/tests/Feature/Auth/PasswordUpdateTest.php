@@ -2,9 +2,11 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 
 test('password can be updated', function () {
     $user = User::factory()->create();
+    Http::fake(['*/api/login' => Http::response(['token' => 'new-test-token'])]);
 
     $response = $this
         ->actingAs($user)
@@ -20,6 +22,7 @@ test('password can be updated', function () {
         ->assertRedirect('/profile');
 
     $this->assertTrue(Hash::check('new-password', $user->refresh()->password));
+    $response->assertSessionHas('token', 'new-test-token');
 });
 
 test('correct password must be provided to update password', function () {

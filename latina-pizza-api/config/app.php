@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'America/Costa_Rica'),
 
     /*
     |--------------------------------------------------------------------------
@@ -123,11 +123,12 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
-        /*
+    /*
     |--------------------------------------------------------------------------
     | API URL personalizada para uso en frontend (modal, fetch, etc.)
     |--------------------------------------------------------------------------
     */
 
     'api_url' => env('APP_API_URL', 'http://localhost:8001'),
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:8000'),
 ];

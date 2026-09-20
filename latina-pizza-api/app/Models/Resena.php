@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
 class Resena extends Model
 {
     use HasFactory;
-    
+
     protected $table = 'resenas';
 
     protected $fillable = [
@@ -22,9 +23,9 @@ class Resena extends Model
     {
         return $this->belongsTo(User::class);
     }
+
     public function sabor()
     {
         return $this->belongsTo(Sabor::class);
     }
-
 }

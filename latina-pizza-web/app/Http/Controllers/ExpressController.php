@@ -8,17 +8,10 @@ use Illuminate\Support\Facades\Session;
 
 class ExpressController extends Controller
 {
-    private string $apiBase;
-
-    public function __construct()
-    {
-        $this->apiBase = rtrim(config('services.latina_api.base_url'), '/'); // ej: http://localhost:8001/api
-    }
-
     public function index()
     {
         $token = Session::get('token');           // ← asegúrate que guardas este token al loguear
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->withErrors('Inicia sesión para ver tus direcciones.');
         }
 
@@ -45,15 +38,15 @@ class ExpressController extends Controller
         $token = Session::get('token');
 
         $payload = $r->validate([
-            'nombre'            => 'required|string|max:255',
-            'direccion_exacta'  => 'required|string|max:255',
-            'provincia'         => 'required|string|max:255',
-            'canton'            => 'required|string|max:255',
-            'distrito'          => 'required|string|max:255',
+            'nombre' => 'required|string|max:255',
+            'direccion_exacta' => 'required|string|max:255',
+            'provincia' => 'required|string|max:255',
+            'canton' => 'required|string|max:255',
+            'distrito' => 'required|string|max:255',
             'telefono_contacto' => 'required|string|max:50',
-            'referencias'       => 'nullable|string|max:255',
-            'latitud'           => 'nullable|numeric|between:-90,90',
-            'longitud'          => 'nullable|numeric|between:-180,180',
+            'referencias' => 'nullable|string|max:255',
+            'latitud' => 'nullable|numeric|between:-90,90',
+            'longitud' => 'nullable|numeric|between:-180,180',
         ]);
 
         $resp = Http::withToken($token)
@@ -79,4 +72,3 @@ class ExpressController extends Controller
         return redirect()->route('sucursales.express', $data);
     }
 }
-

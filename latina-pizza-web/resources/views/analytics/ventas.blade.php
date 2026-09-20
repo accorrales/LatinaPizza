@@ -189,17 +189,13 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 function ventasDashboard(){
-  const API_BASE = "{{ rtrim($apiBase ?? config('services.latina_api.base_url'), '/') }}";
-  const API = API_BASE + '/analytics';
-  const TOKEN = (`{{ $apiToken ?? '' }}` || localStorage.getItem('token') || '').trim();
+  const API = "{{ url('/admin/ventas/api') }}";
 
   const headers = {
     'Accept':'application/json',
-    'X-Requested-With':'XMLHttpRequest',
-    ...(TOKEN ? { 'Authorization': `Bearer ${TOKEN}` } : {})
+    'X-Requested-With':'XMLHttpRequest'
   };
 
   // ----- Chart theme -----
@@ -301,7 +297,6 @@ function ventasDashboard(){
     },
 
     async init(){
-      if(!TOKEN) console.warn('Sin TOKEN: usa session("token") o localStorage.setItem("token","...")');
       await this.reloadAll(true);
     },
 
@@ -331,7 +326,7 @@ function ventasDashboard(){
     },
 
     async _loadDaily(qs, signal){
-      const res = await fetch(`${API}/sales/daily${qs?`?${qs}`:''}`, { headers, mode:'cors', credentials:'omit', signal });
+      const res = await fetch(`${API}/sales/daily${qs?`?${qs}`:''}`, { headers, signal });
       if(!res.ok) return this.handleHttpError(res,'daily');
       const j = await res.json();
       const labels = j.data.map(r=>r.date);
@@ -343,7 +338,7 @@ function ventasDashboard(){
     },
 
     async _loadWeekly(qs, signal){
-      const res = await fetch(`${API}/sales/weekly${qs?`?${qs}`:''}`, { headers, mode:'cors', credentials:'omit', signal });
+      const res = await fetch(`${API}/sales/weekly${qs?`?${qs}`:''}`, { headers, signal });
       if(!res.ok) return this.handleHttpError(res,'weekly');
       const j = await res.json();
       const labels = j.data.map(r=>r.week);
@@ -355,7 +350,7 @@ function ventasDashboard(){
     },
 
     async _loadMonthly(qs, signal){
-      const res = await fetch(`${API}/sales/monthly${qs?`?${qs}`:''}`, { headers, mode:'cors', credentials:'omit', signal });
+      const res = await fetch(`${API}/sales/monthly${qs?`?${qs}`:''}`, { headers, signal });
       if(!res.ok) return this.handleHttpError(res,'monthly');
       const j = await res.json();
       const labels = j.data.map(r=>r.month);
@@ -368,7 +363,7 @@ function ventasDashboard(){
 
     async _loadTopProducts(qs, signal){
       const sep = qs ? '&' : '';
-      const res = await fetch(`${API}/products/top?range=${this.prodRange}${sep}${qs}`, { headers, mode:'cors', credentials:'omit', signal });
+      const res = await fetch(`${API}/products/top?range=${this.prodRange}${sep}${qs}`, { headers, signal });
       if(!res.ok) return this.handleHttpError(res,'topProducts');
       const j = await res.json();
       this.topProducts = j.data || [];

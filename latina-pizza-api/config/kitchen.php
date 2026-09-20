@@ -7,7 +7,7 @@ return [
 
     // puedes afinar por tipo de pedido
     'sla_by_tipo' => [
-        'pickup'  => 20,
+        'pickup' => 20,
         'express' => 35,
     ],
 ];

@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Carrito;
 use App\Models\DireccionUsuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Stripe\PaymentIntent;
+use Stripe\Stripe;
 
 class DireccionUsuarioController extends Controller
 {
@@ -26,15 +30,15 @@ class DireccionUsuarioController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
-            'nombre'             => 'required|string|max:255',
-            'direccion_exacta'   => 'required|string|max:255',
-            'provincia'          => 'required|string|max:255',
-            'canton'             => 'required|string|max:255',
-            'distrito'           => 'required|string|max:255',
-            'telefono_contacto'  => 'required|string|max:50',
-            'referencias'        => 'nullable|string|max:255',
-            'latitud'            => 'nullable|numeric|between:-90,90',
-            'longitud'           => 'nullable|numeric|between:-180,180',
+            'nombre' => 'required|string|max:255',
+            'direccion_exacta' => 'required|string|max:255',
+            'provincia' => 'required|string|max:255',
+            'canton' => 'required|string|max:255',
+            'distrito' => 'required|string|max:255',
+            'telefono_contacto' => 'required|string|max:50',
+            'referencias' => 'nullable|string|max:255',
+            'latitud' => 'nullable|numeric|between:-90,90',
+            'longitud' => 'nullable|numeric|between:-180,180',
         ]);
 
         $direccion = new DireccionUsuario($validated);
@@ -43,7 +47,7 @@ class DireccionUsuarioController extends Controller
 
         return response()->json([
             'message' => 'Dirección guardada correctamente',
-            'data' => $direccion
+            'data' => $direccion,
         ]);
     }
 
@@ -53,6 +57,7 @@ class DireccionUsuarioController extends Controller
         $user = Auth::user();
 
         $direccion = DireccionUsuario::where('user_id', $user->id)->findOrFail($id);
+        $this->invalidateDeliverySelection($user->id, $direccion->id);
         $direccion->delete();
 
         return response()->json(['message' => 'Dirección eliminada correctamente']);
@@ -62,6 +67,7 @@ class DireccionUsuarioController extends Controller
     {
         $user = Auth::user();
         $dir = DireccionUsuario::where('user_id', $user->id)->findOrFail($id);
+
         return response()->json(['data' => $dir]);
     }
 
@@ -71,19 +77,57 @@ class DireccionUsuarioController extends Controller
         $dir = DireccionUsuario::where('user_id', $user->id)->findOrFail($id);
 
         $validated = $request->validate([
-            'nombre'             => 'sometimes|required|string|max:255',
-            'direccion_exacta'   => 'sometimes|required|string|max:255',
-            'provincia'          => 'sometimes|required|string|max:255',
-            'canton'             => 'sometimes|required|string|max:255',
-            'distrito'           => 'sometimes|required|string|max:255',
-            'telefono_contacto'  => 'sometimes|required|string|max:50',
-            'referencias'        => 'nullable|string|max:255',
-            'latitud'            => 'nullable|numeric|between:-90,90',
-            'longitud'           => 'nullable|numeric|between:-180,180',
+            'nombre' => 'sometimes|required|string|max:255',
+            'direccion_exacta' => 'sometimes|required|string|max:255',
+            'provincia' => 'sometimes|required|string|max:255',
+            'canton' => 'sometimes|required|string|max:255',
+            'distrito' => 'sometimes|required|string|max:255',
+            'telefono_contacto' => 'sometimes|required|string|max:50',
+            'referencias' => 'nullable|string|max:255',
+            'latitud' => 'nullable|numeric|between:-90,90',
+            'longitud' => 'nullable|numeric|between:-180,180',
         ]);
 
         $dir->update($validated);
+        $this->invalidateDeliverySelection($user->id, $dir->id);
+
         return response()->json(['message' => 'Dirección actualizada', 'data' => $dir]);
     }
-}
 
+    private function invalidateDeliverySelection(int $userId, int $addressId): void
+    {
+        $cart = Carrito::where('user_id', $userId)
+            ->where('direccion_usuario_id', $addressId)
+            ->first();
+        if (! $cart) {
+            return;
+        }
+
+        $intentId = $cart->stripe_payment_intent_id;
+        $cart->update([
+            'tipo_entrega' => null,
+            'sucursal_id' => null,
+            'direccion_usuario_id' => null,
+            'delivery_fee' => null,
+            'delivery_distance_km' => null,
+            'stripe_payment_intent_id' => null,
+        ]);
+
+        if (! $intentId || ! config('services.stripe.secret')) {
+            return;
+        }
+
+        try {
+            Stripe::setApiKey(config('services.stripe.secret'));
+            $intent = PaymentIntent::retrieve($intentId);
+            if (! in_array($intent->status, ['succeeded', 'canceled'], true)) {
+                $intent->cancel();
+            }
+        } catch (\Throwable $exception) {
+            Log::warning('Could not cancel Stripe intent after address change.', [
+                'intent_id' => $intentId,
+                'exception' => $exception::class,
+            ]);
+        }
+    }
+}

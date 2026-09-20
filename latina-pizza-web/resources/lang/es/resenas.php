@@ -19,4 +19,3 @@ return [
 
     'inicia_sesion' => 'Inicia sesión para escribir una reseña',
 ];
-
