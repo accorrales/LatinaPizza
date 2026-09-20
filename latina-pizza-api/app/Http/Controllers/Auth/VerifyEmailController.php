@@ -15,7 +15,7 @@ class VerifyEmailController extends Controller
         $user = User::findOrFail($id);
         abort_unless(hash_equals(sha1($user->getEmailForVerification()), $hash), 403);
 
-        if (!$user->hasVerifiedEmail() && $user->markEmailAsVerified()) {
+        if (! $user->hasVerifiedEmail() && $user->markEmailAsVerified()) {
             event(new Verified($user));
         }
 

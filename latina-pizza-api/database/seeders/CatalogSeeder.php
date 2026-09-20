@@ -25,6 +25,7 @@ class CatalogSeeder extends Seeder
             ['nombre' => 'Extragrande', 'precio_base' => 10500],
         ])->mapWithKeys(function ($data) {
             $size = Tamano::updateOrCreate(['nombre' => $data['nombre']], $data);
+
             return [$data['nombre'] => $size];
         });
 

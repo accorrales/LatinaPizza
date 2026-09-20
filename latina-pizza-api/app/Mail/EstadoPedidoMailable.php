@@ -21,6 +21,6 @@ class EstadoPedidoMailable extends Mailable
     public function build()
     {
         return $this->subject('🛎️ Actualización de tu pedido en Latina Pizza')
-                    ->view('emails.estado_pedido');
+            ->view('emails.estado_pedido');
     }
 }

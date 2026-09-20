@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules\Password;
 
@@ -30,7 +31,7 @@ class PasswordController extends Controller
 
         if (Schema::hasTable('personal_access_tokens')) {
             DB::table('personal_access_tokens')
-                ->where('tokenable_type', \App\Models\User::class)
+                ->where('tokenable_type', User::class)
                 ->where('tokenable_id', $request->user()->id)
                 ->delete();
         }
@@ -45,10 +46,11 @@ class PasswordController extends Controller
             $response = null;
         }
 
-        if (!$response?->successful() || !$response->json('token')) {
+        if (! $response?->successful() || ! $response->json('token')) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+
             return redirect()->route('login')->with('status', 'Contraseña actualizada. Inicie sesión nuevamente.');
         }
 

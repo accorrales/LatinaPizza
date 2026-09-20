@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+
 class UserController extends Controller
 {
     // Mostrar todos los usuarios (solo admins)
@@ -14,6 +15,7 @@ class UserController extends Controller
             ->select('id', 'name', 'email', 'role', 'sucursal_id')
             ->orderBy('name')
             ->paginate(min(max($request->integer('per_page', 50), 1), 100));
+
         return response()->json($usuarios);
     }
 
@@ -21,6 +23,7 @@ class UserController extends Controller
     public function show($id)
     {
         $usuario = User::with('sucursal:id,nombre')->findOrFail($id);
+
         return response()->json($usuario);
     }
 
@@ -31,7 +34,7 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $usuario->id,
+            'email' => 'required|email|max:255|unique:users,email,'.$usuario->id,
             'role' => 'required|string|in:admin,cliente,cocina',
             'sucursal_id' => 'nullable|required_if:role,cocina|exists:sucursales,id',
         ]);

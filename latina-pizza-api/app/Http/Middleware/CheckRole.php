@@ -12,7 +12,7 @@ class CheckRole
     {
         $user = $request->user();
 
-        if (!$user || !in_array($user->role, $roles, true)) {
+        if (! $user || ! in_array($user->role, $roles, true)) {
             return response()->json([
                 'message' => 'No autorizado.',
                 'required_roles' => $roles,
@@ -22,6 +22,3 @@ class CheckRole
         return $next($request);
     }
 }
-
-
-

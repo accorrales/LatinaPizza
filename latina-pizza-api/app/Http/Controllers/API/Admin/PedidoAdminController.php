@@ -28,6 +28,7 @@ class PedidoAdminController extends Controller
 
         return response()->json($pedido);
     }
+
     public function index(Request $request)
     {
         $pedidos = Pedido::with(['productos', 'usuario', 'sucursal'])
@@ -37,10 +38,11 @@ class PedidoAdminController extends Controller
 
         return response()->json($pedidos);
     }
+
     public function actualizarEstado(Request $request, $id)
     {
         $request->validate([
-            'estado' => 'required|in:pendiente,preparando,listo,entregado,cancelado'
+            'estado' => 'required|in:pendiente,preparando,listo,entregado,cancelado',
         ]);
 
         $pedido = Pedido::findOrFail($id);
@@ -52,7 +54,7 @@ class PedidoAdminController extends Controller
             'cancelado' => [],
             'pagado' => ['preparando', 'cancelado'],
         ];
-        if (!in_array($request->estado, $allowed[$pedido->estado] ?? [], true)) {
+        if (! in_array($request->estado, $allowed[$pedido->estado] ?? [], true)) {
             return response()->json(['message' => 'Transición de estado no permitida.'], 422);
         }
         if ($request->estado === 'cancelado' && $pedido->payment_provider === 'stripe' && $pedido->payment_status === 'paid') {
@@ -79,22 +81,22 @@ class PedidoAdminController extends Controller
 
         return response()->json([
             'message' => 'Estado actualizado correctamente',
-            'pedido' => $pedido
+            'pedido' => $pedido,
         ]);
     }
 
     public function refund(Pedido $pedido)
     {
-        if ($pedido->payment_provider !== 'stripe' || !$pedido->payment_ref) {
+        if ($pedido->payment_provider !== 'stripe' || ! $pedido->payment_ref) {
             return response()->json(['message' => 'Este pedido no tiene un pago de Stripe reembolsable.'], 422);
         }
         if ($pedido->payment_status === 'refunded') {
             return response()->json(['message' => 'El pedido ya fue reembolsado.', 'pedido' => $pedido]);
         }
-        if (!in_array($pedido->payment_status, ['paid', 'refund_pending'], true)) {
+        if (! in_array($pedido->payment_status, ['paid', 'refund_pending'], true)) {
             return response()->json(['message' => 'El pago no está en un estado reembolsable.'], 409);
         }
-        if (!config('services.stripe.secret')) {
+        if (! config('services.stripe.secret')) {
             return response()->json(['message' => 'Stripe no está configurado.'], 503);
         }
 
@@ -119,7 +121,7 @@ class PedidoAdminController extends Controller
                     'estado' => 'cancelado',
                     'kitchen_status' => 'cancelado',
                 ])->save();
-                if (!$wasCanceled) {
+                if (! $wasCanceled) {
                     $locked->guardarHistorial('cancelado');
                 }
 
@@ -142,6 +144,7 @@ class PedidoAdminController extends Controller
             return response()->json(['message' => 'No se pudo completar el reembolso.'], 502);
         }
     }
+
     public function filtrar(Request $request)
     {
         $estado = $request->query('estado');
@@ -165,6 +168,7 @@ class PedidoAdminController extends Controller
 
         return response()->json($resultados);
     }
+
     public function tiempoEstimado()
     {
         // Configuraciones por tipo
@@ -182,11 +186,12 @@ class PedidoAdminController extends Controller
 
             $total = $tiempo['base'] + ($pendientes * $tiempo['por_pedido']);
 
-            $estimados[str_replace(' ', '_', $tipo)] = $total . ' minutos';
+            $estimados[str_replace(' ', '_', $tipo)] = $total.' minutos';
         }
 
         return response()->json($estimados);
     }
+
     public function verHistorial($id)
     {
         $pedido = Pedido::findOrFail($id);
@@ -195,6 +200,7 @@ class PedidoAdminController extends Controller
 
         return response()->json($historial);
     }
+
     public function resumenSucursal($id)
     {
         // Obtener pedidos de la sucursal
@@ -221,10 +227,10 @@ class PedidoAdminController extends Controller
                 if ($existente) {
                     $existente->total += $producto->pivot->cantidad;
                 } else {
-                    $topProductos->push((object)[
+                    $topProductos->push((object) [
                         'id' => $producto->id,
                         'nombre' => $producto->nombre,
-                        'total' => $producto->pivot->cantidad
+                        'total' => $producto->pivot->cantidad,
                     ]);
                 }
             }

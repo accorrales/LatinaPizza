@@ -7,11 +7,12 @@ use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 use Throwable;
+
 class AuthenticatedSessionController extends Controller
 {
     /**
@@ -33,7 +34,7 @@ class AuthenticatedSessionController extends Controller
 
         // Llamada a login de la API para obtener el token
         try {
-            $response = Http::acceptJson()->timeout(10)->post(config('app.api_url') . '/api/login', [
+            $response = Http::acceptJson()->timeout(10)->post(config('app.api_url').'/api/login', [
                 'email' => $request->email,
                 'password' => $request->password,
                 'token_name' => 'web-session',
@@ -47,7 +48,7 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        if (!$response->successful() || !$response->json('token')) {
+        if (! $response->successful() || ! $response->json('token')) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
 
@@ -58,7 +59,7 @@ class AuthenticatedSessionController extends Controller
 
         Session::put('token', $response->json('token'));
 
-        if (!$request->user()->hasVerifiedEmail()) {
+        if (! $request->user()->hasVerifiedEmail()) {
             return redirect()->route('verification.notice');
         }
 
@@ -76,7 +77,7 @@ class AuthenticatedSessionController extends Controller
                 Http::withToken($token)
                     ->acceptJson()
                     ->timeout(5)
-                    ->post(config('app.api_url') . '/api/logout');
+                    ->post(config('app.api_url').'/api/logout');
             } catch (Throwable) {
                 // Local logout must always finish, even if the API is unavailable.
             }

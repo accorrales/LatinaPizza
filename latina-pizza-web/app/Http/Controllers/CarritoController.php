@@ -2,48 +2,50 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Session;
+
 class CarritoController extends Controller
 {
-     /**
+    /**
      * NUEVO: Punto de retorno tras login/register.
      * Consume el item pendiente y luego decide a dónde redirigir.
      */
     public function consumePending(Request $request)
     {
         $token = Session::get('token');
-        if (!$token) {
+        if (! $token) {
             Redirect::setIntendedUrl(route('carrito.consume_pending'));
-            return redirect()->route('login')->with('error','Debe iniciar sesión para continuar.');
+
+            return redirect()->route('login')->with('error', 'Debe iniciar sesión para continuar.');
         }
 
         $pending = Session::pull('cart.pending_item');
         if ($pending) {
             try {
                 $resp = Http::withToken($token)->post(config('services.latina_api.base_url').'/carrito/add', [
-                    'producto_id'  => $pending['producto_id'],
-                    'cantidad'     => $pending['cantidad'] ?? 1,
-                    'masa_id'      => $pending['masa_id'] ?? null,
-                    'extras'       => $pending['extras'] ?? [],
+                    'producto_id' => $pending['producto_id'],
+                    'cantidad' => $pending['cantidad'] ?? 1,
+                    'masa_id' => $pending['masa_id'] ?? null,
+                    'extras' => $pending['extras'] ?? [],
                     'nota_cliente' => $pending['nota_cliente'] ?? null,
                 ]);
-                if (!$resp->successful()) {
-                    return redirect('/catalogo')->with('error','No se pudo agregar el producto pendiente: '.$resp->body());
+                if (! $resp->successful()) {
+                    return redirect('/catalogo')->with('error', 'No se pudo agregar el producto pendiente: '.$resp->body());
                 }
             } catch (\Throwable $e) {
                 Log::error('No se pudo agregar el producto pendiente.', ['exception' => $e]);
+
                 return redirect('/catalogo')->with('error', 'No se pudo conectar con el servicio de pedidos.');
             }
         }
 
         return session()->has('delivery.type')
-            ? redirect()->route('carrito.ver')->with('success','Producto agregado a tu carrito.')
-            : redirect('/catalogo?cambiar_entrega=1')->with('success','Producto agregado a tu carrito.');
+            ? redirect()->route('carrito.ver')->with('success', 'Producto agregado a tu carrito.')
+            : redirect('/catalogo?cambiar_entrega=1')->with('success', 'Producto agregado a tu carrito.');
     }
 
     /**
@@ -53,11 +55,11 @@ class CarritoController extends Controller
     public function agregar(Request $request)
     {
         $payload = $request->validate([
-            'producto_id'  => 'required|integer',
-            'cantidad'     => 'nullable|integer|min:1',
-            'masa_id'      => 'nullable|integer',
-            'extras'       => 'array',
-            'extras.*'     => 'integer',
+            'producto_id' => 'required|integer',
+            'cantidad' => 'nullable|integer|min:1',
+            'masa_id' => 'nullable|integer',
+            'extras' => 'array',
+            'extras.*' => 'integer',
             'nota_cliente' => 'nullable|string|max:500',
         ]);
         $payload['cantidad'] = $payload['cantidad'] ?? 1;
@@ -65,7 +67,7 @@ class CarritoController extends Controller
         $token = Session::get('token');
 
         // ⛔ Invitado
-        if (!$token) {
+        if (! $token) {
             Session::put('cart.pending_item', $payload);
             Redirect::setIntendedUrl(route('carrito.consume_pending'));
 
@@ -73,7 +75,7 @@ class CarritoController extends Controller
             if ($request->expectsJson() || $request->ajax() ||
                 str_contains($request->header('accept', ''), 'application/json')) {
                 return response()->json([
-                    'message'  => 'UNAUTHENTICATED',
+                    'message' => 'UNAUTHENTICATED',
                     'redirect' => route('login'),
                 ], 401);
             }
@@ -86,10 +88,10 @@ class CarritoController extends Controller
         // ✅ Autenticado → llama a tu API
         try {
             $resp = Http::withToken($token)->post(config('services.latina_api.base_url').'/carrito/add', [
-                'producto_id'  => $payload['producto_id'],
-                'cantidad'     => $payload['cantidad'],
-                'masa_id'      => $payload['masa_id'] ?? null,
-                'extras'       => $payload['extras'] ?? [],
+                'producto_id' => $payload['producto_id'],
+                'cantidad' => $payload['cantidad'],
+                'masa_id' => $payload['masa_id'] ?? null,
+                'extras' => $payload['extras'] ?? [],
                 'nota_cliente' => $payload['nota_cliente'] ?? null,
             ]);
 
@@ -99,39 +101,44 @@ class CarritoController extends Controller
                     $next = session()->has('delivery.type')
                         ? route('carrito.ver')
                         : url('/catalogo?cambiar_entrega=1');
+
                     return response()->json(['ok' => true, 'next' => $next]);
                 }
+
                 // navegación normal
                 return session()->has('delivery.type')
-                    ? redirect()->route('carrito.ver')->with('success','Producto agregado al carrito correctamente')
-                    : redirect('/catalogo?cambiar_entrega=1')->with('success','Producto agregado al carrito correctamente');
+                    ? redirect()->route('carrito.ver')->with('success', 'Producto agregado al carrito correctamente')
+                    : redirect('/catalogo?cambiar_entrega=1')->with('success', 'Producto agregado al carrito correctamente');
             }
 
             // error de API
             if ($request->expectsJson() || $request->ajax()) {
-                return response()->json(['ok'=>false,'error'=>$resp->body()], $resp->status());
+                return response()->json(['ok' => false, 'error' => $resp->body()], $resp->status());
             }
+
             return redirect('/catalogo')->with('error', 'Error al agregar producto: '.$resp->body());
         } catch (\Throwable $e) {
             Log::error('No se pudo agregar el producto al carrito.', ['exception' => $e]);
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['ok' => false, 'error' => 'No se pudo conectar con el servicio de pedidos.'], 503);
             }
+
             return redirect('/catalogo')->with('error', 'No se pudo conectar con el servicio de pedidos.');
         }
     }
+
     public function checkout(Request $request)
     {
         $token = Session::get('token');
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')
                 ->with('error', 'Debe iniciar sesión para confirmar el pedido');
         }
 
         // 1) Validación básica del formulario
         $data = $request->validate([
-            'metodo_pago'        => 'required|in:efectivo,datafono,stripe',
-            'payment_intent_id'  => 'nullable|string'
+            'metodo_pago' => 'required|in:efectivo,datafono,stripe',
+            'payment_intent_id' => 'nullable|string',
         ]);
 
         // Stripe is verified by the API, which is the only application holding the secret key.
@@ -143,7 +150,7 @@ class CarritoController extends Controller
 
         // 3) Construir el payload para el API
         $payload = [
-            'metodo_pago'       => $data['metodo_pago'],
+            'metodo_pago' => $data['metodo_pago'],
             'payment_intent_id' => $data['payment_intent_id'] ?? null,
         ];
 
@@ -157,32 +164,36 @@ class CarritoController extends Controller
                 Session::forget('stripe_pi_id');
 
                 $pedidoId = data_get($resp->json(), 'pedido_id');
+
                 return redirect()->route('carrito.ver')
                     ->with('success', "✅ Pedido #{$pedidoId} creado correctamente. Te enviamos la factura por correo.");
             }
 
             // Mostrar un mensaje más legible si el API devolvió 4xx/5xx con JSON
             $msg = $resp->json('message') ?? $resp->body();
+
             return redirect()->route('carrito.ver')
-                ->with('error', 'No se pudo confirmar el pedido: ' . $msg);
+                ->with('error', 'No se pudo confirmar el pedido: '.$msg);
 
         } catch (\Throwable $e) {
             Log::error('No se pudo confirmar el pedido.', ['exception' => $e]);
+
             return redirect()->route('carrito.ver')
                 ->with('error', 'No se pudo conectar con el servicio de pedidos.');
         }
     }
+
     public function ver()
     {
         $token = Session::get('token');
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión para ver el carrito');
         }
 
         try {
             $resp = Http::withToken($token)->get("{$this->apiBase}/carrito");
-            if (!$resp->successful()) {
-                return redirect('/catalogo')->with('error', 'Error al cargar el carrito: ' . $resp->body());
+            if (! $resp->successful()) {
+                return redirect('/catalogo')->with('error', 'Error al cargar el carrito: '.$resp->body());
             }
 
             $payload = $resp->json();
@@ -190,23 +201,25 @@ class CarritoController extends Controller
             // Aplanamos para que tu Blade funcione sin tocar mucho:
             // - tu Blade usa $carrito['items'] y también mostrará subtotal/delivery/total
             $carrito = [
-                'items'    => $payload['data']['items'] ?? [],
+                'items' => $payload['data']['items'] ?? [],
                 'subtotal' => $payload['subtotal'] ?? 0,
                 'delivery' => $payload['delivery'] ?? ['fee' => 0, 'currency' => '₡', 'distance' => 0],
-                'total'    => $payload['total'] ?? 0,
-                'data'     => $payload['data'] ?? [], // aquí vienen tipo_entrega, sucursal_id, etc.
+                'total' => $payload['total'] ?? 0,
+                'data' => $payload['data'] ?? [], // aquí vienen tipo_entrega, sucursal_id, etc.
             ];
 
             return view('carrito.index', compact('carrito'));
         } catch (\Throwable $e) {
             Log::error('No se pudo consultar el carrito.', ['exception' => $e]);
+
             return redirect('/catalogo')->with('error', 'No se pudo conectar con el servicio de pedidos.');
         }
     }
+
     public function eliminar($id)
     {
         $token = Session::get('token');
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -215,9 +228,11 @@ class CarritoController extends Controller
             if ($resp->successful()) {
                 return redirect()->route('carrito.ver')->with('success', 'Producto eliminado del carrito');
             }
-            return redirect()->route('carrito.ver')->with('error', 'Error al eliminar producto: ' . $resp->body());
+
+            return redirect()->route('carrito.ver')->with('error', 'Error al eliminar producto: '.$resp->body());
         } catch (\Throwable $e) {
             Log::error('No se pudo eliminar el producto del carrito.', ['exception' => $e]);
+
             return redirect()->route('carrito.ver')->with('error', 'No se pudo conectar con el servicio de pedidos.');
         }
     }
@@ -226,20 +241,20 @@ class CarritoController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión para modificar el carrito');
         }
 
         $accion = $request->validate(['accion' => ['required', 'in:sumar,restar']])['accion'];
         $carritoResponse = Http::withToken($token)->get("{$this->apiBase}/carrito");
 
-        if (!$carritoResponse->successful()) {
+        if (! $carritoResponse->successful()) {
             return back()->with('error', 'No se pudo obtener el carrito');
         }
 
         $productoEnCarrito = collect($carritoResponse->json('data.items', []))->firstWhere('id', (int) $id);
 
-        if (!$productoEnCarrito) {
+        if (! $productoEnCarrito) {
             return back()->with('error', 'Producto no encontrado en el carrito');
         }
 
@@ -247,20 +262,21 @@ class CarritoController extends Controller
         $nuevaCantidad = $accion === 'sumar' ? $cantidadActual + 1 : max(1, $cantidadActual - 1);
 
         $response = Http::withToken($token)->put("{$this->apiBase}/carrito/items/{$id}", [
-            'cantidad' => $nuevaCantidad
+            'cantidad' => $nuevaCantidad,
         ]);
 
         if ($response->successful()) {
             return back()->with('success', 'Cantidad actualizada correctamente');
         } else {
-            return back()->with('error', 'Error al actualizar cantidad: ' . $response->body());
+            return back()->with('error', 'Error al actualizar cantidad: '.$response->body());
         }
     }
+
     public function agregarPromocion(Request $request)
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return response()->json(['error' => 'Debe iniciar sesión'], 401);
         }
 
@@ -281,18 +297,19 @@ class CarritoController extends Controller
         if ($response->successful()) {
             return response()->json([
                 'message' => '🎉 Promoción agregada correctamente al carrito',
-                'data' => $response->json()
+                'data' => $response->json(),
             ]);
         } else {
             return response()->json([
-                'error' => $response->json('message') ?? 'No se pudo agregar la promoción.'
+                'error' => $response->json('message') ?? 'No se pudo agregar la promoción.',
             ], $response->status());
         }
     }
+
     public function createStripeIntent()
     {
         $token = Session::get('token');
-        if (!$token) {
+        if (! $token) {
             return response()->json(['message' => 'No autenticado'], 401);
         }
 
@@ -305,6 +322,7 @@ class CarritoController extends Controller
             return response()->json($response->json(), $response->status());
         } catch (\Throwable $e) {
             report($e);
+
             return response()->json(['message' => 'No se pudo iniciar el pago.'], 503);
         }
     }

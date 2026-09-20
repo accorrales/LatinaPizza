@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\Masa;
 use App\Models\Extra;
+use App\Models\Masa;
 
 class OpcionesPizzaController extends Controller
 {
@@ -25,4 +25,3 @@ class OpcionesPizzaController extends Controller
         )->get());
     }
 }
-

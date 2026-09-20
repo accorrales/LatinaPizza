@@ -22,6 +22,7 @@ class CarritoItemsPromocionExtra extends Model
     {
         return $this->belongsTo(CarritoItemPromocionDetalle::class, 'detalle_id');
     }
+
     public function extra()
     {
         return $this->belongsTo(Extra::class);

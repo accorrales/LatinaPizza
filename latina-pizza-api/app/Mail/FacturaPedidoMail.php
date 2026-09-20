@@ -2,10 +2,10 @@
 
 namespace App\Mail;
 
+use App\Models\Pedido;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use App\Models\Pedido;
 
 class FacturaPedidoMail extends Mailable
 {

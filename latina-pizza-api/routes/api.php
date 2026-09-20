@@ -3,8 +3,9 @@
 use App\Http\Controllers\API\Admin\PedidoAdminController;
 use App\Http\Controllers\API\AnalyticsController;
 use App\Http\Controllers\API\CarritoController;
-use App\Http\Controllers\API\CheckoutController;
 use App\Http\Controllers\API\CategoriaController;
+use App\Http\Controllers\API\CheckoutController;
+use App\Http\Controllers\API\DetallePedidoPromocionController;
 use App\Http\Controllers\API\DireccionUsuarioController;
 use App\Http\Controllers\API\EntregaController;
 use App\Http\Controllers\API\ExtraController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\API\SucursalController;
 use App\Http\Controllers\API\TamanoController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Middleware\CheckRole;
+use App\Models\Pedido;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Route;
 
@@ -54,7 +56,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/mis-pedidos', [PedidoController::class, 'misPedidos']);
     Route::get('/pedidos/{id}', [PedidoController::class, 'show']);
     Route::get('/pedidos/{id}/historial', [HistorialPedidoController::class, 'index']);
-    Route::get('/detalle-pedido-promocion/{pedido_id}/detalles', [\App\Http\Controllers\API\DetallePedidoPromocionController::class, 'detallesConPrecioYDesglose']);
+    Route::get('/detalle-pedido-promocion/{pedido_id}/detalles', [DetallePedidoPromocionController::class, 'detallesConPrecioYDesglose']);
 
     Route::get('/carrito', [CarritoController::class, 'index']);
     Route::post('/carrito/add', [CarritoController::class, 'add']);
@@ -101,7 +103,7 @@ Route::middleware(['auth:sanctum', 'verified', CheckRole::class.':admin'])->grou
         Route::get('/tiempo-estimado', [PedidoAdminController::class, 'tiempoEstimado']);
         Route::get('/resumen-sucursal/{id}', [PedidoAdminController::class, 'resumenSucursal']);
 
-        Route::get('/facturas/{pedido}', function (\App\Models\Pedido $pedido) {
+        Route::get('/facturas/{pedido}', function (Pedido $pedido) {
             return Pdf::loadView('pdf.factura', ['pedido' => $pedido])
                 ->setPaper('a4')
                 ->stream("Factura-{$pedido->id}.pdf");

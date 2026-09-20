@@ -49,15 +49,15 @@ class Pedido extends Model
 
     protected $casts = [
         // tiempos
-        'paid_at'      => 'datetime',
-        'promised_at'  => 'datetime',
-        'ready_at'     => 'datetime',
+        'paid_at' => 'datetime',
+        'promised_at' => 'datetime',
+        'ready_at' => 'datetime',
 
         // flags y números
-        'priority'             => 'boolean',
-        'subtotal'             => 'float',
-        'total'                => 'float',
-        'delivery_fee'         => 'float',
+        'priority' => 'boolean',
+        'subtotal' => 'float',
+        'total' => 'float',
+        'delivery_fee' => 'float',
         'delivery_distance_km' => 'float',
 
         // snapshot
@@ -68,7 +68,7 @@ class Pedido extends Model
     // Defaults útiles (opcional)
     protected $attributes = [
         'kitchen_status' => 'nuevo',
-        'priority'       => false,
+        'priority' => false,
     ];
 
     /* ----------------- Helpers de pago ----------------- */
@@ -76,9 +76,9 @@ class Pedido extends Model
     {
         $this->forceFill([
             'payment_provider' => $provider,
-            'payment_ref'      => $ref,
-            'payment_status'   => 'paid',
-            'paid_at'          => now(),
+            'payment_ref' => $ref,
+            'payment_status' => 'paid',
+            'paid_at' => now(),
         ])->save();
     }
 
@@ -135,7 +135,7 @@ class Pedido extends Model
     /* ----------------- Scopes para cocina ----------------- */
     public function scopeKitchenOpen($q)
     {
-        return $q->whereIn('kitchen_status', ['nuevo','preparacion','listo']);
+        return $q->whereIn('kitchen_status', ['nuevo', 'preparacion', 'listo']);
     }
 
     public function scopeByStatus($q, string $status)
@@ -156,12 +156,15 @@ class Pedido extends Model
 
     public function isLate(): bool
     {
-        return $this->promised_at && !$this->ready_at && now()->greaterThan($this->promised_at);
+        return $this->promised_at && ! $this->ready_at && now()->greaterThan($this->promised_at);
     }
 
     public function dueInMinutes(): ?int
     {
-        if (!$this->promised_at) return null;
+        if (! $this->promised_at) {
+            return null;
+        }
+
         return now()->diffInMinutes($this->promised_at, false); // negativo si ya se pasó
     }
 

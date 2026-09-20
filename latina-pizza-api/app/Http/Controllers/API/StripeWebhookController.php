@@ -17,7 +17,7 @@ class StripeWebhookController extends Controller
     public function handle(Request $request): JsonResponse
     {
         $secret = config('services.stripe.webhook_secret');
-        if (!$secret) {
+        if (! $secret) {
             return response()->json(['message' => 'Webhook no configurado.'], 503);
         }
 
@@ -48,16 +48,17 @@ class StripeWebhookController extends Controller
                     ? $object->id
                     : ($object->payment_intent ?? null);
 
-                if (!$paymentIntentId) {
+                if (! $paymentIntentId) {
                     return true;
                 }
 
                 $pedido = Pedido::where('payment_ref', $paymentIntentId)->lockForUpdate()->first();
-                if (!$pedido) {
+                if (! $pedido) {
                     Log::info('Stripe event received before order creation.', [
                         'event_id' => $event->id,
                         'payment_intent' => $paymentIntentId,
                     ]);
+
                     return true;
                 }
 
@@ -79,6 +80,7 @@ class StripeWebhookController extends Controller
             return response()->json(['received' => true, 'processed' => $processed]);
         } catch (Throwable $exception) {
             report($exception);
+
             return response()->json(['message' => 'No se pudo procesar el evento.'], 500);
         }
     }

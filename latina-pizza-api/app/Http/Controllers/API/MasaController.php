@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Masa;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+
 class MasaController extends Controller
 {
     public function index()
@@ -21,6 +22,7 @@ class MasaController extends Controller
         ]);
 
         $masa = Masa::create($validated);
+
         return response()->json($masa, 201);
     }
 
@@ -37,6 +39,7 @@ class MasaController extends Controller
             'precio_extra' => 'nullable|numeric|min:0',
         ]);
         $masa->update($validated);
+
         return response()->json($masa);
     }
 
@@ -50,6 +53,7 @@ class MasaController extends Controller
             return response()->json(['message' => 'La masa tiene pedidos históricos y no se puede eliminar.'], 409);
         }
         $masa->delete();
+
         return response()->json(['message' => 'Masa eliminada correctamente.']);
     }
 }

@@ -11,12 +11,15 @@ class AdminExtraController extends Controller
     public function index()
     {
         $token = Session::get('token');
-        if (!$token) return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        if (! $token) {
+            return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        }
 
         $response = Http::withToken($token)->get("$this->apiBase/extras-productos");
 
         if ($response->successful()) {
             $extras = $response->json();
+
             return view('admin.extras.index', compact('extras'));
         }
 
@@ -31,7 +34,9 @@ class AdminExtraController extends Controller
     public function store(Request $request)
     {
         $token = Session::get('token');
-        if (!$token) return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        if (! $token) {
+            return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        }
 
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
@@ -53,12 +58,15 @@ class AdminExtraController extends Controller
     public function edit($id)
     {
         $token = Session::get('token');
-        if (!$token) return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        if (! $token) {
+            return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        }
 
         $response = Http::withToken($token)->get("$this->apiBase/extras-productos/{$id}");
 
         if ($response->successful()) {
             $extra = (object) $response->json();
+
             return view('admin.extras.edit', compact('extra'));
         }
 
@@ -68,7 +76,9 @@ class AdminExtraController extends Controller
     public function update(Request $request, $id)
     {
         $token = Session::get('token');
-        if (!$token) return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        if (! $token) {
+            return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        }
 
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
@@ -90,7 +100,9 @@ class AdminExtraController extends Controller
     public function destroy($id)
     {
         $token = Session::get('token');
-        if (!$token) return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        if (! $token) {
+            return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        }
 
         $response = Http::withToken($token)->delete("$this->apiBase/extras-productos/{$id}");
 

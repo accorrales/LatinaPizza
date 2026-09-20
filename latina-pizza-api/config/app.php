@@ -123,7 +123,7 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
-        /*
+    /*
     |--------------------------------------------------------------------------
     | API URL personalizada para uso en frontend (modal, fetch, etc.)
     |--------------------------------------------------------------------------

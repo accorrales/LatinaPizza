@@ -2,10 +2,10 @@
 
 namespace App\Mail;
 
+use App\Models\Pedido;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use App\Models\Pedido;
 
 class PedidoConfirmadoMail extends Mailable
 {
@@ -21,7 +21,6 @@ class PedidoConfirmadoMail extends Mailable
     public function build()
     {
         return $this->subject('🍕 Tu pedido ha sido recibido - Latina Pizza')
-                    ->view('emails.pedido_confirmado');
+            ->view('emails.pedido_confirmado');
     }
 }
-

@@ -14,9 +14,9 @@ return [
     |
     */
     'latina_api' => [
-        'base_url' => rtrim(env('APP_API_URL', 'http://localhost:8001'), '/') . '/api',
+        'base_url' => rtrim(env('APP_API_URL', 'http://localhost:8001'), '/').'/api',
     ],
-    
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
@@ -39,8 +39,8 @@ return [
     ],
 
     'stripe' => [
-        'key'      => env('STRIPE_KEY'),
-        'secret'   => env('STRIPE_SECRET'),
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
         'currency' => env('STRIPE_CURRENCY', 'crc'),
     ],

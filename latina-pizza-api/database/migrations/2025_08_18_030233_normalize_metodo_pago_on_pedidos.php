@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 return new class extends Migration
@@ -43,7 +43,7 @@ return new class extends Migration
             DB::statement('ALTER TABLE pedidos DROP CONSTRAINT IF EXISTS chk_pedidos_metodo_pago');
             DB::statement("ALTER TABLE pedidos ADD CONSTRAINT chk_pedidos_metodo_pago CHECK (metodo_pago IN ('efectivo','datafono','stripe'))");
             DB::statement('CREATE INDEX IF NOT EXISTS idx_pedidos_metodo_pago ON pedidos (metodo_pago)');
-        } elseif (!Schema::hasIndex('pedidos', 'idx_pedidos_metodo_pago')) {
+        } elseif (! Schema::hasIndex('pedidos', 'idx_pedidos_metodo_pago')) {
             Schema::table('pedidos', fn (Blueprint $table) => $table->index('metodo_pago', 'idx_pedidos_metodo_pago'));
         }
     }

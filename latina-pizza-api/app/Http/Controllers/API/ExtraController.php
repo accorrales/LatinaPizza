@@ -1,10 +1,10 @@
-<?php 
+<?php
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Controllers\Controller;
 use App\Models\Extra;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 
 class ExtraController extends Controller
@@ -25,6 +25,7 @@ class ExtraController extends Controller
         ]);
 
         $extra = Extra::create($validated);
+
         return response()->json($extra, 201);
     }
 
@@ -46,6 +47,7 @@ class ExtraController extends Controller
         ]);
 
         $extra->update($validated);
+
         return response()->json($extra);
     }
 
@@ -58,6 +60,7 @@ class ExtraController extends Controller
             return response()->json(['message' => 'El extra tiene pedidos históricos y no se puede eliminar.'], 409);
         }
         $extra->delete();
+
         return response()->json(['message' => 'Extra eliminado correctamente.']);
     }
 }

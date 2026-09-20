@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use App\Models\User;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -35,7 +35,7 @@ class AuthenticatedSessionController extends Controller
 
         return response()->json([
             'user' => $user,
-            'token' => $user->createToken($tokenName)->plainTextToken
+            'token' => $user->createToken($tokenName)->plainTextToken,
         ]);
     }
 
@@ -48,7 +48,7 @@ class AuthenticatedSessionController extends Controller
         $request->user()->currentAccessToken()?->delete();
 
         return response()->json([
-            'message' => 'Sesión cerrada correctamente.'
+            'message' => 'Sesión cerrada correctamente.',
         ]);
     }
 }

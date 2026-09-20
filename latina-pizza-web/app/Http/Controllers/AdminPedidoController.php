@@ -24,6 +24,7 @@ class AdminPedidoController extends Controller
                 'current_page' => (int) $response->json('current_page', 1),
                 'last_page' => (int) $response->json('last_page', 1),
             ];
+
             return view('admin.pedidos.index', compact('pedidos', 'pagination'));
         } else {
             return back()->with('error', 'Error al obtener los pedidos');
@@ -38,17 +39,19 @@ class AdminPedidoController extends Controller
 
         if ($response->successful()) {
             $pedido = $response->json();
+
             return view('admin.pedidos.show', compact('pedido'));
         } else {
             return back()->with('error', 'No se pudo cargar el pedido');
         }
     }
+
     public function cambiarEstado(Request $request, $id)
     {
         $token = Session::get('token');
 
         $response = Http::withToken($token)->put($this->apiUrl("/admin/pedidos/{$id}/estado"), [
-            'estado' => $request->estado
+            'estado' => $request->estado,
         ]);
 
         if ($response->successful()) {
@@ -66,9 +69,10 @@ class AdminPedidoController extends Controller
 
         if ($response->successful()) {
             $historial = $response->json();
+
             return view('admin.pedidos.historial', [
                 'historial' => $historial,
-                'pedido_id' => $id
+                'pedido_id' => $id,
             ]);
         } else {
             return back()->with('error', 'No se pudo obtener el historial');

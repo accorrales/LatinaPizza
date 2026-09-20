@@ -1,4 +1,5 @@
 <?php
+
 return [
     'index' => [
         'titulo' => '👥 Users List',
@@ -22,4 +23,3 @@ return [
         'guardar' => 'Save Changes',
     ],
 ];
-

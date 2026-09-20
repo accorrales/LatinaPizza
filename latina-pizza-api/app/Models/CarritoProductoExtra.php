@@ -3,9 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Carrito;
-use App\Models\Producto;
-use App\Models\Extra;
+
 class CarritoProductoExtra extends Model
 {
     protected $table = 'carrito_producto_extra';

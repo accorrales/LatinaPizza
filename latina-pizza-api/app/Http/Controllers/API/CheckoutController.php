@@ -37,7 +37,7 @@ class CheckoutController extends Controller
         $user = $request->user();
         $paymentIntentId = $validated['payment_intent_id'] ?? null;
 
-        if ($validated['metodo_pago'] === 'stripe' && !$paymentIntentId) {
+        if ($validated['metodo_pago'] === 'stripe' && ! $paymentIntentId) {
             throw ValidationException::withMessages([
                 'payment_intent_id' => 'Falta la referencia del pago con tarjeta.',
             ]);
@@ -55,7 +55,7 @@ class CheckoutController extends Controller
         try {
             $pedido = DB::transaction(function () use ($user, $validated, $paymentIntentId) {
                 $carrito = Carrito::where('user_id', $user->id)->lockForUpdate()->first();
-                if (!$carrito) {
+                if (! $carrito) {
                     throw ValidationException::withMessages(['carrito' => 'No existe un carrito activo.']);
                 }
 
@@ -80,6 +80,7 @@ class CheckoutController extends Controller
                     $existing = Pedido::where('payment_ref', $intent->id)->lockForUpdate()->first();
                     if ($existing) {
                         abort_unless($existing->user_id === $user->id, 409, 'La referencia de pago ya fue utilizada.');
+
                         return $existing;
                     }
                 }
@@ -134,6 +135,7 @@ class CheckoutController extends Controller
             throw $exception;
         } catch (Throwable $exception) {
             report($exception);
+
             return response()->json(['message' => 'No se pudo procesar el pedido.'], 500);
         }
 
@@ -144,22 +146,22 @@ class CheckoutController extends Controller
 
     private function quoteDelivery(Carrito $carrito, int $userId): array
     {
-        if (!in_array($carrito->tipo_entrega, ['pickup', 'express'], true)) {
+        if (! in_array($carrito->tipo_entrega, ['pickup', 'express'], true)) {
             throw ValidationException::withMessages(['tipo_entrega' => 'Seleccione retiro o entrega express.']);
         }
-        if (!$carrito->sucursal_id) {
+        if (! $carrito->sucursal_id) {
             throw ValidationException::withMessages(['sucursal_id' => 'Debe seleccionar una sucursal.']);
         }
         if ($carrito->tipo_entrega === 'pickup') {
             return ['address' => null, 'fee' => 0.0, 'distance' => null];
         }
-        if (!$carrito->direccion_usuario_id) {
+        if (! $carrito->direccion_usuario_id) {
             throw ValidationException::withMessages(['direccion' => 'Debe seleccionar una dirección.']);
         }
 
         $direccion = DireccionUsuario::where('user_id', $userId)->find($carrito->direccion_usuario_id);
         $sucursal = Sucursal::find($carrito->sucursal_id);
-        if (!$direccion || !$sucursal || $direccion->latitud === null || $direccion->longitud === null
+        if (! $direccion || ! $sucursal || $direccion->latitud === null || $direccion->longitud === null
             || $sucursal->latitud === null || $sucursal->longitud === null) {
             throw ValidationException::withMessages(['direccion' => 'La dirección seleccionada no tiene ubicación válida.']);
         }
@@ -208,10 +210,10 @@ class CheckoutController extends Controller
 
     private function validateStripePayment(Carrito $carrito, int $userId, string $intentId, float $total): PaymentIntent
     {
-        if (!config('services.stripe.secret')) {
+        if (! config('services.stripe.secret')) {
             abort(503, 'Stripe no está configurado.');
         }
-        if (!hash_equals((string) $carrito->stripe_payment_intent_id, $intentId)) {
+        if (! hash_equals((string) $carrito->stripe_payment_intent_id, $intentId)) {
             throw ValidationException::withMessages(['payment_intent_id' => 'El pago no corresponde al carrito actual.']);
         }
 
@@ -306,6 +308,7 @@ class CheckoutController extends Controller
                 }
                 $detail->extras()->attach($extraData);
                 $pedido->productos()->attach($item->producto_id, ['cantidad' => max(1, (int) $item->cantidad)]);
+
                 continue;
             }
 
@@ -358,6 +361,7 @@ class CheckoutController extends Controller
     private function extraPrice(Extra $extra, string $size): float
     {
         $size = mb_strtolower($size);
+
         return match (true) {
             str_contains($size, 'extra') => (float) ($extra->precio_extragrande ?? 0),
             str_contains($size, 'grande') => (float) ($extra->precio_grande ?? 0),
@@ -370,7 +374,7 @@ class CheckoutController extends Controller
     {
         try {
             $pedido->load(['usuario', 'sucursal', 'direccionUsuario']);
-            if (!$pedido->usuario?->email) {
+            if (! $pedido->usuario?->email) {
                 return;
             }
             $pdf = Pdf::loadView('pdf.factura', ['pedido' => $pedido])->setPaper('a4');

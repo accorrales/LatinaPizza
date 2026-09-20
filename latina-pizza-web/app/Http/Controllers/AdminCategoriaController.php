@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class AdminCategoriaController extends Controller
 
         return view('admin.categorias.index', compact('categorias'));
     }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -32,8 +34,9 @@ class AdminCategoriaController extends Controller
             return redirect()->route('admin.categorias.index')->with('success', '✅ Categoría creada correctamente');
         }
 
-        return redirect()->route('admin.categorias.index')->with('error', '❌ Error al crear la categoría: ' . $response->body());
+        return redirect()->route('admin.categorias.index')->with('error', '❌ Error al crear la categoría: '.$response->body());
     }
+
     public function edit($id)
     {
         $token = Session::get('token');
@@ -45,6 +48,7 @@ class AdminCategoriaController extends Controller
 
         return redirect()->route('admin.categorias.index')->with('error', 'Error al obtener la categoría.');
     }
+
     public function update(Request $request, $id)
     {
         $token = Session::get('token');
@@ -70,5 +74,4 @@ class AdminCategoriaController extends Controller
 
         return redirect()->route('admin.categorias.index')->with('error', 'Error al eliminar la categoría.');
     }
-
 }

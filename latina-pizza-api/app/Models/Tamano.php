@@ -12,5 +12,4 @@ class Tamano extends Model
     {
         return $this->hasMany(DetallePedido::class);
     }
-
 }

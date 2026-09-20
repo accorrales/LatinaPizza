@@ -12,12 +12,15 @@ class AdminProductoController extends Controller
     public function index()
     {
         $token = Session::get('token');
-        if (!$token) return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        if (! $token) {
+            return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        }
 
         $response = Http::withToken($token)->get($this->apiUrl('/admin/productos'));
 
         if ($response->successful()) {
             $productos = $response->json();
+
             return view('admin.productos.index', compact('productos'));
         }
 
@@ -28,7 +31,7 @@ class AdminProductoController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -52,12 +55,11 @@ class AdminProductoController extends Controller
         }
     }
 
-
     public function store(Request $request)
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -99,14 +101,14 @@ class AdminProductoController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
         try {
             // Obtener el producto
             $productoResponse = Http::withToken($token)->get($this->apiUrl("/admin/productos/{$id}"));
-            if (!$productoResponse->successful()) {
+            if (! $productoResponse->successful()) {
                 return back()->with('error', 'No se pudo cargar el producto');
             }
             $producto = $productoResponse->json();
@@ -130,6 +132,7 @@ class AdminProductoController extends Controller
 
         } catch (\Exception $e) {
             Log::error('No se pudo cargar el producto para editarlo.', ['exception' => $e]);
+
             return back()->with('error', 'No se pudieron cargar los datos del producto.');
         }
     }
@@ -139,14 +142,14 @@ class AdminProductoController extends Controller
         $token = Session::get('token');
 
         $data = $request->validate([
-            'nombre'       => 'nullable|string|max:255',
-            'descripcion'  => 'nullable|string',
-            'precio'       => 'required|numeric|min:0',
-            'imagen'       => 'nullable|url:http,https|max:2048',
+            'nombre' => 'nullable|string|max:255',
+            'descripcion' => 'nullable|string',
+            'precio' => 'required|numeric|min:0',
+            'imagen' => 'nullable|url:http,https|max:2048',
             'categoria_id' => 'required|integer',
-            'sabor_id'     => 'nullable|integer',
-            'tamano_id'    => 'nullable|integer',
-            'estado'       => 'nullable|boolean',
+            'sabor_id' => 'nullable|integer',
+            'tamano_id' => 'nullable|integer',
+            'estado' => 'nullable|boolean',
         ]);
 
         $response = Http::withToken($token)->put($this->apiUrl("/admin/productos/{$id}"), $data);
@@ -158,12 +161,12 @@ class AdminProductoController extends Controller
         return back()->with('error', 'No se pudo actualizar el producto');
     }
 
-
-
     public function destroy($id)
     {
         $token = Session::get('token');
-        if (!$token) return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        if (! $token) {
+            return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        }
 
         $response = Http::withToken($token)->delete($this->apiUrl("/admin/productos/{$id}"));
 

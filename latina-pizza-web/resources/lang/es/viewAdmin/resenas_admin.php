@@ -13,4 +13,3 @@ return [
     'confirmar_eliminacion' => 'Confirmar eliminación',
     'sin_resenas' => 'No hay reseñas para mostrar.',
 ];
-

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
+
 class AdminUsuarioController extends Controller
 {
     public function index(Request $request)
@@ -24,11 +24,13 @@ class AdminUsuarioController extends Controller
                 'current_page' => (int) ($payload['current_page'] ?? 1),
                 'last_page' => (int) ($payload['last_page'] ?? 1),
             ];
+
             return view('admin.usuarios.index', compact('usuarios', 'pagination'));
         } else {
             return back()->with('error', 'Error al obtener los usuarios');
         }
     }
+
     public function edit($id)
     {
         $token = Session::get('token');
@@ -38,11 +40,13 @@ class AdminUsuarioController extends Controller
         if ($response->successful()) {
             $usuario = $response->json();
             $sucursales = Http::get($this->apiUrl('/sucursales'))->json() ?? [];
+
             return view('admin.usuarios.edit', compact('usuario', 'sucursales'));
         } else {
             return back()->with('error', 'Error al obtener el usuario');
         }
     }
+
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -66,6 +70,7 @@ class AdminUsuarioController extends Controller
             return back()->with('error', 'Error al actualizar el usuario');
         }
     }
+
     public function destroy($id)
     {
         $token = Session::get('token');

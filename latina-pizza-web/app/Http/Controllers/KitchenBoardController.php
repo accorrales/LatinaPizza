@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 
 class KitchenBoardController extends Controller
@@ -12,7 +12,7 @@ class KitchenBoardController extends Controller
     {
         // Valida rol mínimo en la vista (y oculta el acceso si no es admin/cocina)
         $user = Auth::user();
-        abort_unless($user && in_array($user->role, ['admin','cocina']), 403);
+        abort_unless($user && in_array($user->role, ['admin', 'cocina']), 403);
 
         return view('kitchen.index');
     }

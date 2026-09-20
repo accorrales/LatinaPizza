@@ -48,6 +48,7 @@ class DetallePedido extends Model
             ->withPivot('precio_extra')
             ->withTimestamps();
     }
+
     public function promocion()
     {
         return $this->belongsTo(Promocion::class);

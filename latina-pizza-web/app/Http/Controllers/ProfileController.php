@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -95,11 +96,11 @@ class ProfileController extends Controller
 
     private function revokeApiTokens(int $userId): void
     {
-        if (!Schema::hasTable('personal_access_tokens')) {
+        if (! Schema::hasTable('personal_access_tokens')) {
             return;
         }
         DB::table('personal_access_tokens')
-            ->where('tokenable_type', \App\Models\User::class)
+            ->where('tokenable_type', User::class)
             ->where('tokenable_id', $userId)
             ->delete();
     }

@@ -15,7 +15,7 @@ class TamanoController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $tamanos
+            'data' => $tamanos,
         ]);
     }
 
@@ -33,9 +33,11 @@ class TamanoController extends Controller
 
         return response()->json($tamano, 201);
     }
+
     public function show($id)
     {
         $tamano = Tamano::findOrFail($id);
+
         return response()->json($tamano);
     }
 
@@ -70,5 +72,4 @@ class TamanoController extends Controller
 
         return response()->json(['message' => 'Eliminado correctamente']);
     }
-    
 }

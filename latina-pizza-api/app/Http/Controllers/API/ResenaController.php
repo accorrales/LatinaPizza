@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\Resena;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\JsonResponse;
 use App\Models\DetallePedido;
 use App\Models\DetallePedidoPromocion;
+use App\Models\Resena;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ResenaController extends Controller
 {
@@ -16,9 +16,9 @@ class ResenaController extends Controller
     public function index($saborId): JsonResponse
     {
         $resenas = Resena::with('user')
-                        ->where('sabor_id', $saborId) // ✅ Arreglado aquí
-                        ->orderBy('created_at', 'desc')
-                        ->get();
+            ->where('sabor_id', $saborId) // ✅ Arreglado aquí
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return response()->json($resenas);
     }
@@ -71,7 +71,7 @@ class ResenaController extends Controller
                     });
             })->exists();
 
-        if (!$compraVerificada) {
+        if (! $compraVerificada) {
             return response()->json(['message' => 'Solo puede reseñar sabores que haya comprado.'], 403);
         }
 
@@ -87,7 +87,7 @@ class ResenaController extends Controller
 
         return response()->json([
             'message' => 'Reseña creada exitosamente',
-            'resena' => $resena
+            'resena' => $resena,
         ], 201);
     }
 
@@ -116,7 +116,6 @@ class ResenaController extends Controller
         return response()->json(['message' => 'Reseña actualizada']);
     }
 
-
     // ✅ Eliminar reseña
     public function destroy($id): JsonResponse
     {
@@ -140,7 +139,7 @@ class ResenaController extends Controller
 
         return response()->json([
             'promedio' => round($promedio ?? 0, 1),
-            'total' => $total
+            'total' => $total,
         ]);
     }
 }

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Http\Client\Pool;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+
 class CatalogoController extends Controller
 {
     public function index(Request $request)
@@ -32,9 +32,9 @@ class CatalogoController extends Controller
                 $responseCategorias->successful() &&
                 $responsePromociones->successful()
             ) {
-                $sabores     = $responseSabores->json();
+                $sabores = $responseSabores->json();
                 $categoriasPayload = $responseCategorias->json();
-                $categorias  = $categoriasPayload['data'] ?? $categoriasPayload;
+                $categorias = $categoriasPayload['data'] ?? $categoriasPayload;
                 $promociones = $responsePromociones->json()['data'] ?? [];
 
                 // 🔍 Filtrar por categoría si viene en la query

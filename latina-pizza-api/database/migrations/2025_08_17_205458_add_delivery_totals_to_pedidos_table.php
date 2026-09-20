@@ -13,37 +13,37 @@ return new class extends Migration
     {
         Schema::table('pedidos', function (Blueprint $table) {
             // Logística
-            if (!Schema::hasColumn('pedidos', 'tipo_entrega')) {
+            if (! Schema::hasColumn('pedidos', 'tipo_entrega')) {
                 $table->string('tipo_entrega', 20)->nullable()->after('estado'); // 'pickup' | 'express'
             }
-            if (!Schema::hasColumn('pedidos', 'direccion_usuario_id')) {
+            if (! Schema::hasColumn('pedidos', 'direccion_usuario_id')) {
                 $table->unsignedBigInteger('direccion_usuario_id')->nullable()
-                      ->after('sucursal_id');
+                    ->after('sucursal_id');
             }
 
             // Delivery
-            if (!Schema::hasColumn('pedidos', 'delivery_fee')) {
+            if (! Schema::hasColumn('pedidos', 'delivery_fee')) {
                 $table->decimal('delivery_fee', 10, 2)->nullable()
-                      ->after('direccion_usuario_id');
+                    ->after('direccion_usuario_id');
             }
-            if (!Schema::hasColumn('pedidos', 'delivery_currency')) {
+            if (! Schema::hasColumn('pedidos', 'delivery_currency')) {
                 $table->string('delivery_currency', 8)->nullable()
-                      ->after('delivery_fee');
+                    ->after('delivery_fee');
             }
-            if (!Schema::hasColumn('pedidos', 'delivery_distance_km')) {
+            if (! Schema::hasColumn('pedidos', 'delivery_distance_km')) {
                 $table->decimal('delivery_distance_km', 8, 2)->nullable()
-                      ->after('delivery_currency');
+                    ->after('delivery_currency');
             }
 
             // Totales
-            if (!Schema::hasColumn('pedidos', 'subtotal')) {
+            if (! Schema::hasColumn('pedidos', 'subtotal')) {
                 $table->decimal('subtotal', 10, 2)->nullable()
-                      ->after('delivery_distance_km');
+                    ->after('delivery_distance_km');
             }
             // Ojo: ya tienes total → no lo tocamos
 
             // Snapshot del carrito
-            if (!Schema::hasColumn('pedidos', 'detalle_json')) {
+            if (! Schema::hasColumn('pedidos', 'detalle_json')) {
                 $table->json('detalle_json')->nullable()->after('total');
             }
 

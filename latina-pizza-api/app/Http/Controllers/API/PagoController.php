@@ -14,19 +14,19 @@ class PagoController extends Controller
 {
     public function createIntent(Request $request): JsonResponse
     {
-        if (!config('services.stripe.secret')) {
+        if (! config('services.stripe.secret')) {
             return response()->json(['message' => 'Stripe no está configurado.'], 503);
         }
 
         $user = $request->user();
         $carrito = $user->carrito()->with('items')->first();
-        if (!$carrito || $carrito->items->isEmpty()) {
+        if (! $carrito || $carrito->items->isEmpty()) {
             return response()->json(['message' => 'El carrito está vacío.'], 422);
         }
-        if (!in_array($carrito->tipo_entrega, ['pickup', 'express'], true) || !$carrito->sucursal_id) {
+        if (! in_array($carrito->tipo_entrega, ['pickup', 'express'], true) || ! $carrito->sucursal_id) {
             return response()->json(['message' => 'Seleccione el método de entrega y la sucursal antes de pagar.'], 422);
         }
-        if ($carrito->tipo_entrega === 'express' && (!$carrito->direccion_usuario_id || $carrito->delivery_fee === null)) {
+        if ($carrito->tipo_entrega === 'express' && (! $carrito->direccion_usuario_id || $carrito->delivery_fee === null)) {
             return response()->json(['message' => 'Seleccione una dirección express válida antes de pagar.'], 422);
         }
 
@@ -71,7 +71,7 @@ class PagoController extends Controller
                 }
             }
 
-            if (!$intent) {
+            if (! $intent) {
                 $intent = PaymentIntent::create([
                     'amount' => $amount,
                     'currency' => $currency,
@@ -96,6 +96,7 @@ class PagoController extends Controller
             ]);
         } catch (Throwable $exception) {
             Log::error('Stripe intent failed.', ['exception' => $exception::class]);
+
             return response()->json(['message' => 'No se pudo iniciar el pago.'], 502);
         }
     }

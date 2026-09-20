@@ -4,10 +4,11 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\DetallePedidoPromocion;
-use Illuminate\Http\Request;
 use App\Models\Promocion;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class PromocionController extends Controller
 {
@@ -22,7 +23,7 @@ class PromocionController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $promociones
+            'data' => $promociones,
         ]);
     }
 
@@ -71,7 +72,7 @@ class PromocionController extends Controller
 
         return response()->json([
             'message' => 'Promoción creada exitosamente',
-            'promocion' => $promocion->load('componentes.tamano', 'componentes.sabor', 'componentes.masa', 'componentes.producto')
+            'promocion' => $promocion->load('componentes.tamano', 'componentes.sabor', 'componentes.masa', 'componentes.producto'),
         ], 201);
     }
 
@@ -86,9 +87,10 @@ class PromocionController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $promocion
+            'data' => $promocion,
         ]);
     }
+
     public function update(Request $request, $id)
     {
         $promocion = Promocion::findOrFail($id);
@@ -143,7 +145,6 @@ class PromocionController extends Controller
         ]);
     }
 
-
     public function destroy($id)
     {
         $promocion = Promocion::findOrFail($id);
@@ -155,7 +156,7 @@ class PromocionController extends Controller
         $promocion->delete();
 
         return response()->json([
-            'message' => 'Promoción eliminada exitosamente'
+            'message' => 'Promoción eliminada exitosamente',
         ]);
     }
 
@@ -163,12 +164,12 @@ class PromocionController extends Controller
     {
         foreach ($components as $index => $component) {
             if ($component['tipo'] === 'pizza' && empty($component['tamano_id'])) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     "componentes.{$index}.tamano_id" => 'Cada pizza debe tener un tamaño configurado.',
                 ]);
             }
             if ($component['tipo'] === 'bebida' && empty($component['producto_id'])) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     "componentes.{$index}.producto_id" => 'Cada bebida debe indicar un producto.',
                 ]);
             }

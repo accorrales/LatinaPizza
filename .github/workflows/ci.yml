@@ -30,25 +30,12 @@ jobs:
           php-version: "8.3"
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
           coverage: none
-      - name: Refresh API dependency lock
-        run: composer update --with-all-dependencies --no-interaction --no-progress
-      - name: Upload refreshed API lock
-        uses: actions/upload-artifact@v4
+      - uses: ramsey/composer-install@v3
         with:
-          name: api-composer-lock
-          path: latina-pizza-api/composer.lock
+          working-directory: latina-pizza-api
       - run: composer audit --locked --no-interaction
       - run: cp .env.example .env
       - run: php artisan key:generate
-      - name: Apply API formatting
-        run: vendor/bin/pint
-      - name: Build API formatting patch
-        run: git diff --binary -- . > pint.patch
-      - name: Upload API formatting patch
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-pint-patch
-          path: latina-pizza-api/pint.patch
       - run: vendor/bin/pint --test
       - run: php artisan test
 
@@ -78,26 +65,13 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: latina-pizza-web/package-lock.json
-      - name: Refresh Web dependency lock
-        run: composer update --with-all-dependencies --no-interaction --no-progress
-      - name: Upload refreshed Web lock
-        uses: actions/upload-artifact@v4
+      - uses: ramsey/composer-install@v3
         with:
-          name: web-composer-lock
-          path: latina-pizza-web/composer.lock
+          working-directory: latina-pizza-web
       - run: composer audit --locked --no-interaction
       - run: cp .env.example .env
       - run: php artisan key:generate
-      - name: Apply Web formatting
-        run: vendor/bin/pint
-      - name: Build Web formatting patch
-        run: git diff --binary -- . > pint.patch
-      - name: Upload Web formatting patch
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-pint-patch
-          path: latina-pizza-web/pint.patch
-      - run: vendor/bin/pint --test
-      - run: php artisan test
       - run: npm ci
       - run: npm run build
+      - run: vendor/bin/pint --test
+      - run: php artisan test

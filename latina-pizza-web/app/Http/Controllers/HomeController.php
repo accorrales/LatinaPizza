@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Http\Client\Pool;
+use Illuminate\Http\Client\Response;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 class HomeController extends Controller
@@ -28,13 +28,16 @@ class HomeController extends Controller
             $responsePromociones = $responses['promociones'];
 
             if (
+                $responseSabores instanceof Response &&
+                $responseCategorias instanceof Response &&
+                $responsePromociones instanceof Response &&
                 $responseSabores->successful() &&
                 $responseCategorias->successful() &&
                 $responsePromociones->successful()
             ) {
-                $sabores     = $responseSabores->json();
+                $sabores = $responseSabores->json();
                 $categoriasPayload = $responseCategorias->json();
-                $categorias  = $categoriasPayload['data'] ?? $categoriasPayload;
+                $categorias = $categoriasPayload['data'] ?? $categoriasPayload;
                 $promociones = $responsePromociones->json()['data'] ?? [];
 
                 // 🔍 Filtrar por categoría si viene en la query

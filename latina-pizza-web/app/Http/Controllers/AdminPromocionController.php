@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
@@ -17,6 +16,7 @@ class AdminPromocionController extends Controller
 
         if ($response->successful()) {
             $promociones = $response->json()['data'];
+
             return view('admin.promociones.index', compact('promociones'));
         }
 
@@ -43,7 +43,7 @@ class AdminPromocionController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -70,7 +70,7 @@ class AdminPromocionController extends Controller
             $componente['masa_id'] = $componente['masa_id'] ?? null;
         }
         $response = Http::withToken($token)->post("{$this->apiBase}/promociones", $data);
-        
+
         if ($response->successful()) {
             return redirect()->route('admin.promociones.index')->with('success', 'Promoción creada correctamente');
         }
@@ -82,7 +82,7 @@ class AdminPromocionController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -138,7 +138,7 @@ class AdminPromocionController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 

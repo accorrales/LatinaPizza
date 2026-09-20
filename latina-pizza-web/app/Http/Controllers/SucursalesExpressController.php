@@ -12,7 +12,9 @@ class SucursalesExpressController extends Controller
     public function index(Request $r)
     {
         $token = Session::get('token');
-        if (!$token) return redirect()->route('login');
+        if (! $token) {
+            return redirect()->route('login');
+        }
 
         $r->validate(['direccion_usuario_id' => 'required|integer']);
 
@@ -20,30 +22,33 @@ class SucursalesExpressController extends Controller
             'direccion_usuario_id' => $r->direccion_usuario_id,
         ])->throw();
 
-        $direccion  = $resp->json('direccion');
+        $direccion = $resp->json('direccion');
         $sucursales = $resp->json('sucursales') ?? [];
 
-        return view('pedido.sucursales_express', compact('direccion','sucursales'));
+        return view('pedido.sucursales_express', compact('direccion', 'sucursales'));
     }
 
     // Fija Express con dirección + sucursal, y pasa al catálogo
     public function seleccionar(Request $r)
     {
         $token = Session::get('token');
-        if (!$token) return redirect()->route('login');
+        if (! $token) {
+            return redirect()->route('login');
+        }
 
         $data = $r->validate([
             'direccion_usuario_id' => 'required|integer',
-            'sucursal_id'          => 'required|integer',
+            'sucursal_id' => 'required|integer',
         ]);
 
         Http::withToken($token)->post("{$this->apiBase}/carrito/metodo-entrega", [
-            'tipo'                 => 'express',
+            'tipo' => 'express',
             'direccion_usuario_id' => $data['direccion_usuario_id'],
-            'sucursal_id'          => $data['sucursal_id'],
+            'sucursal_id' => $data['sucursal_id'],
         ])->throw();
 
         session(['delivery.type' => 'express']); // 👈 marca la elección en sesión
+
         return redirect()->route('catalogo.index')->with('ok', 'Express seleccionado. ¡Listo para ordenar!');
     }
 }

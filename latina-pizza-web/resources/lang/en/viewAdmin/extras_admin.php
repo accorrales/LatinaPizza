@@ -16,13 +16,13 @@ return [
     'exito' => 'Operation successful',
     'error' => 'An error occurred',
 
-    //editar extra
+    // editar extra
     'titulo_editar' => '✏️ Edit Extra',
     'requerido' => '*',
     'cancelar' => 'Cancel',
     'actualizar' => 'Update Extra',
-    
-    //Guardar extra
+
+    // Guardar extra
     'titulo_crear' => '🍕 Create New Extra',
     'volver' => 'Cancel',
     'guardar' => 'Save Extra',

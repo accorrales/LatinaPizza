@@ -11,7 +11,7 @@ class PedidoController extends Controller
     public function misPedidos(Request $request)
     {
         $user = $request->user();
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Usuario no autenticado'], 401);
         }
 
@@ -27,9 +27,9 @@ class PedidoController extends Controller
             'promociones.masa',
             'promociones.extras',
         ])
-        ->where('user_id', $user->id)
-        ->orderByDesc('created_at')
-        ->paginate(min(max($request->integer('per_page', 20), 1), 50));
+            ->where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->paginate(min(max($request->integer('per_page', 20), 1), 50));
 
         $pedidos->getCollection()->transform(function ($pedido) {
             if ($pedido->promociones && $pedido->promociones->count() > 0) {
@@ -58,7 +58,7 @@ class PedidoController extends Controller
             'usuario',
             'sucursal',
         ])
-        ->findOrFail($id);
+            ->findOrFail($id);
 
         // Seguridad: asegurarse que sea del usuario autenticado
         if ($pedido->user_id !== $request->user()->id) {

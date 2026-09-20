@@ -9,10 +9,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 use Throwable;
 
 class RegisteredUserController extends Controller
@@ -28,7 +28,7 @@ class RegisteredUserController extends Controller
     /**
      * Handle an incoming registration request.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function store(Request $request): RedirectResponse
     {
@@ -61,7 +61,7 @@ class RegisteredUserController extends Controller
             ]);
         }
 
-        if (!$response->successful() || !$response->json('token')) {
+        if (! $response->successful() || ! $response->json('token')) {
             Auth::logout();
             throw ValidationException::withMessages([
                 'email' => 'La cuenta fue creada, pero no se pudo iniciar sesión. Intente nuevamente.',

@@ -1,4 +1,5 @@
 <?php
+
 return [
     'index' => [
         'titulo' => '🍕 Flavors Management',

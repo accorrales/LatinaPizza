@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class CarritoItem extends Model
 {
@@ -44,6 +44,7 @@ class CarritoItem extends Model
     {
         return $this->belongsToMany(Extra::class, 'carrito_item_extra')->withTimestamps();
     }
+
     public function carritoItems()
     {
         return $this->belongsToMany(CarritoItem::class, 'carrito_item_extra')->withTimestamps();
@@ -53,10 +54,12 @@ class CarritoItem extends Model
     {
         return $this->belongsTo(Promocion::class);
     }
+
     public function detallesPromocion()
     {
         return $this->hasMany(CarritoItemPromocionDetalle::class);
     }
+
     public function extrasPromocion()
     {
         return $this->hasManyThrough(

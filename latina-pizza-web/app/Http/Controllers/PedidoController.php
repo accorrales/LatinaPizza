@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -12,7 +11,7 @@ class PedidoController extends Controller
     {
         $token = session('token');
 
-        if (!$token) {
+        if (! $token) {
             return abort(403, 'Token no disponible. Inicia sesión nuevamente.');
         }
 
@@ -21,6 +20,7 @@ class PedidoController extends Controller
 
         if ($response->successful()) {
             $pedido = $response->json();
+
             return view('pedidos.detalle', compact('pedido'));
         }
 
@@ -31,7 +31,7 @@ class PedidoController extends Controller
     {
         $token = session('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login');
         }
 
@@ -47,16 +47,18 @@ class PedidoController extends Controller
                 'current_page' => (int) $response->json('current_page', 1),
                 'last_page' => (int) $response->json('last_page', 1),
             ];
+
             return view('pedidos.mis_pedidos', compact('pedidos', 'pagination'));
         }
 
         return abort($response->status() === 401 ? 401 : 503, 'No se pudo cargar el historial en este momento.');
     }
+
     public function detallePromocion($id)
     {
         $token = session('token');
 
-        if (!$token) {
+        if (! $token) {
             return abort(403, 'Token no disponible. Inicia sesión nuevamente.');
         }
 
@@ -65,8 +67,10 @@ class PedidoController extends Controller
 
         if ($response->successful()) {
             $pedido = $response->json();
+
             return view('pedidos.detalle_promocion', compact('pedido'));
         }
+
         return abort(404, 'No se encontraron detalles de la promoción para este pedido.');
     }
 }

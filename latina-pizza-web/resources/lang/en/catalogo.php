@@ -14,7 +14,7 @@ return [
     'express' => 'Delivery (home address)',
     'confirmar_cambio_metodo' => 'Are you sure you want to change the delivery method? This will clear your current setup.',
 
-    //card productos
+    // card productos
     'favorito' => 'Favorite',
     'ver_resenas' => 'View reviews',
     'ver_tamanos' => 'View sizes',
@@ -29,7 +29,7 @@ return [
     'ir_carrito' => 'Go to cart',
     'agregar_carrito' => 'Add to cart',
 
-    //Modal Producto
+    // Modal Producto
     // Nuevas:
     'tamano' => 'Size',
     'tipo_masa' => 'Dough type',

@@ -31,10 +31,11 @@ class ResenaController extends Controller
         return view('resenas.index', [
             'resenas' => $resenas,
             'puedeCalificar' => $puedeCalificar,
-            'saborId' => $id // esto era lo que faltaba
+            'saborId' => $id, // esto era lo que faltaba
         ]);
 
     }
+
     public function store(Request $request)
     {
         $token = Session::get('token');
@@ -49,6 +50,7 @@ class ResenaController extends Controller
             return back()->with('success', '¡Reseña registrada correctamente!');
         } else {
             $mensaje = $response->json('error') ?? 'Error al guardar reseña.';
+
             return back()->with('error', $mensaje);
         }
     }
@@ -66,6 +68,7 @@ class ResenaController extends Controller
             return back()->with('success', '¡Reseña actualizada correctamente!');
         } else {
             $mensaje = $response->json('error') ?? 'Error al actualizar reseña.';
+
             return back()->with('error', $mensaje);
         }
     }
@@ -80,6 +83,7 @@ class ResenaController extends Controller
             return back()->with('success', '¡Reseña eliminada correctamente!');
         } else {
             $mensaje = $response->json('error') ?? 'Error al eliminar reseña.';
+
             return back()->with('error', $mensaje);
         }
     }

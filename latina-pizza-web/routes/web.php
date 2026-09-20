@@ -29,6 +29,7 @@ Route::get('/catalogo', [CatalogoController::class, 'index'])->name('catalogo.in
 Route::get('/lang/{locale}', function (string $locale) {
     abort_unless(in_array($locale, ['en', 'es'], true), 400);
     session()->put('locale', $locale);
+
     return back();
 })->name('cambiar_idioma');
 

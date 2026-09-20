@@ -11,13 +11,14 @@ class AdminTamanoController extends Controller
     public function index()
     {
         $token = Session::get('token');
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
         $response = Http::withToken($token)->get("$this->apiBase/admin/tamanos");
 
         if ($response->successful()) {
             $tamanos = $response->json()['data'] ?? []; // ✅ Corrección
+
             return view('admin.tamanos.index', compact('tamanos'));
         }
 
@@ -33,7 +34,7 @@ class AdminTamanoController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -55,7 +56,7 @@ class AdminTamanoController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -63,6 +64,7 @@ class AdminTamanoController extends Controller
 
         if ($response->successful()) {
             $tamano = (object) $response->json();
+
             return view('admin.tamanos.edit', compact('tamano'));
         }
 
@@ -73,7 +75,7 @@ class AdminTamanoController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
@@ -95,7 +97,7 @@ class AdminTamanoController extends Controller
     {
         $token = Session::get('token');
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 

@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Producto;
 use App\Models\Sabor;
 use App\Models\Tamano;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+
 class ProductoController extends Controller
 {
     public function index(Request $request)
@@ -53,11 +54,11 @@ class ProductoController extends Controller
                 'total_resenas' => (int) ($sabor->resenas_count ?? 0),
                 'tamanos' => $productosDelSabor->map(function ($p) {
                     return [
-                        'producto_id'   => $p->id,
-                        'tamano_id'     => $p->tamano->id,
+                        'producto_id' => $p->id,
+                        'tamano_id' => $p->tamano->id,
                         'tamano_nombre' => $p->tamano->nombre,
-                        'precio'        => $p->precio, // Este es el precio total actual del producto (si se usa)
-                        'precio_base'   => $p->tamano->precio_base, // 👈 Este es el real por tamaño
+                        'precio' => $p->precio, // Este es el precio total actual del producto (si se usa)
+                        'precio_base' => $p->tamano->precio_base, // 👈 Este es el real por tamaño
                     ];
                 })->values(),
             ];
@@ -69,31 +70,31 @@ class ProductoController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nombre'       => 'nullable|string|max:255|required_without:sabor_id',
-            'descripcion'  => 'nullable|string',
-            'precio'       => 'nullable|numeric|min:0|required_without:sabor_id',
-            'imagen'       => 'nullable|url:http,https|max:2048',
+            'nombre' => 'nullable|string|max:255|required_without:sabor_id',
+            'descripcion' => 'nullable|string',
+            'precio' => 'nullable|numeric|min:0|required_without:sabor_id',
+            'imagen' => 'nullable|url:http,https|max:2048',
             'categoria_id' => 'required|exists:categorias,id',
-            'sabor_id'     => 'nullable|required_with:tamano_id|exists:sabores,id',
-            'tamano_id'    => 'nullable|required_with:sabor_id|exists:tamanos,id',
-            'estado'       => 'nullable|boolean',
+            'sabor_id' => 'nullable|required_with:tamano_id|exists:sabores,id',
+            'tamano_id' => 'nullable|required_with:sabor_id|exists:tamanos,id',
+            'estado' => 'nullable|boolean',
         ]);
 
         try {
-            $nombre       = $request->input('nombre');
-            $descripcion  = $request->input('descripcion');
-            $imagen       = $request->input('imagen');
-            $saborId      = $request->input('sabor_id');
-            $tamanoId     = $request->input('tamano_id');
+            $nombre = $request->input('nombre');
+            $descripcion = $request->input('descripcion');
+            $imagen = $request->input('imagen');
+            $saborId = $request->input('sabor_id');
+            $tamanoId = $request->input('tamano_id');
 
             // 🧀 Si es pizza, generamos nombre, imagen y descripción desde el sabor
             if ($saborId && $tamanoId) {
                 $sabor = Sabor::findOrFail($saborId);
                 $tamano = Tamano::findOrFail($tamanoId);
 
-                $nombre       = $sabor->nombre . ' ' . $tamano->nombre;
-                $descripcion  = $sabor->descripcion;
-                $imagen       = $imagen ?? $sabor->imagen;
+                $nombre = $sabor->nombre.' '.$tamano->nombre;
+                $descripcion = $sabor->descripcion;
+                $imagen = $imagen ?? $sabor->imagen;
             }
 
             $precio = ($saborId && $tamanoId)
@@ -101,27 +102,28 @@ class ProductoController extends Controller
                 : (float) $request->precio;
 
             $producto = Producto::create([
-                'nombre'       => $nombre ?? 'Producto sin nombre',
-                'descripcion'  => $descripcion,
-                'precio'       => $precio,
-                'imagen'       => $imagen,
+                'nombre' => $nombre ?? 'Producto sin nombre',
+                'descripcion' => $descripcion,
+                'precio' => $precio,
+                'imagen' => $imagen,
                 'categoria_id' => $request->categoria_id,
-                'sabor_id'     => $saborId,
-                'tamano_id'    => $tamanoId,
-                'estado'       => $request->estado ?? true,
+                'sabor_id' => $saborId,
+                'tamano_id' => $tamanoId,
+                'estado' => $request->estado ?? true,
             ]);
+
             return response()->json($producto->load(['categoria', 'sabor', 'tamano']), 201);
         } catch (\Exception $e) {
             report($e);
+
             return response()->json(['message' => 'No se pudo guardar el producto.'], 500);
         }
     }
 
-
-
     public function show($id)
     {
         $producto = Producto::with(['categoria', 'sabor', 'tamano'])->findOrFail($id);
+
         return response()->json($producto);
     }
 
@@ -145,25 +147,25 @@ class ProductoController extends Controller
             $sabor = Sabor::findOrFail($request->sabor_id);
             $tamano = Tamano::findOrFail($request->tamano_id);
 
-            $producto->nombre      = $sabor->nombre . ' ' . $tamano->nombre;
+            $producto->nombre = $sabor->nombre.' '.$tamano->nombre;
             $producto->descripcion = $sabor->descripcion;
-            $producto->imagen      = $request->imagen ?? $sabor->imagen;
-            $producto->sabor_id    = $sabor->id;
-            $producto->tamano_id   = $tamano->id;
+            $producto->imagen = $request->imagen ?? $sabor->imagen;
+            $producto->sabor_id = $sabor->id;
+            $producto->tamano_id = $tamano->id;
         } else {
             // Si no es pizza, se usa lo que venga del form
-            $producto->nombre      = $request->nombre;
+            $producto->nombre = $request->nombre;
             $producto->descripcion = $request->descripcion;
-            $producto->imagen      = $request->imagen;
-            $producto->sabor_id    = null;
-            $producto->tamano_id   = null;
+            $producto->imagen = $request->imagen;
+            $producto->sabor_id = null;
+            $producto->tamano_id = null;
         }
 
-        $producto->precio       = ($request->sabor_id && $request->tamano_id)
+        $producto->precio = ($request->sabor_id && $request->tamano_id)
             ? (float) $tamano->precio_base
             : (float) $request->precio;
         $producto->categoria_id = $request->categoria_id;
-        $producto->estado       = $request->estado ?? true;
+        $producto->estado = $request->estado ?? true;
         $producto->save();
 
         return response()->json(['message' => 'Producto actualizado correctamente'], 200);
@@ -178,29 +180,33 @@ class ProductoController extends Controller
 
         if ($hasHistory) {
             $producto->update(['estado' => false]);
+
             return response()->json([
                 'message' => 'El producto tiene historial y fue archivado en lugar de eliminarse.',
             ]);
         }
 
         $producto->delete();
+
         return response()->json(['message' => 'Producto eliminado.']);
     }
+
     public function bebidas()
     {
         $bebidas = Producto::whereHas('categoria', function ($query) {
-                $query->whereRaw('LOWER(nombre) IN (?, ?, ?)', ['bebidas', 'bebida', 'refrescos']);
-            })
+            $query->whereRaw('LOWER(nombre) IN (?, ?, ?)', ['bebidas', 'bebida', 'refrescos']);
+        })
             ->where('estado', true)
             ->get(['id', 'nombre']);
 
         return response()->json($bebidas);
     }
+
     public function publicIndex(Request $request)
     {
         $q = Producto::query()
             ->where('estado', true)
-            ->select('id','nombre','imagen','categoria_id','sabor_id','tamano_id')
+            ->select('id', 'nombre', 'imagen', 'categoria_id', 'sabor_id', 'tamano_id')
             ->with([
                 'sabor:id,nombre',
                 'tamano:id,nombre',
@@ -216,18 +222,18 @@ class ProductoController extends Controller
 
         $items = $q->orderBy('nombre')->get()->map(function ($p) {
             return [
-                'id'           => $p->id,
-                'nombre'       => $p->nombre,
-                'imagen'       => $p->imagen,
+                'id' => $p->id,
+                'nombre' => $p->nombre,
+                'imagen' => $p->imagen,
                 'categoria_id' => $p->categoria_id,
-                'sabor'        => $p->sabor?->nombre,
-                'tamano'       => $p->tamano?->nombre,
+                'sabor' => $p->sabor?->nombre,
+                'tamano' => $p->tamano?->nombre,
             ];
         });
 
         return response()->json([
             'success' => true,
-            'data'    => $items,
+            'data' => $items,
         ]);
     }
 }
