@@ -40,6 +40,15 @@ jobs:
       - run: composer audit --locked --no-interaction
       - run: cp .env.example .env
       - run: php artisan key:generate
+      - name: Apply API formatting
+        run: vendor/bin/pint
+      - name: Build API formatting patch
+        run: git diff --binary -- . > pint.patch
+      - name: Upload API formatting patch
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-pint-patch
+          path: latina-pizza-api/pint.patch
       - run: vendor/bin/pint --test
       - run: php artisan test
 
@@ -79,6 +88,15 @@ jobs:
       - run: composer audit --locked --no-interaction
       - run: cp .env.example .env
       - run: php artisan key:generate
+      - name: Apply Web formatting
+        run: vendor/bin/pint
+      - name: Build Web formatting patch
+        run: git diff --binary -- . > pint.patch
+      - name: Upload Web formatting patch
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-pint-patch
+          path: latina-pizza-web/pint.patch
       - run: vendor/bin/pint --test
       - run: php artisan test
       - run: npm ci
