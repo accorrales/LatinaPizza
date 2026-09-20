@@ -33,16 +33,18 @@ class PedidoController extends Controller
         $token = session('token');
 
         if (!$token) {
-            abort(403, 'Token no disponible. Inicia sesión nuevamente.');
+            return redirect()->route('login');
         }
 
         $response = Http::withToken($token)
-            ->get("http://localhost:8001/api/mis-pedidos");
+            ->get(config('app.api_url') . '/api/mis-pedidos');
 
         if ($response->successful()) {
             $pedidos = $response->json();
             return view('pedidos.mis_pedidos', compact('pedidos'));
         }
+
+        dd($response->status(), $response->body());
 
         return abort(403, 'No se pudo cargar el historial');
     }

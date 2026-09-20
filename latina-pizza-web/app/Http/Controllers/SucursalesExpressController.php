@@ -50,6 +50,7 @@ class SucursalesExpressController extends Controller
             'sucursal_id'          => $data['sucursal_id'],
         ])->throw();
 
-        return redirect()->route('catalogo.index')->with('ok', 'Sucursal seleccionada. ¡A ordenar!');
+        session(['delivery.type' => 'express']); // 👈 marca la elección en sesión
+        return redirect()->route('catalogo.index')->with('ok', 'Express seleccionado. ¡Listo para ordenar!');
     }
 }

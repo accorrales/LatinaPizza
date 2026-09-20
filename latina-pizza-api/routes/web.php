@@ -16,6 +16,10 @@ Route::get('/', function () {
 Route::get('/lang/{locale}', [LocaleController::class, 'switch'])
     ->whereIn('locale', ['es','en'])
     ->name('lang.switch');
+    
+Route::get('/login', function () {
+    return view('auth.login');
+})->name('login');
 
 Route::post('/login', function (Request $request) {
     $credentials = $request->validate([

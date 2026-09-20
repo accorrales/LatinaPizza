@@ -77,6 +77,7 @@ class PedidoController extends Controller
             'detalles.masa',
             'detalles.extras',
             'promociones.promocion',
+            'promociones.sabor',
             'promociones.tamano',
             'promociones.masa',
             'promociones.extras',

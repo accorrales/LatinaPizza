@@ -30,7 +30,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         // Llamada a login de la API para obtener el token
-        $response = Http::post('http://127.0.0.1:8001/api/login', [
+        $response = Http::post(config('app.api_url') . '/api/login', [
             'email' => $request->email,
             'password' => $request->password,
         ]);

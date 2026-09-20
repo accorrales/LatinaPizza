@@ -38,12 +38,16 @@ class AdminSaborController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
         $validated = $request->validate([
-            'nombre' => 'required|string|max:255',
+            'nombre'      => 'required|string|max:255',
             'descripcion' => 'nullable|string',
-            'imagen' => 'nullable|url'
+            'imagen'      => 'nullable|url',
         ]);
 
-        $response = Http::withToken($token)->post("$this->apiBase/sabores", $validated);
+        if (array_key_exists('imagen', $validated) && $validated['imagen'] === '') {
+            $validated['imagen'] = null;
+        }
+
+        $response = Http::withToken($token)->acceptJson()->post("{$this->apiBase}/sabores", $validated);
 
         if ($response->successful()) {
             return redirect()->route('admin.sabores.index')->with('success', 'Sabor creado correctamente.');

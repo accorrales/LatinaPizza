@@ -41,12 +41,29 @@ use App\Http\Controllers\AnalyticsBoardController;
     Route::get('/catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
 
     // Carrito routes
-    Route::post('/carrito/agregar', [CarritoController::class, 'agregar'])->name('carrito.agregar');
-    Route::get('/carrito', [CarritoController::class, 'ver'])->name('carrito.ver');
+    // routes/web.php
+
+    Route::post('/carrito/agregar', [CarritoController::class, 'agregar'])
+        ->name('carrito.agregar');
+
+    // 🔒 Nuevo: consumidor de “pendiente” (solo logueados)
+    Route::middleware('auth')->group(function () {
+        Route::get('/carrito/consume-pending', [CarritoController::class, 'consumePending'])
+            ->name('carrito.consume_pending');
+
+        Route::get('/carrito', [CarritoController::class, 'ver'])->name('carrito.ver');
+        Route::post('/carrito/checkout', [CarritoController::class, 'checkout'])->name('carrito.checkout');
+        Route::post('/carrito/stripe/intent', [CarritoController::class, 'createStripeIntent'])->name('carrito.stripe.intent');
+    });
+    // (si también exponés eliminar/actualizar sin auth middleware, puedes dejarlas como estaban)
     Route::delete('/carrito/eliminar/{id}', [CarritoController::class, 'eliminar'])->name('carrito.eliminar');
     Route::put('/carrito/update/{id}', [CarritoController::class, 'actualizarCantidad'])->name('carrito.update');
-    Route::post('/carrito/checkout', [CarritoController::class, 'checkout'])->name('carrito.checkout');
     Route::post('/carrito/agregar-promocion', [CarritoController::class, 'agregarPromocion'])->name('carrito.agregarPromocion');
+
+    Route::middleware('auth')->group(function () {
+        Route::get('/carrito/consume-pending', [CarritoController::class, 'consumePending'])
+            ->name('carrito.consume_pending');
+    });
 
     // Admin routes
     // This route is for the admin to manage categories
@@ -87,13 +104,13 @@ use App\Http\Controllers\AnalyticsBoardController;
         ->name('pedidos.detalle.promocion');
 
     Route::get('/promociones', [PromocionesController::class, 'index'])->name('promociones.index');
-    Route::prefix('admin/sabores')->name('admin.sabores.')->group(function () {
-        Route::get('/', [AdminSaborController::class, 'index'])->name('index');
-        Route::get('/create', [AdminSaborController::class, 'create'])->name('create');
-        Route::post('/', [AdminSaborController::class, 'store'])->name('store');
-        Route::get('/{id}/edit', [AdminSaborController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [AdminSaborController::class, 'update'])->name('update');
-        Route::delete('/{id}', [AdminSaborController::class, 'destroy'])->name('destroy');
+    Route::middleware(['web','auth'])->prefix('admin/sabores')->name('admin.sabores.')->group(function () {
+        Route::get('/',            [AdminSaborController::class, 'index'])->name('index');
+        Route::get('/create',      [AdminSaborController::class, 'create'])->name('create');
+        Route::post('/',           [AdminSaborController::class, 'store'])->name('store');
+        Route::get('/{id}/edit',   [AdminSaborController::class, 'edit'])->name('edit');
+        Route::put('/{id}',        [AdminSaborController::class, 'update'])->name('update');
+        Route::delete('/{id}',     [AdminSaborController::class, 'destroy'])->name('destroy');
     });
     Route::prefix('admin/tamanos')->name('admin.tamanos.')->group(function () {
         Route::get('/', [AdminTamanoController::class, 'index'])->name('index');
@@ -204,3 +221,4 @@ use App\Http\Controllers\AnalyticsBoardController;
     });
 require __DIR__.'/auth.php';
 
+    

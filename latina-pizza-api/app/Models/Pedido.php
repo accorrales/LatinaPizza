@@ -144,4 +144,14 @@ class Pedido extends Model
         if (!$this->promised_at) return null;
         return now()->diffInMinutes($this->promised_at, false); // negativo si ya se pasó
     }
+
+    public function productos()
+    {
+        return $this->belongsToMany(
+            Producto::class,
+            'pedido_producto',
+            'pedido_id',
+            'producto_id'
+        )->withPivot('cantidad')->withTimestamps();
+    }
 }

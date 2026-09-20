@@ -4,6 +4,7 @@
 /public/storage
 /storage/*.key
 .env
+.vs/
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
@@ -25,3 +26,6 @@ Thumbs.db
 *.swp
 *.bak
 *.tmp
+
+# Respaldos locales
+/latina-pizza-web.zip

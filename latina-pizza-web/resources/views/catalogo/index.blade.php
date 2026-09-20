@@ -90,7 +90,8 @@
 
 @section('scripts')
 <script>
-    const API_URL = "{{ config('app.api_url') }}";
+    const API_URL  = "{{ config('app.api_url') }}";
+    const LOGIN_URL = "{{ route('login') }}";
 </script>
 
 <script>
@@ -205,28 +206,62 @@
         document.getElementById('modalConfirmacion').classList.add('hidden');
     }
 
+    // ====== SUBMIT: agregar producto ======
     document.getElementById('formAgregarProducto').addEventListener('submit', async function (e) {
         e.preventDefault();
         const form = e.target;
         const formData = new FormData(form);
-        mostrarLoading();
 
+        mostrarLoading();
         try {
             const res = await fetch('/carrito/agregar', {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                body: formData
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                redirect: 'manual'
             });
-            if (!res.ok) throw new Error("error");
+
+            if (res.status === 401) {                    // ← invitado: vamos a /login
+            let j = {};
+            try { j = await res.json(); } catch {}
+            window.location.assign(j.redirect || LOGIN_URL);
+            return;
+            }
+
+            if (res.ok && (res.headers.get('Content-Type')||'').includes('application/json')) {
+            const j = await res.json();
+            if (j.ok && j.next) {
+                window.location.assign(j.next);          // /carrito o /catalogo?cambiar_entrega=1
+                return;
+            }
+            }
+
+            if (res.redirected) {                        // fallback si algo redirige
+            window.location.assign(res.url);
+            return;
+            }
+
+            if (!res.ok) {
+            console.error(await res.text());
+            alert(window.i18n.producto_error);
+            return;
+            }
+
+            // fallback visual
             document.getElementById('modalSabor').classList.add('hidden');
             document.getElementById('modalConfirmacion').classList.remove('hidden');
-        } catch (error) {
-            console.error('❌', error);
+        } catch (err) {
+            console.error('❌', err);
             alert(window.i18n.producto_error);
         } finally {
             ocultarLoading();
         }
-    });
+        });
 </script>
 
 <script>
@@ -359,6 +394,7 @@
         document.getElementById('totalPromo').textContent = `${window.i18n.total} ₡${total.toFixed(2)}`;
     }
 
+    // ====== SUBMIT: agregar promoción ======
     function agregarPromocionAlCarrito() {
         const pizzas = [];
         let i = 0;
@@ -403,19 +439,37 @@
 
         fetch('/carrito/agregar-promocion', {
             method: 'POST',
+            body: JSON.stringify(payload),
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',             // ← respuesta JSON
+                'X-Requested-With': 'XMLHttpRequest',     // ← marca AJAX
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify(payload)
+            }
         })
-        .then(res => { if (!res.ok) throw new Error('error'); return res.json(); })
+        .then(async res => {
+            if (res.status === 401) {
+                // tu endpoint devuelve 401 si falta token
+                // si además le agregás {redirect:'/login'} en el controller, úsalo:
+                let j = {};
+                try { j = await res.json(); } catch {}
+                window.location.assign(j.redirect || LOGIN_URL);
+                return Promise.reject('unauth');
+            }
+            if (!res.ok) {
+                const txt = await res.text();
+                console.error('agregar-promocion error:', txt);
+                throw new Error('error');
+            }
+            return res.json();
+        })
         .then(data => {
             alert(window.i18n.promo_agregada);
-            const precioFinal = data.data.precio_total;
+            const precioFinal = data.data?.precio_total ?? data.precio_total;
             const totalPromo = document.getElementById('totalPromo');
-            if (totalPromo) {
-                totalPromo.textContent = `${window.i18n.total} ₡${precioFinal.toLocaleString('es-CR', {
+            if (totalPromo && typeof precioFinal !== 'undefined') {
+                totalPromo.textContent = `${window.i18n.total} ₡${Number(precioFinal).toLocaleString('es-CR', {
                     minimumFractionDigits: 2, maximumFractionDigits: 2
                 })}`;
             }
@@ -423,13 +477,16 @@
             document.getElementById('modalConfirmacion').classList.remove('hidden');
         })
         .catch(err => {
-            console.error('❌', err);
-            alert(window.i18n.promo_error);
+            if (err !== 'unauth') {
+                console.error('❌', err);
+                alert(window.i18n.promo_error);
+            }
         })
         .finally(() => ocultarLoading());
     }
 </script>
 @endsection
+
 
 <style>
 @keyframes fade-in-down { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }

@@ -143,7 +143,14 @@ use App\Http\Controllers\API\AnalyticsController;
     Route::get('/productos/bebidas', [ProductoController::class, 'bebidas']);
 
     Route::get('/sabores', [SaborController::class, 'index']);
+    Route::get('/sabores/con-resenas', [SaborController::class, 'indexConResenas']);
+    Route::get('/sabores/{id}', [SaborController::class, 'show']);
 
+    Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->group(function () {
+        Route::post('/sabores', [SaborController::class, 'store']);
+        Route::put('/sabores/{id}', [SaborController::class, 'update']);
+        Route::delete('/sabores/{id}', [SaborController::class, 'destroy']);
+    });
     Route::middleware(['auth:sanctum', CheckRole::class . ':admin'])->prefix('admin')->group(function () {
         Route::get('/sabores', [SaborController::class, 'index']);
         Route::get('/tamanos', [TamanoController::class, 'index']);

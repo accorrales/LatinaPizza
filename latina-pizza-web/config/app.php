@@ -12,7 +12,9 @@ return [
     | other UI elements where an application name needs to be displayed.
     |
     */
-
+    
+    'api_url' => env('APP_API_URL', 'http://127.0.0.1:8001'),
+    
     'name' => env('APP_NAME', 'Latina Pizza'),
 
     /*

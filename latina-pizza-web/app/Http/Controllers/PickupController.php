@@ -54,8 +54,8 @@ class PickupController extends Controller
                 'tipo'        => 'pickup',
                 'sucursal_id' => (int) $data['sucursal_id'],
             ])->throw();
-
-            // Cambia el destino si prefieres ir al carrito
+            
+            session(['delivery.type' => 'pickup']); // 👈 marca la elección en sesión
             return redirect()->route('catalogo.index')->with('ok', 'Pickup seleccionado. ¡A ordenar!');
         } catch (\Illuminate\Http\Client\RequestException $e) {
             $json = $e->response?->json() ?? [];
