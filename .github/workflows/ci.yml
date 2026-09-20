@@ -30,9 +30,13 @@ jobs:
           php-version: "8.3"
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
           coverage: none
-      - uses: ramsey/composer-install@v3
+      - name: Refresh API dependency lock
+        run: composer update --with-all-dependencies --no-interaction --no-progress
+      - name: Upload refreshed API lock
+        uses: actions/upload-artifact@v4
         with:
-          working-directory: latina-pizza-api
+          name: api-composer-lock
+          path: latina-pizza-api/composer.lock
       - run: composer audit --locked --no-interaction
       - run: cp .env.example .env
       - run: php artisan key:generate
@@ -65,9 +69,13 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: latina-pizza-web/package-lock.json
-      - uses: ramsey/composer-install@v3
+      - name: Refresh Web dependency lock
+        run: composer update --with-all-dependencies --no-interaction --no-progress
+      - name: Upload refreshed Web lock
+        uses: actions/upload-artifact@v4
         with:
-          working-directory: latina-pizza-web
+          name: web-composer-lock
+          path: latina-pizza-web/composer.lock
       - run: composer audit --locked --no-interaction
       - run: cp .env.example .env
       - run: php artisan key:generate
