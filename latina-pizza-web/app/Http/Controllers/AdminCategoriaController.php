@@ -10,7 +10,7 @@ class AdminCategoriaController extends Controller
     public function index()
     {
         $token = Session::get('token');
-        $response = Http::withToken($token)->get('http://127.0.0.1:8001/api/categorias');
+        $response = Http::withToken($token)->get($this->apiUrl('/categorias'));
 
         $categorias = $response->successful() ? $response->json() : [];
 
@@ -24,7 +24,7 @@ class AdminCategoriaController extends Controller
 
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->post('http://127.0.0.1:8001/api/categorias', [
+        $response = Http::withToken($token)->post($this->apiUrl('/categorias'), [
             'nombre' => $request->nombre,
         ]);
 
@@ -37,7 +37,7 @@ class AdminCategoriaController extends Controller
     public function edit($id)
     {
         $token = Session::get('token');
-        $response = Http::withToken($token)->get("http://127.0.0.1:8001/api/categorias/{$id}");
+        $response = Http::withToken($token)->get($this->apiUrl("/categorias/{$id}"));
 
         if ($response->successful()) {
             return view('admin.categorias.edit', ['categoria' => $response->json()]);
@@ -48,7 +48,7 @@ class AdminCategoriaController extends Controller
     public function update(Request $request, $id)
     {
         $token = Session::get('token');
-        $response = Http::withToken($token)->put("http://127.0.0.1:8001/api/categorias/{$id}", [
+        $response = Http::withToken($token)->put($this->apiUrl("/categorias/{$id}"), [
             'nombre' => $request->input('nombre'),
         ]);
 
@@ -62,7 +62,7 @@ class AdminCategoriaController extends Controller
     public function destroy($id)
     {
         $token = Session::get('token');
-        $response = Http::withToken($token)->delete("http://127.0.0.1:8001/api/categorias/{$id}");
+        $response = Http::withToken($token)->delete($this->apiUrl("/categorias/{$id}"));
 
         if ($response->successful()) {
             return redirect()->route('admin.categorias.index')->with('success', 'Categoría eliminada correctamente');

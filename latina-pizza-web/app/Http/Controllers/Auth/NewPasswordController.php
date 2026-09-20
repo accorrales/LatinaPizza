@@ -9,6 +9,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
@@ -46,6 +48,13 @@ class NewPasswordController extends Controller
                     'password' => Hash::make($request->password),
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                if (Schema::hasTable('personal_access_tokens')) {
+                    DB::table('personal_access_tokens')
+                        ->where('tokenable_type', User::class)
+                        ->where('tokenable_id', $user->id)
+                        ->delete();
+                }
 
                 event(new PasswordReset($user));
             }

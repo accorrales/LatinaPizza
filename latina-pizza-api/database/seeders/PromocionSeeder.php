@@ -2,45 +2,49 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
+use App\Models\Masa;
+use App\Models\Producto;
 use App\Models\Promocion;
-use App\Models\PromocionComponente;
+use App\Models\Tamano;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class PromocionSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run()
+    public function run(): void
     {
-        // Crea la promoción base
-        $promo = Promocion::create([
-            'nombre' => 'Promo 2 Pizzas + Refresco',
-            'descripcion' => 'Disfruta dos pizzas medianas a elegir y un refresco incluido.',
-            'precio_base' => 11500,
-            'incluye_bebida' => true,
-            'imagen' => 'https://i.postimg.cc/SQVJD4SB/Screenshot-11-7-2025-5100-www-instagram-com.jpg',
-        ]);
+        DB::transaction(function (): void {
+            $tamano = Tamano::where('nombre', 'Mediana')->firstOrFail();
+            $masa = Masa::where('tipo', 'Tradicional')->firstOrFail();
+            $bebida = Producto::whereHas('categoria', function ($query): void {
+                $query->where('nombre', 'Bebidas');
+            })->orderBy('id')->firstOrFail();
 
+            $promocion = Promocion::updateOrCreate(
+                ['nombre' => 'Promo 2 Pizzas + Refresco'],
+                [
+                    'descripcion' => 'Dos pizzas medianas y un refresco.',
+                    'precio_total' => 11500,
+                    'precio_sugerido' => 11500,
+                    'imagen' => null,
+                    'incluye_bebida' => true,
+                ]
+            );
 
-        // Agrega dos componentes tipo pizza
-        for ($i = 0; $i < 2; $i++) {
-            PromocionComponente::create([
-            'promocion_id' => 1,
-            'tipo' => 'pizza',
-            'tamano_id' => 2,
-            'masa_id' => 1,
-            'sabor_id' => 1,
-            'cantidad' => 2,
-        ]);
-        }
-
-        // Agrega un componente tipo bebida
-        PromocionComponente::create([
-            'promocion_id' => $promo->id,
-            'tipo' => 'bebida',
-            'producto_id' => 10 // ID de un refresco real (ajústalo a uno que tengas)
-        ]);
+            $promocion->componentes()->delete();
+            $promocion->componentes()->createMany([
+                [
+                    'tipo' => 'pizza',
+                    'tamano_id' => $tamano->id,
+                    'masa_id' => $masa->id,
+                    'cantidad' => 2,
+                ],
+                [
+                    'tipo' => 'bebida',
+                    'producto_id' => $bebida->id,
+                    'cantidad' => 1,
+                ],
+            ]);
+        });
     }
 }

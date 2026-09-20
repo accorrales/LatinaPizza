@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class KitchenBoardController extends Controller
 {
@@ -12,9 +14,24 @@ class KitchenBoardController extends Controller
         $user = Auth::user();
         abort_unless($user && in_array($user->role, ['admin','cocina']), 403);
 
-        return view('kitchen.index', [
-            'apiBase' => rtrim(config('services.latina_api.base_url'), '/'), // p.ej. http://127.0.0.1:8001/api
-            'apiToken'=> session('token'), // Bearer token de tu login actual
-        ]);
+        return view('kitchen.index');
+    }
+
+    public function proxy(Request $request, string $path = '')
+    {
+        abort_unless(preg_match('#^(orders(?:/.*)?)$#', $path) === 1, 404);
+        $token = $request->session()->get('token');
+        abort_unless($token, 401);
+
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->timeout(10)
+            ->send($request->method(), $this->apiUrl('/kitchen/'.$path), [
+                'query' => $request->query(),
+                'json' => $request->all(),
+            ]);
+
+        return response($response->body(), $response->status())
+            ->header('Content-Type', 'application/json');
     }
 }

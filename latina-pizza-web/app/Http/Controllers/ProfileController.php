@@ -6,7 +6,9 @@ use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -28,11 +30,21 @@ class ProfileController extends Controller
     {
         $request->user()->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
+        $emailChanged = $request->user()->isDirty('email');
+        if ($emailChanged) {
             $request->user()->email_verified_at = null;
         }
 
         $request->user()->save();
+
+        if ($emailChanged) {
+            $this->revokeApiTokens($request->user()->id);
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return Redirect::route('login')->with('status', 'Correo actualizado. Inicie sesión nuevamente.');
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
@@ -48,13 +60,47 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        if ($user->role === 'admin') {
+            return Redirect::route('profile.edit')->withErrors([
+                'userDeletion' => 'Una cuenta administrativa debe ser retirada por otro administrador.',
+            ]);
+        }
+
+        $hasOrders = Schema::hasTable('pedidos')
+            && DB::table('pedidos')->where('user_id', $user->id)->exists();
+        $this->revokeApiTokens($user->id);
+
         Auth::logout();
 
-        $user->delete();
+        if ($hasOrders) {
+            if (Schema::hasTable('direcciones_usuario')) {
+                DB::table('direcciones_usuario')->where('user_id', $user->id)->delete();
+            }
+            $user->forceFill([
+                'name' => 'Cliente eliminado',
+                'email' => "deleted+{$user->id}+".now()->timestamp.'@example.invalid',
+                'password' => bcrypt(str()->random(64)),
+                'email_verified_at' => null,
+                'remember_token' => null,
+            ])->save();
+        } else {
+            $user->delete();
+        }
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+
+    private function revokeApiTokens(int $userId): void
+    {
+        if (!Schema::hasTable('personal_access_tokens')) {
+            return;
+        }
+        DB::table('personal_access_tokens')
+            ->where('tokenable_type', \App\Models\User::class)
+            ->where('tokenable_id', $userId)
+            ->delete();
     }
 }

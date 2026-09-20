@@ -5,12 +5,10 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\Http\JsonResponse;
 
 class RegisteredUserController extends Controller
 {
@@ -31,11 +29,10 @@ class RegisteredUserController extends Controller
         'name' => $request->name,
         'email' => $request->email,
         'password' => Hash::make($request->password),
-        'role' => $request->role ?? 'cliente',
+        'role' => 'cliente',
     ]);
 
-    event(new Registered($user));
-    Auth::login($user);
+        event(new Registered($user));
 
     return response()->json([
         'user' => $user,

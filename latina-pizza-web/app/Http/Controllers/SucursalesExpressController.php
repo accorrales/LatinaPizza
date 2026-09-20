@@ -8,13 +8,6 @@ use Illuminate\Support\Facades\Session;
 
 class SucursalesExpressController extends Controller
 {
-    private string $apiBase;
-
-    public function __construct()
-    {
-        $this->apiBase = rtrim(config('services.latina_api.base_url'), '/'); // ej: http://localhost:8001/api
-    }
-
     // Lista sucursales cercanas a la dirección
     public function index(Request $r)
     {

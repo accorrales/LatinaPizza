@@ -8,14 +8,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
 class PickupController extends Controller
 {
-    private string $apiBase;
-
-    public function __construct()
-    {
-        // Defínelo en config/services.php → services['latina_api']['base_url']
-        $this->apiBase = rtrim(config('services.latina_api.base_url'), '/'); // ej: http://127.0.0.1:8001/api
-    }
-
     // GET /pickup → lista de sucursales para elegir
     public function index()
     {

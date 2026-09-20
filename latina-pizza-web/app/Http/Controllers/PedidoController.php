@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Session;
 
 class PedidoController extends Controller
 {
@@ -18,7 +17,7 @@ class PedidoController extends Controller
         }
 
         $response = Http::withToken($token)
-            ->get("http://localhost:8001/api/pedidos/{$id}");
+            ->get($this->apiUrl("/pedidos/{$id}"));
 
         if ($response->successful()) {
             $pedido = $response->json();
@@ -37,16 +36,21 @@ class PedidoController extends Controller
         }
 
         $response = Http::withToken($token)
-            ->get(config('app.api_url') . '/api/mis-pedidos');
+            ->get($this->apiUrl('/mis-pedidos'), [
+                'page' => max(1, $request->integer('page', 1)),
+                'per_page' => 20,
+            ]);
 
         if ($response->successful()) {
-            $pedidos = $response->json();
-            return view('pedidos.mis_pedidos', compact('pedidos'));
+            $pedidos = $response->json('data', []);
+            $pagination = [
+                'current_page' => (int) $response->json('current_page', 1),
+                'last_page' => (int) $response->json('last_page', 1),
+            ];
+            return view('pedidos.mis_pedidos', compact('pedidos', 'pagination'));
         }
 
-        dd($response->status(), $response->body());
-
-        return abort(403, 'No se pudo cargar el historial');
+        return abort($response->status() === 401 ? 401 : 503, 'No se pudo cargar el historial en este momento.');
     }
     public function detallePromocion($id)
     {
@@ -57,10 +61,10 @@ class PedidoController extends Controller
         }
 
         $response = Http::withToken($token)
-            ->get("http://localhost:8001/api/detalle-pedido-promocion/{$id}/detalles");
+            ->get($this->apiUrl("/detalle-pedido-promocion/{$id}/detalles"));
 
         if ($response->successful()) {
-            $pedido = $response->json(); // 👈 renombralo aquí
+            $pedido = $response->json();
             return view('pedidos.detalle_promocion', compact('pedido'));
         }
         return abort(404, 'No se encontraron detalles de la promoción para este pedido.');

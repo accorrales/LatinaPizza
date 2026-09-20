@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 class AuthenticatedSessionController extends Controller
 {
     /**
@@ -30,15 +32,36 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         // Llamada a login de la API para obtener el token
-        $response = Http::post(config('app.api_url') . '/api/login', [
-            'email' => $request->email,
-            'password' => $request->password,
-        ]);
+        try {
+            $response = Http::acceptJson()->timeout(10)->post(config('app.api_url') . '/api/login', [
+                'email' => $request->email,
+                'password' => $request->password,
+                'token_name' => 'web-session',
+            ]);
+        } catch (Throwable) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
 
-        if ($response->successful()) {
-            $token = $response['token'];
-            Session::put('token', $token); // 🔐 Guardar token en sesión
+            throw ValidationException::withMessages([
+                'email' => 'No se pudo conectar con el servicio de Latina Pizza. Intente nuevamente.',
+            ]);
         }
+
+        if (!$response->successful() || !$response->json('token')) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+
+            throw ValidationException::withMessages([
+                'email' => 'No fue posible completar el inicio de sesión.',
+            ]);
+        }
+
+        Session::put('token', $response->json('token'));
+
+        if (!$request->user()->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice');
+        }
+
         return redirect()->intended(route('home', absolute: false));
     }
 
@@ -47,6 +70,18 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $token = $request->session()->get('token');
+        if ($token) {
+            try {
+                Http::withToken($token)
+                    ->acceptJson()
+                    ->timeout(5)
+                    ->post(config('app.api_url') . '/api/logout');
+            } catch (Throwable) {
+                // Local logout must always finish, even if the API is unavailable.
+            }
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

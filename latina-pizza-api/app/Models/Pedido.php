@@ -44,6 +44,7 @@ class Pedido extends Model
 
         // Snapshot
         'detalle_json',
+        'delivery_address_json',
     ];
 
     protected $casts = [
@@ -61,6 +62,7 @@ class Pedido extends Model
 
         // snapshot
         'detalle_json' => 'array',
+        'delivery_address_json' => 'array',
     ];
 
     // Defaults útiles (opcional)
@@ -84,6 +86,16 @@ class Pedido extends Model
     public function usuario()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function user()
+    {
+        return $this->usuario();
+    }
+
+    public function direccionUsuario()
+    {
+        return $this->belongsTo(DireccionUsuario::class, 'direccion_usuario_id');
     }
 
     public function sucursal()
@@ -110,6 +122,14 @@ class Pedido extends Model
     public function historial()
     {
         return $this->hasMany(HistorialPedido::class);
+    }
+
+    public function guardarHistorial(string $estado): HistorialPedido
+    {
+        return $this->historial()->create([
+            'estado' => $estado,
+            'fecha' => now(),
+        ]);
     }
 
     /* ----------------- Scopes para cocina ----------------- */

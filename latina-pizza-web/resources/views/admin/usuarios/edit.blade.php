@@ -29,7 +29,21 @@
             <select name="role" id="role" class="w-full border rounded px-3 py-2" required>
                 <option value="admin" {{ $usuario['role'] === 'admin' ? 'selected' : '' }}>{{ __('viewAdmin/usuarios_admin.index.rol_admin') }}</option>
                 <option value="cliente" {{ $usuario['role'] === 'cliente' ? 'selected' : '' }}>{{ __('viewAdmin/usuarios_admin.index.rol_cliente') }}</option>
+                <option value="cocina" {{ $usuario['role'] === 'cocina' ? 'selected' : '' }}>Cocina</option>
             </select>
+        </div>
+
+        <div class="mb-4">
+            <label for="sucursal_id" class="block text-sm font-semibold mb-1">Sucursal asignada</label>
+            <select name="sucursal_id" id="sucursal_id" class="w-full border rounded px-3 py-2">
+                <option value="">Sin sucursal</option>
+                @foreach($sucursales as $sucursal)
+                    <option value="{{ $sucursal['id'] }}" @selected(($usuario['sucursal_id'] ?? null) == $sucursal['id'])>
+                        {{ $sucursal['nombre'] }}
+                    </option>
+                @endforeach
+            </select>
+            <p class="text-xs text-gray-500 mt-1">Es obligatoria para el personal de cocina.</p>
         </div>
 
         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
@@ -38,4 +52,3 @@
     </form>
 </div>
 @endsection
-

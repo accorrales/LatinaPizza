@@ -16,6 +16,9 @@ class KitchenOrderController extends Controller
         if (!$user || !in_array($user->role, ['admin', 'cocina'])) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
+        if ($user->role === 'cocina' && !$user->sucursal_id) {
+            return response()->json(['message' => 'El usuario de cocina no tiene una sucursal asignada.'], 403);
+        }
 
         $status     = $request->input('status', 'nuevo');
         $tipoPedido = $request->input('tipo_pedido');
@@ -30,9 +33,10 @@ class KitchenOrderController extends Controller
                 'kitchen_status','priority','sla_minutes','promised_at','ready_at',
                 'detalle_json','created_at'
             ])
+            ->whereNotIn('estado', ['cancelado', 'entregado'])
             ->whereIn('kitchen_status', ['nuevo','preparacion','listo']);
 
-        if ($user->role !== 'admin' && !empty($user->sucursal_id)) {
+        if ($user->role === 'cocina') {
             $q->where('sucursal_id', $user->sucursal_id);
         }
 
@@ -60,7 +64,8 @@ class KitchenOrderController extends Controller
         $orders = $q->paginate($limit);
 
         $counts = Pedido::query()
-            ->when(!empty($user->sucursal_id), fn($qq) => $qq->where('sucursal_id', $user->sucursal_id))
+            ->when($user->role === 'cocina', fn($qq) => $qq->where('sucursal_id', $user->sucursal_id))
+            ->whereNotIn('estado', ['cancelado', 'entregado'])
             ->whereIn('kitchen_status', ['nuevo','preparacion','listo'])
             ->selectRaw("kitchen_status, COUNT(*) as c")
             ->groupBy('kitchen_status')
@@ -72,7 +77,8 @@ class KitchenOrderController extends Controller
             $kitchenItems = [];
             foreach (($det['items'] ?? []) as $it) {
                 if (($it['tipo'] ?? '') === 'producto') {
-                    $label = "🍕 {$it['nombre']} — {$it['tamano']} · {$it['sabor']} · {$it['masa_nombre']}";
+                    $masa = $it['masa'] ?? $it['masa_nombre'] ?? '-';
+                    $label = "🍕 {$it['nombre']} — {$it['tamano']} · {$it['sabor']} · {$masa}";
                     if (!empty($it['extras'])) {
                         $exn = collect($it['extras'])->pluck('nombre')->implode(', ');
                         if ($exn) {
@@ -89,11 +95,15 @@ class KitchenOrderController extends Controller
                     $label = "🎁 {$it['nombre']}";
                     $sub   = [];
 
-                    foreach (($it['pizzas'] ?? []) as $pz) {
+                    foreach (($it['componentes'] ?? $it['pizzas'] ?? []) as $pz) {
                         if (($pz['tipo'] ?? '') === 'pizza') {
                             // ⚠️ Nada de {$expr ?? '-'} dentro de strings.
-                            $sabor = data_get($pz, 'sabor.nombre', '-');
-                            $masa  = data_get($pz, 'masa.nombre', '-');
+                            $sabor = is_array($pz['sabor'] ?? null)
+                                ? data_get($pz, 'sabor.nombre', '-')
+                                : ($pz['sabor'] ?? '-');
+                            $masa = is_array($pz['masa'] ?? null)
+                                ? data_get($pz, 'masa.nombre', '-')
+                                : ($pz['masa'] ?? '-');
                             $extrasStr = collect($pz['extras'] ?? [])->pluck('nombre')->implode(', ');
 
                             $line = "🍕 {$sabor} · {$masa}";
@@ -102,7 +112,9 @@ class KitchenOrderController extends Controller
                             }
                             $sub[] = $line;
                         } elseif (($pz['tipo'] ?? '') === 'bebida') {
-                            $bebida = data_get($pz, 'producto.nombre', 'Bebida');
+                            $bebida = is_array($pz['producto'] ?? null)
+                                ? data_get($pz, 'producto.nombre', 'Bebida')
+                                : ($pz['producto'] ?? 'Bebida');
                             $sub[]  = "🥤 {$bebida}";
                         }
                     }
@@ -166,7 +178,10 @@ class KitchenOrderController extends Controller
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
-        if (!empty($user->sucursal_id) && $pedido->sucursal_id !== $user->sucursal_id) {
+        if ($user->role === 'cocina' && !$user->sucursal_id) {
+            return response()->json(['message' => 'El usuario de cocina no tiene una sucursal asignada'], 403);
+        }
+        if ($user->role === 'cocina' && $pedido->sucursal_id !== $user->sucursal_id) {
             return response()->json(['message' => 'No autorizado a ver este pedido'], 403);
         }
 
@@ -195,7 +210,10 @@ class KitchenOrderController extends Controller
         if (!$user || !in_array($user->role, ['admin','cocina'])) {
             abort(403, 'No autorizado');
         }
-        if ($pedido && !empty($user->sucursal_id) && $pedido->sucursal_id !== $user->sucursal_id) {
+        if ($user?->role === 'cocina' && !$user->sucursal_id) {
+            abort(403, 'El usuario de cocina no tiene una sucursal asignada');
+        }
+        if ($pedido && $user?->role === 'cocina' && $pedido->sucursal_id !== $user->sucursal_id) {
             abort(403, 'No autorizado a esta sucursal');
         }
     }
@@ -208,6 +226,17 @@ class KitchenOrderController extends Controller
         $status = $request->input('status');
         if (!in_array($status, ['nuevo','preparacion','listo'], true)) {
             return response()->json(['message' => 'Estado inválido'], 422);
+        }
+        $transitions = [
+            'nuevo' => ['nuevo', 'preparacion'],
+            'preparacion' => ['preparacion', 'listo'],
+            'listo' => ['listo'],
+        ];
+        if (!in_array($status, $transitions[$pedido->kitchen_status] ?? [], true)) {
+            return response()->json(['message' => 'No se puede retroceder el estado de cocina.'], 422);
+        }
+        if (in_array($pedido->estado, ['cancelado', 'entregado'], true)) {
+            return response()->json(['message' => 'El pedido ya está cerrado.'], 409);
         }
 
         $pedido->kitchen_status = $status;
@@ -225,6 +254,12 @@ class KitchenOrderController extends Controller
             $pedido->ready_at = now();
         }
 
+        $pedido->save();
+        if ($status === 'preparacion') {
+            $pedido->estado = 'preparando';
+        } elseif ($status === 'listo') {
+            $pedido->estado = 'listo';
+        }
         $pedido->save();
         $pedido->guardarHistorial("kitchen:status:{$status}");
 
@@ -320,8 +355,12 @@ class KitchenOrderController extends Controller
     public function markReady(Request $request, Pedido $pedido)
     {
         $this->ensureKitchenAuthAndScope($pedido);
+        if (in_array($pedido->estado, ['cancelado', 'entregado'], true)) {
+            return response()->json(['message' => 'El pedido ya está cerrado.'], 409);
+        }
 
         $pedido->kitchen_status = 'listo';
+        $pedido->estado = 'listo';
         $pedido->ready_at = now();
         $pedido->save();
 
@@ -378,13 +417,30 @@ class KitchenOrderController extends Controller
 
         DB::transaction(function () use ($user, $data, &$affected) {
             $q = Pedido::query()->whereIn('id', $data['ids']);
-            if (!empty($user->sucursal_id)) {
+            if ($user->role === 'cocina') {
+                abort_unless($user->sucursal_id, 403, 'Sucursal no asignada');
                 $q->where('sucursal_id', $user->sucursal_id);
             }
             $pedidos = $q->get();
 
             foreach ($pedidos as $p) {
+                if (in_array($p->estado, ['cancelado', 'entregado'], true)) {
+                    continue;
+                }
+                $transitions = [
+                    'nuevo' => ['nuevo', 'preparacion'],
+                    'preparacion' => ['preparacion', 'listo'],
+                    'listo' => ['listo'],
+                ];
+                if (!in_array($data['status'], $transitions[$p->kitchen_status] ?? [], true)) {
+                    continue;
+                }
                 $p->kitchen_status = $data['status'];
+                $p->estado = match ($data['status']) {
+                    'preparacion' => 'preparando',
+                    'listo' => 'listo',
+                    default => $p->estado,
+                };
                 if ($data['status'] === 'listo') {
                     $p->ready_at = now();
                 }

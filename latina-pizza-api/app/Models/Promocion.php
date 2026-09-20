@@ -20,8 +20,7 @@ class Promocion extends Model
     public function componentes()
     {
         return $this->hasMany(PromocionComponente::class, 'promocion_id')
-                    ->with(['sabor', 'tamano', 'masa']);
+                    ->with(['sabor', 'tamano', 'masa', 'producto']);
     }
 }
-
 

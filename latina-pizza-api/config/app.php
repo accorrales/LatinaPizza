@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'America/Costa_Rica'),
 
     /*
     |--------------------------------------------------------------------------
@@ -130,4 +130,5 @@ return [
     */
 
     'api_url' => env('APP_API_URL', 'http://localhost:8001'),
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:8000'),
 ];

@@ -2,10 +2,11 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -21,18 +22,26 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        View::composer('*', function ($view) {
+        Http::globalOptions([
+            'connect_timeout' => 3,
+            'timeout' => 10,
+        ]);
+
+        View::composer('layouts.app', function ($view) {
             $carritoCount = 0;
             $token = Session::get('token');
 
             if ($token) {
-                $response = Http::withToken($token)->get('http://127.0.0.1:8001/api/carrito');
+                try {
+                    $apiBase = rtrim(config('services.latina_api.base_url'), '/');
+                    $response = Http::withToken($token)->timeout(3)->get("{$apiBase}/carrito");
 
-                if ($response->successful()) {
-                    $carrito = $response->json();
-                    $carritoCount = collect($carrito['productos'] ?? [])->sum(function ($item) {
-                        return $item['pivot']['cantidad'] ?? 0;
-                    });
+                    if ($response->successful()) {
+                        $carritoCount = collect($response->json('data.items', []))
+                            ->sum(fn ($item) => (int) ($item['cantidad'] ?? 1));
+                    }
+                } catch (\Throwable) {
+                    $carritoCount = 0;
                 }
             }
 

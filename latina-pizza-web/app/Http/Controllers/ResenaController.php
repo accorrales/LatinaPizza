@@ -5,26 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Auth;
-use App\Models\DetallePedido;
-use App\Models\Resena;
+
 class ResenaController extends Controller
 {
-    public function ver($saborId)
-    {
-        $productoResponse = Http::get("http://127.0.0.1:8001/api/sabor/$saborId");
-        $resenasResponse = Http::get("http://127.0.0.1:8001/api/resenas/$saborId");
-
-        if ($productoResponse->successful() && $resenasResponse->successful()) {
-            $producto = $productoResponse->json();
-            $resenas = $resenasResponse->json();
-
-            return view('resenas.ver', compact('producto', 'resenas'));
-        } else {
-            return back()->with('error', 'No se pudieron obtener los datos.');
-        }
-    }
-    
     public function verResenas($id)
     {
         $resenas = [];
@@ -32,13 +15,13 @@ class ResenaController extends Controller
 
         $token = Session::get('token');
 
-        $resenaResponse = Http::get("http://127.0.0.1:8001/api/resenas/$id");
+        $resenaResponse = Http::get($this->apiUrl("/resenas/$id"));
         if ($resenaResponse->successful()) {
             $resenas = $resenaResponse->json();
         }
 
         if ($token) {
-            $verificacion = Http::withToken($token)->get("http://127.0.0.1:8001/api/resenas/verificar-compra/$id");
+            $verificacion = Http::withToken($token)->get($this->apiUrl("/resenas/verificar-compra/$id"));
 
             if ($verificacion->successful()) {
                 $puedeCalificar = $verificacion->json()['comprado'];
@@ -56,7 +39,7 @@ class ResenaController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->post('http://127.0.0.1:8001/api/resenas', [
+        $response = Http::withToken($token)->post($this->apiUrl('/resenas'), [
             'sabor_id' => $request->sabor_id,
             'calificacion' => $request->calificacion,
             'comentario' => $request->comentario,
@@ -74,7 +57,7 @@ class ResenaController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->put("http://127.0.0.1:8001/api/resenas/$id", [
+        $response = Http::withToken($token)->put($this->apiUrl("/resenas/$id"), [
             'calificacion' => $request->calificacion,
             'comentario' => $request->comentario,
         ]);
@@ -91,7 +74,7 @@ class ResenaController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->delete("http://127.0.0.1:8001/api/resenas/$id");
+        $response = Http::withToken($token)->delete($this->apiUrl("/resenas/$id"));
 
         if ($response->successful()) {
             return back()->with('success', '¡Reseña eliminada correctamente!');
@@ -100,9 +83,4 @@ class ResenaController extends Controller
             return back()->with('error', $mensaje);
         }
     }
-    public function crear($saborId)
-    {
-        return view('resenas.crear', compact('saborId'));
-    }
 }
-

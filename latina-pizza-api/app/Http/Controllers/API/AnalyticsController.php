@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Pedido;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
 {
@@ -15,7 +14,7 @@ class AnalyticsController extends Controller
        ======================= */
     protected function baseQuery(Request $request)
     {
-        $q = Pedido::query()->whereNotNull('paid_at'); // o ->where('payment_status','paid')
+        $q = Pedido::query()->where('payment_status', 'paid')->whereNotNull('paid_at');
 
         // Filtros opcionales por querystring
         if ($suc = $request->query('sucursal_id')) {
@@ -142,15 +141,15 @@ class AnalyticsController extends Controller
         foreach ($pedidos as $p) {
             $det = $p->detalle_json ?? [];
             foreach (($det['items'] ?? []) as $it) {
-                if (($it['tipo'] ?? '') !== 'producto') continue;
-
                 $qty  = (int) ($it['cantidad'] ?? 1);
-                $name = trim(
-                    ($it['nombre'] ?? 'Producto') . ' ' .
-                    ($it['tamano'] ?? '') . ' ' .
-                    ($it['sabor'] ?? '') . ' ' .
-                    ($it['masa_nombre'] ?? '')
-                );
+                $name = ($it['tipo'] ?? '') === 'promocion'
+                    ? 'Promoción: '.($it['nombre'] ?? 'Sin nombre')
+                    : trim(
+                        ($it['nombre'] ?? 'Producto').' '.
+                        ($it['tamano'] ?? '').' '.
+                        ($it['sabor'] ?? '').' '.
+                        ($it['masa'] ?? $it['masa_nombre'] ?? '')
+                    );
                 $name = preg_replace('/\s+/', ' ', $name);
 
                 $lineRevenue = 0.0;
@@ -180,4 +179,3 @@ class AnalyticsController extends Controller
         ]);
     }
 }
-

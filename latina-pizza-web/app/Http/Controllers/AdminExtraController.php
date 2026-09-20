@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\Session;
 
 class AdminExtraController extends Controller
 {
-    private $apiBase = 'http://127.0.0.1:8001/api/admin';
-
     public function index()
     {
         $token = Session::get('token');

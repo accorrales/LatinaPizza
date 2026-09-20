@@ -24,7 +24,9 @@ test('profile information can be updated', function () {
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect('/profile');
+        ->assertRedirect('/login');
+
+    $this->assertGuest();
 
     $user->refresh();
 

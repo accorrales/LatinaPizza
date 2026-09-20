@@ -15,7 +15,7 @@
         @foreach ($data['pizzas'] as $pizza)
             <div class="border border-gray-300 rounded-lg p-4 bg-gray-50 shadow-sm flex flex-col sm:flex-row items-start gap-4">
                 {{-- Imagen referencial basada en sabor --}}
-                <img src="{{ $pizza['imagen'] ?? 'https://cdn-icons-png.flaticon.com/512/1404/1404945.png' }}"
+                <img src="{{ $pizza['imagen'] ?? asset('images/Logo.png') }}"
                      alt="Pizza {{ $pizza['sabor'] }}" class="w-24 h-24 object-cover rounded shadow-sm">
 
                 <div class="flex-1">

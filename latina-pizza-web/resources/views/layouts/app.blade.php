@@ -4,14 +4,9 @@
     <meta charset="UTF-8">
     <title>{{ config('app.name') }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="{{ trim($__env->yieldContent('meta_description', 'Ordená pizzas, promociones y entrega express con Latina Pizza.')) }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     {{-- Modal Escoger Express o llevar --}}
     <style>[x-cloak]{display:none!important}</style>
@@ -27,6 +22,7 @@
     </style>
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @stack('styles')
 </head>
 <body class="bg-gray-100 font-sans text-gray-900">
 <header class="bg-white backdrop-blur shadow-md sticky top-0 z-50 border-b border-gray-200">
@@ -193,8 +189,6 @@
                         <a href="{{ route('admin.promociones.index') }}" class="block px-4 py-2 hover:bg-gray-100">{{ __('layout.promos') }}</a>
                         <hr class="my-1">
                         <a href="{{ route('admin.pedidos.index') }}" class="block px-4 py-2 hover:bg-gray-100">📋 {{ __('layout.orders') }}</a>
-                        <a href="{{ url('/admin/tiempo-estimado') }}" class="block px-4 py-2 hover:bg-gray-100">⏱️ {{ __('layout.eta') }}</a>
-                        <a href="{{ url('/admin/resumen-sucursal/' . Auth::user()->sucursal_id) }}" class="block px-4 py-2 hover:bg-gray-100">📊 {{ __('layout.branch_summary') }}</a>
                         <a href="{{ route('admin.ventas') }}" class="block px-2 py-1 text-sm hover:bg-gray-100">
                         📈 Ventas
                         </a>
@@ -284,7 +278,11 @@
 </script>
 
 <main class="max-w-7xl mx-auto py-8">
-    @yield('content')
+    @isset($slot)
+        {{ $slot }}
+    @else
+        @yield('content')
+    @endisset
 </main>
 
 <footer class="bg-gray-900 text-white py-10 mt-16 px-4" data-aos="fade-up">
@@ -305,7 +303,10 @@
             <a href="/catalogo" class="block text-gray-300 hover:text-red-300 transition">{{ __('layout.menu') }}</a>
             <a href="{{ route('usuario.pedidos') }}" class="block text-gray-300 hover:text-red-300 transition">{{ __('layout.my_orders') }}</a>
             @auth
-                <a href="{{ route('logout') }}" class="block text-gray-300 hover:text-red-300 transition">{{ __('layout.logout') }}</a>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="block text-gray-300 hover:text-red-300 transition">{{ __('layout.logout') }}</button>
+                </form>
             @else
                 <a href="{{ route('login') }}" class="block text-gray-300 hover:text-red-300 transition">{{ __('layout.login') }}</a>
                 <a href="{{ route('register') }}" class="block text-gray-300 hover:text-red-300 transition">{{ __('layout.register') }}</a>
@@ -315,19 +316,33 @@
         {{-- CONTACTO + HORARIOS --}}
         <div class="space-y-3">
             <h4 class="text-red-400 font-semibold mb-2 text-lg">{{ __('layout.contact') }}</h4>
-            <p class="text-sm text-gray-400">{{ __('layout.address') }}</p>
-            <p class="text-sm text-gray-400">{{ __('layout.phone') }}</p>
-            <p class="text-sm text-gray-400">{{ __('layout.email') }}</p>
+            @if(config('business.address'))
+                <p class="text-sm text-gray-400">📍 {{ config('business.address') }}</p>
+            @endif
+            @if(config('business.phone'))
+                <p class="text-sm text-gray-400">📞 {{ config('business.phone') }}</p>
+            @endif
+            @if(config('business.email'))
+                <p class="text-sm text-gray-400">✉️ {{ config('business.email') }}</p>
+            @endif
 
             <h4 class="text-red-400 font-semibold mt-5 mb-1 text-lg">{{ __('layout.hours') }}</h4>
             <p class="text-sm text-gray-400">{{ __('layout.hours_label') }}</p>
             <p class="text-sm text-gray-500 italic">{{ __('layout.hours_note') }}</p>
 
-            <div class="flex space-x-4 mt-4">
-                <a href="#" class="text-gray-400 hover:text-red-400 transition duration-300"><i class="fab fa-facebook-f"></i></a>
-                <a href="#" class="text-gray-400 hover:text-red-400 transition duration-300"><i class="fab fa-instagram"></i></a>
-                <a href="#" class="text-gray-400 hover:text-red-400 transition duration-300"><i class="fab fa-whatsapp"></i></a>
-            </div>
+            @if(config('business.facebook_url') || config('business.instagram_url') || config('business.whatsapp_url'))
+                <div class="flex space-x-4 mt-4">
+                    @if(config('business.facebook_url'))
+                        <a href="{{ config('business.facebook_url') }}" rel="noopener noreferrer" target="_blank" aria-label="Facebook" class="text-gray-400 hover:text-red-400 transition duration-300"><i class="fab fa-facebook-f"></i></a>
+                    @endif
+                    @if(config('business.instagram_url'))
+                        <a href="{{ config('business.instagram_url') }}" rel="noopener noreferrer" target="_blank" aria-label="Instagram" class="text-gray-400 hover:text-red-400 transition duration-300"><i class="fab fa-instagram"></i></a>
+                    @endif
+                    @if(config('business.whatsapp_url'))
+                        <a href="{{ config('business.whatsapp_url') }}" rel="noopener noreferrer" target="_blank" aria-label="WhatsApp" class="text-gray-400 hover:text-red-400 transition duration-300"><i class="fab fa-whatsapp"></i></a>
+                    @endif
+                </div>
+            @endif
         </div>
     </div>
 
@@ -336,18 +351,11 @@
     </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-<script>
-    AOS.init({ duration: 800, once: true, easing: 'ease-in-out' });
-</script>
-
 @yield('scripts')
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script> window.isAuthenticated = @json(Auth::check()); </script>
 @stack('scripts')
 <script>
 function entregaModal() {
-  const API_BASE = @json(rtrim(config('services.latina_api.base_url'), '/')); // p.ej. http://127.0.0.1:8001
   return {
     abierto: false,
 
@@ -392,23 +400,7 @@ function entregaModal() {
     },
 
     async persistTipo(tipo) {
-      try {
-        await fetch(`${API_BASE}/guardar-tipo-pedido`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '' // ← FIX
-          },
-          credentials: 'include',
-          body: JSON.stringify({ tipo })
-        });
-        localStorage.setItem('tipo_pedido', tipo);
-      } catch (e) {
-        console.warn('No se pudo guardar tipo_pedido en backend:', e);
-        // Igual guardamos en localStorage para no volver a mostrar
-        localStorage.setItem('tipo_pedido', tipo);
-      }
+      localStorage.setItem('tipo_pedido', tipo);
     }
   }
 }
@@ -425,4 +417,3 @@ window.abrirSelectorEntrega = () => {
 
 </body>
 </html>
-

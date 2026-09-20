@@ -12,6 +12,7 @@ class CarritoItemPromocionDetalle extends Model
         'carrito_item_id',
         'tipo',            // Asegúrate de que esté aquí
         'sabor_id',
+        'tamano_id',
         'masa_id',
         'nota_cliente',
         'producto_id',
@@ -45,4 +46,3 @@ class CarritoItemPromocionDetalle extends Model
     }
 
 }
-

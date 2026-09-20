@@ -6,22 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('productos', function (Blueprint $table) {
+        Schema::create('stripe_webhook_events', function (Blueprint $table) {
             $table->id();
+            $table->string('event_id')->unique();
+            $table->string('event_type')->index();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('productos');
+        Schema::dropIfExists('stripe_webhook_events');
     }
 };

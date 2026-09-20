@@ -6,6 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\DireccionUsuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Carrito;
+use Illuminate\Support\Facades\Log;
+use Stripe\PaymentIntent;
+use Stripe\Stripe;
 
 class DireccionUsuarioController extends Controller
 {
@@ -53,6 +57,7 @@ class DireccionUsuarioController extends Controller
         $user = Auth::user();
 
         $direccion = DireccionUsuario::where('user_id', $user->id)->findOrFail($id);
+        $this->invalidateDeliverySelection($user->id, $direccion->id);
         $direccion->delete();
 
         return response()->json(['message' => 'Dirección eliminada correctamente']);
@@ -83,7 +88,44 @@ class DireccionUsuarioController extends Controller
         ]);
 
         $dir->update($validated);
+        $this->invalidateDeliverySelection($user->id, $dir->id);
         return response()->json(['message' => 'Dirección actualizada', 'data' => $dir]);
     }
-}
 
+    private function invalidateDeliverySelection(int $userId, int $addressId): void
+    {
+        $cart = Carrito::where('user_id', $userId)
+            ->where('direccion_usuario_id', $addressId)
+            ->first();
+        if (!$cart) {
+            return;
+        }
+
+        $intentId = $cart->stripe_payment_intent_id;
+        $cart->update([
+            'tipo_entrega' => null,
+            'sucursal_id' => null,
+            'direccion_usuario_id' => null,
+            'delivery_fee' => null,
+            'delivery_distance_km' => null,
+            'stripe_payment_intent_id' => null,
+        ]);
+
+        if (!$intentId || !config('services.stripe.secret')) {
+            return;
+        }
+
+        try {
+            Stripe::setApiKey(config('services.stripe.secret'));
+            $intent = PaymentIntent::retrieve($intentId);
+            if (!in_array($intent->status, ['succeeded', 'canceled'], true)) {
+                $intent->cancel();
+            }
+        } catch (\Throwable $exception) {
+            Log::warning('Could not cancel Stripe intent after address change.', [
+                'intent_id' => $intentId,
+                'exception' => $exception::class,
+            ]);
+        }
+    }
+}

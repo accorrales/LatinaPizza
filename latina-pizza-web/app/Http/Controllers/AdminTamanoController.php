@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Session;
 
 class AdminTamanoController extends Controller
 {
-    private $apiBase = 'http://127.0.0.1:8001/api';
     public function index()
     {
         $token = Session::get('token');

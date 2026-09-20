@@ -67,15 +67,24 @@
 @push('scripts')
 <script>
     const tamanos = @json($tamanos);
-    let contador = 1;
+    const bebidas = @json($bebidas);
+    const escapeAdminHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;'
+    })[character]);
+    const safeId = value => Number.isInteger(Number(value)) && Number(value) > 0 ? Number(value) : 0;
+    let contador = 0;
 
-    document.getElementById('agregar-componente').addEventListener('click', function () {
-        const opciones = tamanos.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+    function agregarComponente() {
+        const opcionesTamano = tamanos.map(t => `<option value="${safeId(t.id)}">${escapeAdminHtml(t.nombre)}</option>`).join('');
+        const opcionesBebida = bebidas.map(b => `<option value="${safeId(b.id)}">${escapeAdminHtml(b.nombre)}</option>`).join('');
 
         const html = `
-        <div class="componente border p-4 rounded mb-4 bg-gray-100">
+        <div class="componente border p-4 rounded mb-4 bg-gray-100" data-component>
+            <div class="flex justify-end">
+                <button type="button" class="text-sm text-red-700" data-remove>Eliminar componente</button>
+            </div>
             <label class="block mb-2 font-semibold">{{ __('viewAdmin/promociones_admin.create.tipo') }}</label>
-            <select name="componentes[${contador}][tipo]" class="w-full border rounded p-2" required>
+            <select name="componentes[${contador}][tipo]" class="component-type w-full border rounded p-2" required>
                 <option value="pizza">{{ __('viewAdmin/promociones_admin.create.tipo_pizza') }}</option>
                 <option value="bebida">{{ __('viewAdmin/promociones_admin.create.tipo_bebida') }}</option>
             </select>
@@ -83,15 +92,39 @@
             <label class="block mt-4 font-semibold">{{ __('viewAdmin/promociones_admin.create.cantidad') }}</label>
             <input type="number" name="componentes[${contador}][cantidad]" value="1" min="1" class="w-full border rounded p-2" required>
 
-            <label class="block mt-4 font-semibold">{{ __('viewAdmin/promociones_admin.create.tamano') }}</label>
-            <select name="componentes[${contador}][tamano_id]" class="w-full border rounded p-2">
-                <option value="">{{ __('viewAdmin/promociones_admin.create.seleccionar_tamano') }}</option>
-                ${opciones}
-            </select>
+            <div data-pizza-fields>
+                <label class="block mt-4 font-semibold">{{ __('viewAdmin/promociones_admin.create.tamano') }}</label>
+                <select name="componentes[${contador}][tamano_id]" class="w-full border rounded p-2">
+                    <option value="">{{ __('viewAdmin/promociones_admin.create.seleccionar_tamano') }}</option>
+                    ${opcionesTamano}
+                </select>
+            </div>
+
+            <div data-drink-fields class="hidden">
+                <label class="block mt-4 font-semibold">Bebida</label>
+                <select name="componentes[${contador}][producto_id]" class="w-full border rounded p-2">
+                    <option value="">Seleccione una bebida</option>
+                    ${opcionesBebida}
+                </select>
+            </div>
         </div>`;
         
         document.getElementById('componentes').insertAdjacentHTML('beforeend', html);
         contador++;
+    }
+
+    document.getElementById('agregar-componente').addEventListener('click', agregarComponente);
+    document.getElementById('componentes').addEventListener('click', event => {
+        if (event.target.matches('[data-remove]')) event.target.closest('[data-component]').remove();
     });
+    document.getElementById('componentes').addEventListener('change', event => {
+        if (!event.target.matches('.component-type')) return;
+        const component = event.target.closest('[data-component]');
+        const isDrink = event.target.value === 'bebida';
+        component.querySelector('[data-pizza-fields]').classList.toggle('hidden', isDrink);
+        component.querySelector('[data-drink-fields]').classList.toggle('hidden', !isDrink);
+    });
+
+    agregarComponente();
 </script>
 @endpush

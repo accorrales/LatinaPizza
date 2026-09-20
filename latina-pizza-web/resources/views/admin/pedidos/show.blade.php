@@ -6,6 +6,13 @@
 <div class="max-w-4xl mx-auto py-10 px-4">
     <h2 class="text-2xl font-bold mb-6 text-red-600">🧾 Detalle del Pedido #{{ $pedido['id'] }}</h2>
 
+    @if (session('success'))
+        <div class="mb-4 rounded bg-green-100 p-3 text-green-800">{{ session('success') }}</div>
+    @endif
+    @if (session('error'))
+        <div class="mb-4 rounded bg-red-100 p-3 text-red-800">{{ session('error') }}</div>
+    @endif
+
     <div class="bg-white shadow-md rounded p-6 space-y-4">
         <p><strong>Cliente:</strong> {{ $pedido['usuario']['name'] ?? 'N/A' }}</p>
         <p><strong>Sucursal:</strong> {{ $pedido['sucursal']['nombre'] ?? 'N/A' }}</p>
@@ -25,6 +32,17 @@
             </span>
         </p>
         <p><strong>Total:</strong> ₡{{ number_format($pedido['total'], 0) }}</p>
+        <p><strong>Pago:</strong> {{ ucfirst($pedido['payment_status'] ?? 'pendiente') }}</p>
+
+        @if (($pedido['payment_provider'] ?? null) === 'stripe' && in_array(($pedido['payment_status'] ?? null), ['paid', 'refund_pending'], true))
+            <form method="POST" action="{{ route('admin.pedidos.refund', $pedido['id']) }}"
+                  onsubmit="return confirm('¿Confirma el reembolso total de este pedido? Esta acción no se puede deshacer.');">
+                @csrf
+                <button type="submit" class="rounded bg-red-700 px-4 py-2 font-semibold text-white hover:bg-red-800">
+                    Reembolsar pago completo
+                </button>
+            </form>
+        @endif
     </div>
 
     @if ($pedido['productos'])
@@ -46,4 +64,3 @@
     </a>
 </div>
 @endsection
-

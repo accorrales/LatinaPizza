@@ -1,10 +1,11 @@
 <?php 
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\API;
 
 use App\Models\Extra;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 
 class ExtraController extends Controller
 {
@@ -16,7 +17,7 @@ class ExtraController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nombre' => 'required|string|max:255',
+            'nombre' => 'required|string|max:255|unique:extras,nombre',
             'precio_pequena' => 'required|numeric|min:0',
             'precio_mediana' => 'required|numeric|min:0',
             'precio_grande' => 'required|numeric|min:0',
@@ -37,7 +38,7 @@ class ExtraController extends Controller
         $extra = Extra::findOrFail($id);
 
         $validated = $request->validate([
-            'nombre' => 'required|string|max:255',
+            'nombre' => 'required|string|max:255|unique:extras,nombre,'.$extra->id,
             'precio_pequena' => 'required|numeric|min:0',
             'precio_mediana' => 'required|numeric|min:0',
             'precio_grande' => 'required|numeric|min:0',
@@ -50,7 +51,13 @@ class ExtraController extends Controller
 
     public function destroy($id)
     {
-        Extra::findOrFail($id)->delete();
+        $extra = Extra::findOrFail($id);
+        $inUse = DB::table('detalle_pedido_extra')->where('extra_id', $extra->id)->exists()
+            || DB::table('detalle_promocion_extra')->where('extra_id', $extra->id)->exists();
+        if ($inUse) {
+            return response()->json(['message' => 'El extra tiene pedidos históricos y no se puede eliminar.'], 409);
+        }
+        $extra->delete();
         return response()->json(['message' => 'Extra eliminado correctamente.']);
     }
 }

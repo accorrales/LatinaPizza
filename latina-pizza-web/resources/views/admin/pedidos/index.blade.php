@@ -42,6 +42,7 @@
                             <span class="px-2 py-1 rounded text-white text-xs font-medium
                                 @switch($pedido['estado'])
                                     @case('pendiente') bg-yellow-500 @break
+                                    @case('pagado') bg-emerald-500 @break
                                     @case('preparando') bg-orange-500 @break
                                     @case('listo') bg-blue-500 @break
                                     @case('entregado') bg-green-600 @break
@@ -63,28 +64,51 @@
                                 Historial
                             </a>
 
-                            <form method="POST" action="{{ route('admin.pedidos.estado', $pedido['id']) }}">
-                                @csrf
-                                @method('PUT')
-                                <select name="estado" onchange="this.form.submit()"
-                                        class="text-xs bg-gray-100 rounded px-2 py-1 border text-gray-700">
-                                    <option disabled selected>Cambiar</option>
-                                    <option value="pendiente">Pendiente</option>
-                                    <option value="preparando">Preparando</option>
-                                    <option value="listo">Listo</option>
-                                    <option value="entregado">Entregado</option>
-                                    <option value="cancelado">Cancelado</option>
-                                </select>
-                            </form>
+                            @php
+                                $transiciones = match ($pedido['estado']) {
+                                    'pendiente', 'pagado' => ['preparando', 'cancelado'],
+                                    'preparando' => ['listo', 'cancelado'],
+                                    'listo' => ['entregado', 'cancelado'],
+                                    default => [],
+                                };
+                                if (($pedido['payment_provider'] ?? null) === 'stripe' && ($pedido['payment_status'] ?? null) === 'paid') {
+                                    $transiciones = array_values(array_diff($transiciones, ['cancelado']));
+                                }
+                            @endphp
+                            @if ($transiciones)
+                                <form method="POST" action="{{ route('admin.pedidos.estado', $pedido['id']) }}">
+                                    @csrf
+                                    @method('PUT')
+                                    <select name="estado" onchange="this.form.submit()"
+                                            class="text-xs bg-gray-100 rounded px-2 py-1 border text-gray-700">
+                                        <option disabled selected>Cambiar</option>
+                                        @foreach ($transiciones as $estado)
+                                            <option value="{{ $estado }}">{{ ucfirst($estado) }}</option>
+                                        @endforeach
+                                    </select>
+                                </form>
+                            @endif
                         </td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
     </div>
+
+    @if (($pagination['last_page'] ?? 1) > 1)
+        <nav class="mt-6 flex items-center justify-center gap-4" aria-label="Paginación de pedidos">
+            @if ($pagination['current_page'] > 1)
+                <a class="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
+                   href="{{ route('admin.pedidos.index', ['page' => $pagination['current_page'] - 1]) }}">Anterior</a>
+            @endif
+            <span class="text-sm text-gray-600">Página {{ $pagination['current_page'] }} de {{ $pagination['last_page'] }}</span>
+            @if ($pagination['current_page'] < $pagination['last_page'])
+                <a class="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
+                   href="{{ route('admin.pedidos.index', ['page' => $pagination['current_page'] + 1]) }}">Siguiente</a>
+            @endif
+        </nav>
+    @endif
 </div>
 @endsection
-
-
 
 

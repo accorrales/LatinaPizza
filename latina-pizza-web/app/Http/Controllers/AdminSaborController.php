@@ -7,8 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 class AdminSaborController extends Controller
 {
-    private $apiBase = 'http://127.0.0.1:8001/api/admin';
-
     public function index()
     {
         
@@ -111,5 +109,4 @@ class AdminSaborController extends Controller
         return back()->with('error', 'Error al eliminar el sabor.');
     }
 }
-
 

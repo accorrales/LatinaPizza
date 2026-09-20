@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Sucursal;
-use Illuminate\Validation\Rule;
 class EntregaController extends Controller
 {
     public function setMetodoEntrega(Request $r)
@@ -103,7 +102,8 @@ class EntregaController extends Controller
         }
         // Si la distancia cae fuera de todos los tramos (no debería si validamos max_km),
         // devolvemos el último fee como fallback.
-        return (int) end($tiers)['fee'] ?? 0;
+        $lastTier = end($tiers);
+        return is_array($lastTier) ? (int) ($lastTier['fee'] ?? 0) : 0;
     }
 
     private function normalizePair($lat, $lng): array

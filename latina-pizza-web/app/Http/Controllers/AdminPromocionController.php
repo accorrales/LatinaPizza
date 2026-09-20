@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Session;
 
 class AdminPromocionController extends Controller
 {
-    private $apiBase = 'http://127.0.0.1:8001/api';
-
     public function index()
     {
         $token = Session::get('token');
@@ -29,11 +27,16 @@ class AdminPromocionController extends Controller
     {
         $token = Session::get('token');
 
-        $tamanos = Http::withToken($token)->get("{$this->apiBase}/admin/tamanos")->json()['data'] ?? [];
-        $sabores = Http::withToken($token)->get("{$this->apiBase}/admin/sabores")->json()['data'] ?? [];
-        $masas   = Http::withToken($token)->get("{$this->apiBase}/admin/masas")->json()['data'] ?? [];
+        $tamanosResponse = Http::withToken($token)->get("{$this->apiBase}/admin/tamanos")->json();
+        $saboresResponse = Http::withToken($token)->get("{$this->apiBase}/admin/sabores")->json();
+        $masasResponse = Http::withToken($token)->get("{$this->apiBase}/admin/masas")->json();
+        $bebidasResponse = Http::get("{$this->apiBase}/bebidas")->json();
+        $tamanos = $tamanosResponse['data'] ?? $tamanosResponse;
+        $sabores = $saboresResponse['data'] ?? $saboresResponse;
+        $masas = $masasResponse['data'] ?? $masasResponse;
+        $bebidas = $bebidasResponse['data'] ?? $bebidasResponse;
 
-        return view('admin.promociones.create', compact('tamanos', 'sabores', 'masas'));
+        return view('admin.promociones.create', compact('tamanos', 'sabores', 'masas', 'bebidas'));
     }
 
     public function store(Request $request)
@@ -49,12 +52,13 @@ class AdminPromocionController extends Controller
             'descripcion' => 'nullable|string',
             'precio_total' => 'required|numeric|min:0',
             'precio_sugerido' => 'nullable|numeric|min:0',
-            'imagen' => 'nullable|string',
+            'imagen' => 'nullable|url:http,https|max:2048',
             'incluye_bebida' => 'nullable|boolean',
             'componentes' => 'required|array|min:1',
             'componentes.*.tipo' => 'required|in:pizza,bebida',
             'componentes.*.cantidad' => 'required|integer|min:1',
             'componentes.*.tamano_id' => 'nullable|integer',
+            'componentes.*.producto_id' => 'nullable|integer',
         ]);
 
         $data = $validated;
@@ -83,11 +87,16 @@ class AdminPromocionController extends Controller
         }
 
         $promocion = Http::withToken($token)->get("{$this->apiBase}/promociones/{$id}")->json()['data'] ?? null;
-        $tamanos   = Http::withToken($token)->get("{$this->apiBase}/admin/tamanos")->json()['data'] ?? [];
-        $sabores   = Http::withToken($token)->get("{$this->apiBase}/admin/sabores")->json()['data'] ?? [];
-        $masas     = Http::withToken($token)->get("{$this->apiBase}/admin/masas")->json()['data'] ?? [];
+        $tamanosResponse = Http::withToken($token)->get("{$this->apiBase}/admin/tamanos")->json();
+        $saboresResponse = Http::withToken($token)->get("{$this->apiBase}/admin/sabores")->json();
+        $masasResponse = Http::withToken($token)->get("{$this->apiBase}/admin/masas")->json();
+        $bebidasResponse = Http::get("{$this->apiBase}/bebidas")->json();
+        $tamanos = $tamanosResponse['data'] ?? $tamanosResponse;
+        $sabores = $saboresResponse['data'] ?? $saboresResponse;
+        $masas = $masasResponse['data'] ?? $masasResponse;
+        $bebidas = $bebidasResponse['data'] ?? $bebidasResponse;
 
-        return view('admin.promociones.edit', compact('promocion', 'tamanos', 'sabores', 'masas'));
+        return view('admin.promociones.edit', compact('promocion', 'tamanos', 'sabores', 'masas', 'bebidas'));
     }
 
     public function update(Request $request, $id)
@@ -99,12 +108,13 @@ class AdminPromocionController extends Controller
             'descripcion' => 'nullable|string',
             'precio_total' => 'required|numeric|min:0',
             'precio_sugerido' => 'nullable|numeric|min:0',
-            'imagen' => 'nullable|string',
+            'imagen' => 'nullable|url:http,https|max:2048',
             'incluye_bebida' => 'nullable|boolean',
             'componentes' => 'required|array|min:1',
             'componentes.*.tipo' => 'required|in:pizza,bebida',
             'componentes.*.cantidad' => 'required|integer|min:1',
             'componentes.*.tamano_id' => 'nullable|integer',
+            'componentes.*.producto_id' => 'nullable|integer',
         ]);
 
         $data = $validated;

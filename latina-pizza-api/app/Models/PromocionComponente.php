@@ -14,6 +14,7 @@ class PromocionComponente extends Model
         'sabor_id',
         'tamano_id',
         'masa_id',
+        'producto_id',
         'cantidad',
     ];
 
@@ -35,5 +36,10 @@ class PromocionComponente extends Model
     public function masa()
     {
         return $this->belongsTo(Masa::class);
+    }
+
+    public function producto()
+    {
+        return $this->belongsTo(Producto::class);
     }
 }

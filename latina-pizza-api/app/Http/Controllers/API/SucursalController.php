@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sucursal;
@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\DireccionUsuario;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 class SucursalController extends Controller
 {
     public function index()
@@ -20,10 +19,12 @@ class SucursalController extends Controller
     {
         $request->validate([
             'nombre' => 'required|string|max:255',
-            'direccion' => 'required|string|max:255'
+            'direccion' => 'required|string|max:255',
+            'latitud' => 'required|numeric|between:-90,90',
+            'longitud' => 'required|numeric|between:-180,180',
         ]);
 
-        $sucursal = Sucursal::create($request->only('nombre', 'direccion'));
+        $sucursal = Sucursal::create($request->only('nombre', 'direccion', 'latitud', 'longitud'));
 
         return response()->json([
             'message' => 'Sucursal creada correctamente',
@@ -42,10 +43,12 @@ class SucursalController extends Controller
 
         $request->validate([
             'nombre' => 'required|string|max:255',
-            'direccion' => 'required|string|max:255'
+            'direccion' => 'required|string|max:255',
+            'latitud' => 'required|numeric|between:-90,90',
+            'longitud' => 'required|numeric|between:-180,180',
         ]);
 
-        $sucursal->update($request->only('nombre', 'direccion'));
+        $sucursal->update($request->only('nombre', 'direccion', 'latitud', 'longitud'));
 
         return response()->json([
             'message' => 'Sucursal actualizada correctamente',
@@ -56,6 +59,11 @@ class SucursalController extends Controller
     public function destroy($id)
     {
         $sucursal = Sucursal::findOrFail($id);
+        $inUse = DB::table('pedidos')->where('sucursal_id', $sucursal->id)->exists()
+            || DB::table('users')->where('sucursal_id', $sucursal->id)->exists();
+        if ($inUse) {
+            return response()->json(['message' => 'La sucursal tiene usuarios o pedidos asociados y no se puede eliminar.'], 409);
+        }
         $sucursal->delete();
 
         return response()->json([
@@ -133,4 +141,3 @@ class SucursalController extends Controller
     }
     
 }
-

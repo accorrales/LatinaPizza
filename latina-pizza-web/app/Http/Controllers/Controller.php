@@ -10,4 +10,16 @@ use Illuminate\Routing\Controller as BaseController;
 class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
+
+    protected string $apiBase;
+
+    public function __construct()
+    {
+        $this->apiBase = rtrim(config('services.latina_api.base_url'), '/');
+    }
+
+    protected function apiUrl(string $path = ''): string
+    {
+        return $this->apiBase.'/'.ltrim($path, '/');
+    }
 }

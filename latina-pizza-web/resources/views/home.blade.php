@@ -62,7 +62,7 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE = 'http://127.0.0.1:8001';
+    const API_BASE = '{{ config('app.api_url') }}';
 
     fetch(`${API_BASE}/api/promociones`)
         .then(res => res.json())
@@ -72,18 +72,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 const wrapper = document.getElementById('carrusel-promos');
 
                 promos.forEach(promo => {
+                    const promoId = Number(promo.id);
+                    if (!Number.isInteger(promoId) || promoId < 1) return;
+
                     const slide = document.createElement('div');
                     slide.className = 'swiper-slide';
-                    slide.innerHTML = `
-                        <div class="relative group w-full h-full cursor-pointer" onclick="manejarClickPromocion(${promo.id})">
-                            <img src="${promo.imagen}" alt="${promo.nombre}"
-                                class="w-full h-56 sm:h-64 md:h-80 lg:h-[32rem] object-cover rounded-xl transition duration-300">
 
-                            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 rounded-xl">
-                                <span class="text-white text-xl sm:text-2xl font-bold animate-pulse">👆 Pick me para comprar</span>
-                            </div>
-                        </div>
-                    `;
+                    const card = document.createElement('div');
+                    card.className = 'relative group w-full h-full cursor-pointer';
+                    card.addEventListener('click', () => manejarClickPromocion(promoId));
+
+                    const image = document.createElement('img');
+                    try {
+                        const imageUrl = new URL(String(promo.imagen || ''), window.location.origin);
+                        image.src = ['http:', 'https:'].includes(imageUrl.protocol) ? imageUrl.href : '';
+                    } catch {
+                        image.src = '';
+                    }
+                    image.alt = String(promo.nombre || 'Promoción');
+                    image.className = 'w-full h-56 sm:h-64 md:h-80 lg:h-[32rem] object-cover rounded-xl transition duration-300';
+
+                    const overlay = document.createElement('div');
+                    overlay.className = 'absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 rounded-xl';
+                    const label = document.createElement('span');
+                    label.className = 'text-white text-xl sm:text-2xl font-bold animate-pulse';
+                    label.textContent = '👆 Pick me para comprar';
+
+                    overlay.appendChild(label);
+                    card.append(image, overlay);
+                    slide.appendChild(card);
                     wrapper.appendChild(slide);
                 });
 
@@ -119,73 +136,5 @@ function manejarClickPromocion(promoId) {
     }
 }
 
-/* =========================
-   🔻 Lógica del modal
-   ========================= */
-function entregaModal() {
-  const API_BASE = 'http://127.0.0.1:8001';
-
-  return {
-    abierto: false,
-
-    init() {
-        const url = new URL(window.location.href);
-        const forceByQuery = url.searchParams.get('cambiar_entrega') === '1';
-        const forceByFlag  = localStorage.getItem('force_modal_entrega') === '1';
-        const hasChoice    = !!localStorage.getItem('tipo_pedido');
-
-        // Abrir si: venimos forzados por query, por flag, o si aún no eligió nunca
-        this.abierto = forceByQuery || forceByFlag || !hasChoice;
-
-        // Limpia el query param para que no se repita al navegar
-        if (forceByQuery) {
-            url.searchParams.delete('cambiar_entrega');
-            window.history.replaceState({}, '', url);
-        }
-
-        // Limpia la banderita (se usa una sola vez)
-        if (forceByFlag) {
-            localStorage.removeItem('force_modal_entrega');
-        }
-
-        // Exponer función global para abrirlo desde el nav si ya estamos en Home
-        window.abrirSelectorEntrega = () => { this.abierto = true; };
-        window.__entregaModalInstance = this;
-    },
-
-    async choose(tipo) {
-      const destino = (tipo === 'pickup') ? '/pickup' : '/express';
-
-      if (window.isAuthenticated) {
-        await this.persistTipo(tipo);
-        this.abierto = false;
-        window.location.href = destino;
-      } else {
-        // Guarda intención y redirige a login
-        localStorage.setItem('pending_tipo_pedido', tipo);
-        localStorage.setItem('pending_redirect', destino);
-        window.location.href = '/login';
-      }
-    },
-
-    async persistTipo(tipo) {
-      try {
-        await fetch(`${API_BASE}/guardar-tipo-pedido`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? ''
-          },
-          credentials: 'include',
-          body: JSON.stringify({ tipo })
-        });
-      } catch (e) {
-        console.warn('No se pudo guardar tipo_pedido en backend:', e);
-      }
-      localStorage.setItem('tipo_pedido', tipo);
-    }
-  };
-}
 </script>
 @endpush

@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class RegisteredUserController extends Controller
 {
@@ -45,6 +48,28 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(route('home', absolute: false));
+        try {
+            $response = Http::acceptJson()->timeout(10)->post(config('app.api_url').'/api/login', [
+                'email' => $request->email,
+                'password' => $request->password,
+                'token_name' => 'web-session',
+            ]);
+        } catch (Throwable) {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => 'La cuenta fue creada, pero el servicio no respondió. Intente iniciar sesión nuevamente.',
+            ]);
+        }
+
+        if (!$response->successful() || !$response->json('token')) {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => 'La cuenta fue creada, pero no se pudo iniciar sesión. Intente nuevamente.',
+            ]);
+        }
+
+        $request->session()->put('token', $response->json('token'));
+
+        return redirect(route('verification.notice', absolute: false));
     }
 }

@@ -158,7 +158,6 @@
 @endsection
 
 @push('styles')
-  <link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet" />
   <style>
     /* contenedor responsivo con aspect-ratio */
     #map { aspect-ratio: 16 / 9; width: 100%; min-height: 320px; border-radius: 14px; overflow: hidden; }
@@ -168,10 +167,11 @@
 @endpush
 
 @push('scripts')
-  <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
-  <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
   <script>
-  (function() {
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!window.maplibregl || !window.turf) {
+      await new Promise(resolve => window.addEventListener('latina:maps-ready', resolve, { once: true }));
+    }
     const el = document.getElementById('map');
     if (!el) return;
 
@@ -249,7 +249,10 @@
     }
 
     function markerHtml(title, addr, extras='') {
-      return `<strong>${title}</strong><br>${addr || ''}${extras ? '<br>'+extras : ''}`;
+      const escapeMapHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;'
+      })[character]);
+      return `<strong>${escapeMapHtml(title)}</strong><br>${escapeMapHtml(addr)}${extras ? '<br>'+escapeMapHtml(extras) : ''}`;
     }
 
     map.on('load', () => {
@@ -265,7 +268,7 @@
         const [lat, lng] = normalizePair(s.latitud, s.longitud);
         const dist = (s.distancia_km ?? '') !== '' ? `${s.distancia_km} km` : '';
         const fee  = (s.delivery_fee ?? '') !== '' ? ` • Delivery: ${currency}${s.delivery_fee}` : '';
-        const cover= (s.covered === false) ? ' • <span style="color:#b91c1c;">Fuera de cobertura</span>' : '';
+        const cover= (s.covered === false) ? ' • Fuera de cobertura' : '';
         addMarker(lat, lng, markerHtml(s.nombre ?? ('Sucursal #'+s.id), s.direccion ?? '', `${dist}${fee}${cover}`), '#d11');
       });
 
@@ -342,7 +345,6 @@
         window.addEventListener('resize', () => map.resize());
       }
     });
-  })();
+  });
   </script>
 @endpush
-

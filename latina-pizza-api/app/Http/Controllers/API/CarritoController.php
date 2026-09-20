@@ -8,19 +8,15 @@ use App\Models\Producto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\PedidoConfirmadoMail;
-use App\Models\User;
 use App\Models\Masa;
 use App\Models\Extra;
-use App\Models\Tamano;
 use App\Models\CarritoItem;
 use App\Models\Promocion;
 use App\Models\CarritoItemPromocionDetalle;
 use App\Models\CarritoItemsPromocionExtra;
-use Barryvdh\DomPDF\Facade\Pdf as PDF;
-use App\Mail\FacturaPedidoMail;
 use Stripe\Stripe;
+use Stripe\PaymentIntent;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class CarritoController extends Controller
@@ -28,8 +24,28 @@ class CarritoController extends Controller
     // Ver el carrito del usuario
     private function invalidateStripePI(Carrito $carrito): void
     {
-        if (Schema::hasColumn($carrito->getTable(), 'stripe_payment_intent_id')) {
-            $carrito->update(['stripe_payment_intent_id' => null]);
+        if (!Schema::hasColumn($carrito->getTable(), 'stripe_payment_intent_id')) {
+            return;
+        }
+
+        $intentId = $carrito->stripe_payment_intent_id;
+        $carrito->update(['stripe_payment_intent_id' => null]);
+
+        if (!$intentId || !config('services.stripe.secret')) {
+            return;
+        }
+
+        try {
+            Stripe::setApiKey(config('services.stripe.secret'));
+            $intent = PaymentIntent::retrieve($intentId);
+            if (!in_array($intent->status, ['succeeded', 'canceled'], true)) {
+                $intent->cancel();
+            }
+        } catch (\Throwable $exception) {
+            Log::warning('Could not cancel stale Stripe intent.', [
+                'intent_id' => $intentId,
+                'exception' => $exception::class,
+            ]);
         }
     }
     public function index()
@@ -47,7 +63,9 @@ class CarritoController extends Controller
             'items.extras',
             'items.promocion',
             'items.detallesPromocion.sabor',
+            'items.detallesPromocion.tamano',
             'items.detallesPromocion.masa',
+            'items.detallesPromocion.producto',
             'items.detallesPromocion.extras.extra',
         ]);
 
@@ -158,6 +176,7 @@ class CarritoController extends Controller
                     'imagen'        => $item->promocion->imagen ?? null,
                     'pizzas'        => $componentes,
                     'precio_total'  => $precioBD,
+                    'cantidad'      => (int) ($item->cantidad ?: 1),
                     'desglose'      => [
                         'base'   => max(0, $precioBD - $extrasTotal),
                         'extras' => $extrasTotal,
@@ -176,7 +195,10 @@ class CarritoController extends Controller
 
         return response()->json([
             'data' => [
-                // ...
+                'id' => $carrito->id,
+                'tipo_entrega' => $carrito->tipo_entrega,
+                'sucursal_id' => $carrito->sucursal_id,
+                'direccion_usuario_id' => $carrito->direccion_usuario_id,
                 'items' => $items,
             ],
             'subtotal' => $subtotalOk,         // 👈 ya incluye extras de promo
@@ -194,18 +216,23 @@ class CarritoController extends Controller
     {
         $request->validate([
             'producto_id'  => 'required|exists:productos,id',
-            'cantidad'     => 'required|integer|min:1',
+            'cantidad'     => 'required|integer|min:1|max:50',
             'masa_id'      => 'nullable|exists:masas,id',
-            'nota_cliente' => 'nullable|string',
-            'extras'       => 'array',
-            'extras.*'     => 'exists:extras,id',
+            'nota_cliente' => 'nullable|string|max:500',
+            'extras'       => 'array|max:20',
+            'extras.*'     => 'distinct|exists:extras,id',
         ]);
 
         $user    = Auth::user();
         $carrito = Carrito::firstOrCreate(['user_id' => $user->id]);
 
-        $producto = Producto::with('tamano')->findOrFail($request->producto_id);
+        $producto = Producto::with('tamano')
+            ->where('estado', true)
+            ->findOrFail($request->producto_id);
         $tamano   = $producto->tamano;
+        if (!$tamano) {
+            return response()->json(['message' => 'El producto no tiene un tamaño válido.'], 422);
+        }
         $precioProducto = (float) ($tamano->precio_base ?? 0);
 
         $precioMasa = 0.0;
@@ -251,99 +278,151 @@ class CarritoController extends Controller
         return response()->json(['message' => 'Producto agregado al carrito']);
     }
 
+    public function updateQuantity(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'cantidad' => ['required', 'integer', 'min:1', 'max:50'],
+        ]);
+
+        $carrito = Carrito::firstOrCreate(['user_id' => $request->user()->id]);
+        $item = $carrito->items()->with(['producto.tamano', 'masa', 'extras'])->findOrFail($id);
+
+        if (!$item->producto_id || !$item->producto || !$item->producto->estado) {
+            return response()->json(['message' => 'Este elemento no permite modificar su cantidad.'], 422);
+        }
+
+        $unitPrice = (float) $item->producto->tamano->precio_base
+            + (float) ($item->masa->precio_extra ?? 0);
+        foreach ($item->extras as $extra) {
+            $unitPrice += $this->extraPriceForSize($extra, $item->producto->tamano->nombre);
+        }
+
+        $item->update([
+            'cantidad' => $validated['cantidad'],
+            'precio_total' => round($unitPrice * $validated['cantidad'], 2),
+        ]);
+        $this->invalidateStripePI($carrito);
+
+        return response()->json(['message' => 'Cantidad actualizada.', 'item' => $item->fresh()]);
+    }
+
     public function agregarPromocion(Request $request)
     {
-        DB::beginTransaction();
+        $validated = $request->validate([
+            'promocion_id' => ['required', 'integer', 'exists:promociones,id'],
+            'productos' => ['required', 'array', 'min:1', 'max:20'],
+            'productos.*.tipo' => ['required', 'in:pizza,bebida'],
+            'productos.*.sabor_id' => ['nullable', 'integer', 'exists:sabores,id'],
+            'productos.*.masa_id' => ['nullable', 'integer', 'exists:masas,id'],
+            'productos.*.producto_id' => ['nullable', 'integer', 'exists:productos,id'],
+            'productos.*.extras' => ['nullable', 'array', 'max:20'],
+            'productos.*.extras.*' => ['integer', 'distinct', 'exists:extras,id'],
+            'productos.*.nota_cliente' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $user = $request->user();
+        $carrito = Carrito::firstOrCreate(['user_id' => $user->id]);
+        $promocion = Promocion::with(['componentes.tamano'])->findOrFail($validated['promocion_id']);
+
+        $pizzaRules = $promocion->componentes
+            ->where('tipo', 'pizza')
+            ->flatMap(fn ($component) => collect(range(1, max(1, (int) $component->cantidad)))
+                ->map(fn () => $component))
+            ->values();
+        $expectedDrinks = $promocion->componentes
+            ->where('tipo', 'bebida')
+            ->sum(fn ($component) => max(1, (int) $component->cantidad));
+
+        $pizzas = collect($validated['productos'])->where('tipo', 'pizza')->values();
+        $drinks = collect($validated['productos'])->where('tipo', 'bebida')->values();
+
+        if ($pizzas->count() !== $pizzaRules->count() || $drinks->count() !== $expectedDrinks) {
+            return response()->json(['message' => 'Los componentes seleccionados no coinciden con la promoción.'], 422);
+        }
+        if ($pizzaRules->contains(fn ($component) => !$component->tamano)) {
+            return response()->json(['message' => 'La promoción tiene un tamaño sin configurar.'], 422);
+        }
+
+        foreach ($pizzas as $pizza) {
+            if (empty($pizza['sabor_id']) || empty($pizza['masa_id'])) {
+                return response()->json(['message' => 'Cada pizza requiere sabor y masa.'], 422);
+            }
+        }
+        foreach ($drinks as $drink) {
+            if (empty($drink['producto_id'])) {
+                return response()->json(['message' => 'Debe seleccionar la bebida incluida.'], 422);
+            }
+        }
+        $drinkIds = $drinks->pluck('producto_id')->unique()->values();
+        $validDrinkCount = Producto::whereIn('id', $drinkIds)
+            ->where('estado', true)
+            ->whereHas('categoria', fn ($query) => $query->whereRaw(
+                'LOWER(nombre) IN (?, ?, ?)',
+                ['bebidas', 'bebida', 'refrescos']
+            ))
+            ->count();
+        if ($validDrinkCount !== $drinkIds->count()) {
+            return response()->json(['message' => 'La bebida seleccionada no está disponible.'], 422);
+        }
 
         try {
-            $user = Auth::user();
+            $result = DB::transaction(function () use ($carrito, $promocion, $pizzas, $pizzaRules, $drinks) {
+                $item = $carrito->items()->create([
+                    'promocion_id' => $promocion->id,
+                    'cantidad' => 1,
+                    'precio_total' => 0,
+                ]);
 
-            $carrito = Carrito::firstOrCreate(['user_id' => $user->id]);
+                $extrasTotal = 0.0;
+                foreach ($pizzas as $index => $pizza) {
+                    $rule = $pizzaRules[$index];
+                    $tamano = $rule->tamano;
 
-            $promocion  = Promocion::with('componentes')->findOrFail($request->promocion_id);
-            $precioBase = (float) $promocion->precio_total;
-            $precioExtras = 0.0;
-            $detalles = [];
-
-            foreach ($request->productos as $producto) {
-                if ($producto['tipo'] === 'pizza') {
-                    $detalle = new CarritoItemPromocionDetalle([
-                        'tipo'         => 'pizza',
-                        'sabor_id'     => $producto['sabor_id'],
-                        'masa_id'      => $producto['masa_id'],
-                        'nota_cliente' => $producto['nota_cliente'] ?? null,
+                    $detalle = $item->detallesPromocion()->create([
+                        'tipo' => 'pizza',
+                        'sabor_id' => $pizza['sabor_id'],
+                        'tamano_id' => $tamano->id,
+                        'masa_id' => $pizza['masa_id'],
+                        'nota_cliente' => $pizza['nota_cliente'] ?? null,
                     ]);
-                    $detalle->tamano = strtolower($producto['tamano'] ?? 'mediana');
-                    $detalles[] = ['detalle' => $detalle, 'extras' => $producto['extras'] ?? []];
-                } elseif ($producto['tipo'] === 'bebida') {
-                    $detalle = new CarritoItemPromocionDetalle([
-                        'tipo'        => 'bebida',
-                        'producto_id' => $producto['producto_id'],
-                    ]);
-                    $detalles[] = ['detalle' => $detalle, 'extras' => []];
+
+                    $extras = Extra::whereIn('id', $pizza['extras'] ?? [])->get();
+                    foreach ($extras as $extra) {
+                        $precio = $this->extraPriceForSize($extra, $tamano->nombre);
+                        $extrasTotal += $precio;
+                        $detalle->extras()->create([
+                            'extra_id' => $extra->id,
+                            'precio' => $precio,
+                        ]);
+                    }
                 }
-            }
 
-            $item = CarritoItem::create([
-                'carrito_id'   => $carrito->id,
-                'promocion_id' => $promocion->id,
-                'cantidad'     => 1,
-                'precio_total' => 0,
-            ]);
-
-            foreach ($detalles as $data) {
-                $detalle = $data['detalle'];
-                $tam     = $detalle->tamano ?? 'mediana';
-                unset($detalle->tamano);
-
-                $detalle->carrito_item_id = $item->id;
-                $detalle->save();
-
-                foreach ($data['extras'] as $extraId) {
-                    $extra = Extra::find($extraId);
-                    if (!$extra) continue;
-
-                    $precioExtra = match (strtolower($tam)) {
-                        'pequena', 'pequeña' => (float) ($extra->precio_pequena     ?? 0),
-                        'grande'             => (float) ($extra->precio_grande      ?? 0),
-                        'extragrande'        => (float) ($extra->precio_extragrande ?? 0),
-                        default              => (float) ($extra->precio_mediana     ?? 0),
-                    };
-
-                    $precioExtras += $precioExtra;
-
-                    CarritoItemsPromocionExtra::create([
-                        'detalle_id' => $detalle->id,
-                        'extra_id'   => $extra->id,
-                        'precio'     => $precioExtra,
+                foreach ($drinks as $drink) {
+                    $item->detallesPromocion()->create([
+                        'tipo' => 'bebida',
+                        'producto_id' => $drink['producto_id'],
                     ]);
                 }
-            }
 
-            $precioTotal = $precioBase + $precioExtras;
-            $item->update(['precio_total' => $precioTotal]);
+                $total = round((float) $promocion->precio_total + $extrasTotal, 2);
+                $item->update(['precio_total' => $total]);
+                $this->invalidateStripePI($carrito);
 
-            // 👇 invalida el intent porque el carrito cambió
-            $this->invalidateStripePI($carrito);
-
-            DB::commit();
+                return ['item' => $item, 'total' => $total, 'extras' => $extrasTotal];
+            });
 
             return response()->json([
-                'message'         => '✅ Promoción agregada correctamente al carrito',
-                'carrito_item_id' => $item->id,
-                'precio_total'    => $precioTotal,
-                'desglose'        => [
-                    'base'   => $precioBase,
-                    'extras' => $precioExtras,
+                'message' => 'Promoción agregada correctamente al carrito.',
+                'carrito_item_id' => $result['item']->id,
+                'precio_total' => $result['total'],
+                'desglose' => [
+                    'base' => (float) $promocion->precio_total,
+                    'extras' => $result['extras'],
                 ],
-            ]);
-
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return response()->json([
-                'error' => '❌ No se pudo agregar la promoción',
-                'debug' => $e->getMessage(),
-            ], 500);
+            ], 201);
+        } catch (\Throwable $exception) {
+            report($exception);
+            return response()->json(['message' => 'No se pudo agregar la promoción.'], 500);
         }
     }
 
@@ -396,290 +475,16 @@ class CarritoController extends Controller
         return response()->json(['message' => 'Carrito vaciado.']);
     }
 
-    public function checkout(Request $request)
+    private function extraPriceForSize(Extra $extra, string $sizeName): float
     {
-        $user = auth()->user();
-        if (!$user) {
-            return response()->json(['message' => 'Usuario no autenticado'], 401);
-        }
+        $normalized = mb_strtolower($sizeName);
 
-        /** @var \App\Models\Carrito $carrito */
-        $carrito = $user->carrito()->with([
-            'items.producto.tamano',
-            'items.producto.sabor',
-            'items.masa',
-            'items.extras',
-            'items.promocion',
-            'items.detallesPromocion.sabor',
-            'items.detallesPromocion.masa',
-            'items.detallesPromocion.extras.extra',
-        ])->first();
-
-        if (!$carrito || $carrito->items->isEmpty()) {
-            return response()->json(['message' => 'Tu carrito está vacío.'], 400);
-        }
-
-        // === Totales (como los tenías) ===
-        $subtotal    = round($carrito->calcSubtotal(), 2);
-        $deliveryFee = ($carrito->tipo_entrega === 'express') ? (float) ($carrito->delivery_fee ?? 0) : 0.0;
-        $total       = round($subtotal + $deliveryFee, 2);
-
-        // === DEBUG: breakdown exacto desde BD para detectar desajustes de promociones/extras ===
-        if (method_exists($carrito, 'subtotalBreakdown')) {
-            $bd        = $carrito->subtotalBreakdown();
-            $totalCalc = round(($bd['subtotal'] ?? 0) + $deliveryFee, 2);
-
-            \Illuminate\Support\Facades\Log::debug('CHECKOUT_BREAKDOWN', [
-                'user_id'         => $user->id,
-                'carrito_id'      => $carrito->id,
-                'sum_items_raw'   => $bd['sum_items_raw']   ?? null,
-                'sum_items_x_qty' => $bd['sum_items_x_qty'] ?? null,
-                'sum_extras'      => $bd['sum_extras']      ?? null,
-                'subtotal_bd'     => $bd['subtotal']        ?? null,
-                'delivery'        => $deliveryFee,
-                'total_calc'      => $totalCalc,
-                'subtotal_view'   => $subtotal,
-                'total_view'      => $total,
-                'items'           => $bd['items']  ?? [],
-                'extras'          => $bd['extras'] ?? [],
-            ]);
-        }
-
-        // === Validar método de pago ===
-        $metodo = $request->input('metodo_pago', 'efectivo');
-        if (!in_array($metodo, ['efectivo', 'datafono', 'stripe'], true)) {
-            return response()->json(['message' => 'Método de pago inválido'], 422);
-        }
-
-        if ($metodo === 'stripe') {
-            $pi = $request->input('payment_intent_id');
-            if (!$pi) {
-                return response()->json(['message' => 'Falta payment_intent_id para Stripe'], 422);
-            }
-
-            Stripe::setApiKey(config('services.stripe.secret'));
-
-            try {
-                $intent = \Stripe\PaymentIntent::retrieve($pi);
-            } catch (\Throwable $e) {
-                return response()->json(['message' => 'PaymentIntent inválido'], 422);
-            }
-
-            // Estados aceptables
-            if ($intent->status !== 'succeeded') {
-                return response()->json(['message' => 'El pago no está confirmado'], 402);
-            }
-
-            // (Opcional pero recomendado) validar monto/moneda (tu lógica original)
-            $expectedAmount   = (int) round($total * 100);
-            $expectedCurrency = config('services.stripe.currency', 'crc');
-
-            if ((int)$intent->amount !== $expectedAmount || $intent->currency !== $expectedCurrency) {
-                \Illuminate\Support\Facades\Log::warning('CHECKOUT_MISMATCH_AMOUNT', [
-                    'pi_id'     => $intent->id,
-                    'pi_amount' => $intent->amount,
-                    'pi_curr'   => $intent->currency,
-                    'expected'  => $expectedAmount,
-                    'exp_curr'  => $expectedCurrency,
-                    'subtotal'  => $subtotal,
-                    'delivery'  => $deliveryFee,
-                    'total'     => $total,
-                ]);
-                return response()->json(['message' => 'Monto o moneda no coinciden'], 422);
-            }
-        }
-
-        // ===== Snapshot de items (igual que ya lo tenías) =====
-        $itemsPayload = [];
-        foreach ($carrito->items as $item) {
-            if ($item->producto_id && $item->producto) {
-                $itemsPayload[] = [
-                    'tipo'          => 'producto',
-                    'producto_id'   => $item->producto_id,
-                    'nombre'        => $item->producto->nombre,
-                    'tamano'        => $item->producto->tamano->nombre ?? 'N/A',
-                    'sabor'         => $item->producto->sabor->nombre ?? 'N/A',
-                    'masa_nombre'   => $item->masa->tipo ?? 'N/A',
-                    'cantidad'      => (int) $item->cantidad,
-                    'nota_cliente'  => $item->nota_cliente,
-                    'precio_total'  => (float) $item->precio_total,
-                    'extras'        => $item->extras->map(fn($e)=>[
-                        'id'=>$e->id,'nombre'=>$e->nombre
-                    ])->values(),
-                ];
-            } elseif ($item->promocion_id && $item->promocion) {
-                $extrasTotal = 0.0;
-                $componentes = $item->detallesPromocion->map(function ($d) use (&$extrasTotal) {
-                    if ($d->tipo === 'pizza') {
-                        $tamanoNombre = strtolower($d->tamano->nombre ?? 'mediana');
-                        $extras = $d->extras->map(function ($e) use (&$extrasTotal, $tamanoNombre) {
-                            $precio = match ($tamanoNombre) {
-                                'pequena','pequeña'     => (float) ($e->extra->precio_pequena     ?? 0),
-                                'grande'                => (float) ($e->extra->precio_grande      ?? 0),
-                                'extragrande','extra grande'
-                                                        => (float) ($e->extra->precio_extragrande ?? 0),
-                                default                 => (float) ($e->extra->precio_mediana     ?? 0),
-                            };
-                            $extrasTotal += $precio;
-                            return ['id'=>$e->extra->id,'nombre'=>$e->extra->nombre,'precio'=>$precio];
-                        });
-
-                        return [
-                            'tipo'         => 'pizza',
-                            'sabor'        => ['nombre'=>$d->sabor->nombre ?? 'N/A'],
-                            'masa'         => ['nombre'=>$d->masa->tipo   ?? 'N/A'],
-                            'tamano'       => ['nombre'=>ucfirst($tamanoNombre)],
-                            'nota_cliente' => $d->nota_cliente,
-                            'extras'       => $extras->values(),
-                        ];
-                    }
-                    if ($d->tipo === 'bebida') {
-                        return ['tipo'=>'bebida','producto'=>['nombre'=>$d->producto->nombre ?? 'N/A']];
-                    }
-                    return ['tipo'=>'desconocido'];
-                })->values();
-
-                $itemsPayload[] = [
-                    'tipo'          => 'promocion',
-                    'promocion_id'  => $item->promocion_id,
-                    'nombre'        => $item->promocion->nombre,
-                    'descripcion'   => $item->promocion->descripcion,
-                    'imagen'        => $item->promocion->imagen ?? null,
-                    'pizzas'        => $componentes,
-                    'precio_total'  => (float) $item->precio_total,
-                    'desglose'      => [
-                        'base'   => max(0, (float)$item->precio_total - $extrasTotal),
-                        'extras' => $extrasTotal,
-                    ],
-                ];
-            }
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $pedido = new \App\Models\Pedido();
-            $pedido->user_id               = $user->id;
-            $pedido->estado                = ($metodo === 'stripe') ? 'pagado' : 'pendiente';
-            $pedido->tipo_pedido           = $carrito->tipo_entrega ?? 'pickup';
-            $pedido->metodo_pago           = $metodo;
-
-            // Logística desde carrito
-            $pedido->tipo_entrega          = $carrito->tipo_entrega;
-            $pedido->sucursal_id           = $carrito->sucursal_id;
-            $pedido->direccion_usuario_id  = $carrito->direccion_usuario_id;
-
-            // Delivery + totales
-            $pedido->delivery_fee          = $deliveryFee;
-            $pedido->delivery_currency     = $carrito->delivery_currency;
-            $pedido->delivery_distance_km  = $carrito->delivery_distance_km;
-            $pedido->subtotal              = $subtotal;
-            $pedido->total                 = $total;
-
-            // === Kitchen defaults ===
-            // Estado inicial del panel de cocina
-            $pedido->kitchen_status = 'nuevo';
-            // SLA por defecto según tipo de entrega (ajústalo a tu operación)
-            if (is_null($pedido->sla_minutes)) {
-                $pedido->sla_minutes = ($pedido->tipo_entrega === 'express') ? 35 : 20;
-            }
-            // Promesa de salida/entrega
-            if (empty($pedido->promised_at) && !empty($pedido->sla_minutes)) {
-                $pedido->promised_at = now()->addMinutes($pedido->sla_minutes);
-            }
-            // Opcional: marcar prioridad para pedidos express
-            $pedido->priority = ($pedido->tipo_entrega === 'express');
-
-            // Info de pago Stripe (si aplica)
-            if ($metodo === 'stripe') {
-                $pedido->payment_provider = 'stripe';
-                $pedido->payment_ref      = $request->input('payment_intent_id');
-                $pedido->payment_status   = 'paid';
-                $pedido->paid_at          = now();
-            }
-
-            // Snapshot
-            $pedido->detalle_json = json_encode([
-                'items'    => $itemsPayload,
-                'subtotal' => $subtotal,
-                'delivery' => [
-                    'fee'      => $deliveryFee,
-                    'currency' => $carrito->delivery_currency,
-                    'distance' => (float)($carrito->delivery_distance_km ?? 0),
-                ],
-                'total' => $total,
-            ], JSON_UNESCAPED_UNICODE);
-
-            // === Cocina: estado y promesa de alistado ===
-            $sla = config('kitchen.sla_by_tipo.' . ($carrito->tipo_entrega ?? 'pickup'))
-                ?? config('kitchen.default_sla', 25);
-
-            // Si quieres ajustar por cantidad de items, puedes sumar algo:
-            $itemsCount = $carrito->items->sum('cantidad') ?: 1;
-
-            $pedido->kitchen_status = $pedido->kitchen_status ?: 'nuevo';
-            $pedido->priority       = false;
-
-            // SLA por tipo (ajústalo a tu operación)
-            $pedido->sla_minutes = $pedido->sla_minutes ?: (
-                ($pedido->tipo_pedido === 'express') ? 35 : 25
-            );
-
-            // Si no tiene promised_at aún, fíjalo desde ahora + SLA
-            if (empty($pedido->promised_at) && $pedido->sla_minutes) {
-                $pedido->promised_at = now()->addMinutes($pedido->sla_minutes);
-            }
-            if (empty($pedido->sucursal_id) && !empty($user->sucursal_id)) {
-                $pedido->sucursal_id = $user->sucursal_id;
-            }
-            $pedido->save();
-
-            // Limpiar carrito (promos + extras + pivots + items)
-            $itemsIds    = $carrito->items()->pluck('id');
-            $detallesIds = CarritoItemPromocionDetalle::whereIn('carrito_item_id', $itemsIds)->pluck('id');
-            CarritoItemsPromocionExtra::whereIn('detalle_id', $detallesIds)->delete();
-            CarritoItemPromocionDetalle::whereIn('id', $detallesIds)->delete();
-            DB::table('carrito_item_extra')->whereIn('carrito_item_id', $itemsIds)->delete();
-            CarritoItem::whereIn('id', $itemsIds)->delete();
-
-            // (Opcional) limpiar intent en carrito para no reusarlo
-            if (Schema::hasColumn($carrito->getTable(), 'stripe_payment_intent_id')) {
-                $carrito->update(['stripe_payment_intent_id' => null]);
-            }
-
-            DB::commit();
-
-            // Enviar factura PDF (fuera de la transacción)
-            try {
-                $pdf = PDF::loadView('pdf.factura', ['pedido' => $pedido])->setPaper('a4');
-                if (!empty($user->email)) {
-                    Mail::to($user->email)->send(new FacturaPedidoMail($pedido, $pdf->output()));
-                } else {
-                    \Illuminate\Support\Facades\Log::warning('Pedido creado sin email de usuario', [
-                        'pedido_id' => $pedido->id,
-                        'user_id'   => $user->id
-                    ]);
-                }
-            } catch (\Throwable $mailErr) {
-                \Illuminate\Support\Facades\Log::error('Error enviando factura PDF', [
-                    'pedido_id' => $pedido->id,
-                    'error'     => $mailErr->getMessage(),
-                ]);
-            }
-
-            return response()->json([
-                'message'   => '✅ Pedido creado correctamente',
-                'pedido_id' => $pedido->id,
-                'total'     => $total,
-            ]);
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => '❌ Error al procesar el pedido',
-                'error'   => $e->getMessage(),
-            ], 500);
-        }
+        return match (true) {
+            str_contains($normalized, 'extra') => (float) ($extra->precio_extragrande ?? 0),
+            str_contains($normalized, 'grande') => (float) ($extra->precio_grande ?? 0),
+            str_contains($normalized, 'mediana') => (float) ($extra->precio_mediana ?? 0),
+            default => (float) ($extra->precio_pequena ?? 0),
+        };
     }
 
 }
-

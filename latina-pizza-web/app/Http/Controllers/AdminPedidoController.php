@@ -2,24 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Pedido;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\EstadoPedidoMailable;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
+use Throwable;
+
 class AdminPedidoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->get('http://127.0.0.1:8001/api/admin/pedidos');
+        $response = Http::withToken($token)->get($this->apiUrl('/admin/pedidos'), [
+            'page' => max(1, $request->integer('page', 1)),
+            'per_page' => 25,
+        ]);
 
         if ($response->successful()) {
-            $pedidos = $response->json();
-            return view('admin.pedidos.index', compact('pedidos'));
+            $pedidos = $response->json('data', []);
+            $pagination = [
+                'current_page' => (int) $response->json('current_page', 1),
+                'last_page' => (int) $response->json('last_page', 1),
+            ];
+            return view('admin.pedidos.index', compact('pedidos', 'pagination'));
         } else {
             return back()->with('error', 'Error al obtener los pedidos');
         }
@@ -29,7 +34,7 @@ class AdminPedidoController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->get("http://127.0.0.1:8001/api/admin/pedidos/{$id}/ver");
+        $response = Http::withToken($token)->get($this->apiUrl("/admin/pedidos/{$id}/ver"));
 
         if ($response->successful()) {
             $pedido = $response->json();
@@ -42,14 +47,14 @@ class AdminPedidoController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->put("http://127.0.0.1:8001/api/admin/pedidos/{$id}/estado", [
+        $response = Http::withToken($token)->put($this->apiUrl("/admin/pedidos/{$id}/estado"), [
             'estado' => $request->estado
         ]);
 
         if ($response->successful()) {
             return back()->with('success', 'Estado actualizado correctamente');
         } else {
-            return back()->with('error', 'Error al actualizar el estado');
+            return back()->with('error', $response->json('message', 'Error al actualizar el estado'));
         }
     }
 
@@ -57,7 +62,7 @@ class AdminPedidoController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->get("http://127.0.0.1:8001/api/admin/pedidos/{$id}/historial");
+        $response = Http::withToken($token)->get($this->apiUrl("/admin/pedidos/{$id}/historial"));
 
         if ($response->successful()) {
             $historial = $response->json();
@@ -68,5 +73,23 @@ class AdminPedidoController extends Controller
         } else {
             return back()->with('error', 'No se pudo obtener el historial');
         }
+    }
+
+    public function refund($id)
+    {
+        $token = Session::get('token');
+        try {
+            $response = Http::withToken($token)->post($this->apiUrl("/admin/pedidos/{$id}/refund"));
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', 'No se pudo conectar con el servicio de pagos.');
+        }
+
+        if ($response->successful()) {
+            return back()->with('success', $response->json('message', 'Reembolso procesado.'));
+        }
+
+        return back()->with('error', $response->json('message', 'No se pudo procesar el reembolso.'));
     }
 }

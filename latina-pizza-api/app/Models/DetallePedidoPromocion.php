@@ -11,10 +11,13 @@ class DetallePedidoPromocion extends Model
     protected $fillable = [
         'pedido_id',
         'promocion_id',
+        'producto_id',
         'sabor_id',
         'tamano_id',
         'masa_id',
         'nota_cliente',
+        'cantidad',
+        'precio_total',
     ];
 
     public function pedido()
@@ -30,6 +33,11 @@ class DetallePedidoPromocion extends Model
     public function sabor()
     {
         return $this->belongsTo(Sabor::class);
+    }
+
+    public function producto()
+    {
+        return $this->belongsTo(Producto::class);
     }
 
     public function tamano()

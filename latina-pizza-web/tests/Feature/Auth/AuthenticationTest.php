@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\Http;
 
 test('login screen can be rendered', function () {
     $response = $this->get('/login');
@@ -10,6 +11,9 @@ test('login screen can be rendered', function () {
 
 test('users can authenticate using the login screen', function () {
     $user = User::factory()->create();
+    Http::fake([
+        '*/api/login' => Http::response(['token' => 'test-token', 'user' => $user->toArray()]),
+    ]);
 
     $response = $this->post('/login', [
         'email' => $user->email,
@@ -17,7 +21,8 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('home', absolute: false));
+    $response->assertSessionHas('token', 'test-token');
 });
 
 test('users can not authenticate with invalid password', function () {
@@ -33,8 +38,9 @@ test('users can not authenticate with invalid password', function () {
 
 test('users can logout', function () {
     $user = User::factory()->create();
+    Http::fake(['*/api/logout' => Http::response(['message' => 'ok'])]);
 
-    $response = $this->actingAs($user)->post('/logout');
+    $response = $this->actingAs($user)->withSession(['token' => 'test-token'])->post('/logout');
 
     $this->assertGuest();
     $response->assertRedirect('/');

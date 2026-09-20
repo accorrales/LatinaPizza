@@ -8,13 +8,6 @@ use Illuminate\Support\Facades\Session;
 
 class ExpressController extends Controller
 {
-    private string $apiBase;
-
-    public function __construct()
-    {
-        $this->apiBase = rtrim(config('services.latina_api.base_url'), '/'); // ej: http://localhost:8001/api
-    }
-
     public function index()
     {
         $token = Session::get('token');           // ← asegúrate que guardas este token al loguear
@@ -79,4 +72,3 @@ class ExpressController extends Controller
         return redirect()->route('sucursales.express', $data);
     }
 }
-
