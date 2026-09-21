@@ -96,6 +96,98 @@
   overflow: visible;
 }
 
+/* Dynamic controls rendered by catalog.js */
+#modalTamanos label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  background: #fff;
+  padding: 0.65rem 1rem;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+#modalTamanos label:hover {
+  border-color: #93c5fd;
+  color: #2563eb;
+  transform: translateY(-1px);
+}
+
+#modalTamanos input[type="radio"],
+#extrasOpciones input[type="checkbox"],
+.promotion-builder input[type="checkbox"] {
+  accent-color: #1680ff;
+}
+
+#modalTamanos label:has(input:checked) {
+  border-color: #1680ff;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+#extrasOpciones label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 46px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  padding: 0.7rem 0.85rem;
+  color: #475569;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+#extrasOpciones label:has(input:checked) {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.promotion-builder > div {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 20px;
+  background: #fff;
+  padding: 1.15rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.promotion-builder h3 {
+  color: #0f172a !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+}
+
+.promotion-builder select,
+.promotion-builder textarea {
+  width: 100%;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  background: #f8fafc;
+  padding: 0.7rem 0.85rem !important;
+  color: #334155;
+  outline: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.promotion-builder select:focus,
+.promotion-builder textarea:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15);
+}
+
+.promotion-builder label {
+  color: #475569;
+  font-weight: 600;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .site-header,
   #menu-toggle .hamburger-line,
