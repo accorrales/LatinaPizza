@@ -23,8 +23,7 @@
         <form method="POST" action="{{ route('pickup.seleccionar') }}">
           @csrf
           <input type="hidden" name="sucursal_id" value="{{ $s['id'] }}">
-          <button type="submit"
-            class="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
+          <button type="submit" class="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
             Elegir esta sucursal
           </button>
         </form>
@@ -36,38 +35,4 @@
     @endforelse
   </div>
 </div>
-
-{{-- Orden por distancia en el cliente (opcional, solo UI) --}}
-<script>
-(function () {
-  const toRad = x => x * Math.PI / 180;
-  const km = (lat1, lon1, lat2, lon2) => {
-    const R = 6371, dLa = toRad(lat2-lat1), dLo = toRad(lon2-lon1);
-    const a = Math.sin(dLa/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLo/2)**2;
-    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-  };
-
-  if (!navigator.geolocation) return;
-
-  navigator.geolocation.getCurrentPosition((pos) => {
-    const uLat = pos.coords.latitude, uLng = pos.coords.longitude;
-    const cards = Array.from(document.querySelectorAll('#sucursales-lista > div'));
-    cards.forEach(card => {
-      const span = card.querySelector('.dist-valor');
-      const lat = parseFloat(span.dataset.lat), lng = parseFloat(span.dataset.lng);
-      if (isFinite(lat) && isFinite(lng)) {
-        const d = km(uLat,uLng,lat,lng);
-        span.textContent = d.toFixed(2) + ' km';
-        card.dataset.dist = d;
-      } else {
-        card.dataset.dist = 1e9;
-      }
-    });
-    const container = document.getElementById('sucursales-lista');
-    cards.sort((a,b) => (+a.dataset.dist) - (+b.dataset.dist))
-         .forEach(c => container.appendChild(c));
-  }, () => {}, {enableHighAccuracy:true, timeout:8000});
-})();
-</script>
 @endsection
-
