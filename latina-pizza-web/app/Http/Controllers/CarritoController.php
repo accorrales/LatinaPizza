@@ -135,41 +135,34 @@ class CarritoController extends Controller
                 ->with('error', 'Debe iniciar sesión para confirmar el pedido');
         }
 
-        // 1) Validación básica del formulario
         $data = $request->validate([
             'metodo_pago' => 'required|in:efectivo,datafono,stripe',
             'payment_intent_id' => 'nullable|string',
         ]);
 
-        // Stripe is verified by the API, which is the only application holding the secret key.
-        if ($data['metodo_pago'] === 'stripe') {
-            if (empty($data['payment_intent_id'])) {
-                return back()->with('error', 'Falta el identificador de pago de Stripe. Intenta nuevamente.');
-            }
+        if ($data['metodo_pago'] === 'stripe' && empty($data['payment_intent_id'])) {
+            return back()->with('error', 'Falta el identificador de pago de Stripe. Intenta nuevamente.');
         }
 
-        // 3) Construir el payload para el API
         $payload = [
             'metodo_pago' => $data['metodo_pago'],
             'payment_intent_id' => $data['payment_intent_id'] ?? null,
         ];
 
-        // 4) Llamar al API para cerrar el pedido
         try {
             $resp = Http::withToken($token)
                 ->post("{$this->apiBase}/checkout", $payload);
 
             if ($resp->successful()) {
-                // si usaste PaymentIntent de Stripe, limpia el que guardaste en sesión
                 Session::forget('stripe_pi_id');
 
                 $pedidoId = data_get($resp->json(), 'pedido_id');
 
-                return redirect()->route('carrito.ver')
-                    ->with('success', "✅ Pedido #{$pedidoId} creado correctamente. Te enviamos la factura por correo.");
+                return redirect()->route('usuario.pedidos')
+                    ->with('pedido_confirmado_id', $pedidoId)
+                    ->with('success', "Pedido #{$pedidoId} creado correctamente. Te enviamos la factura por correo.");
             }
 
-            // Mostrar un mensaje más legible si el API devolvió 4xx/5xx con JSON
             $msg = $resp->json('message') ?? $resp->body();
 
             return redirect()->route('carrito.ver')
@@ -198,14 +191,12 @@ class CarritoController extends Controller
 
             $payload = $resp->json();
 
-            // Aplanamos para que tu Blade funcione sin tocar mucho:
-            // - tu Blade usa $carrito['items'] y también mostrará subtotal/delivery/total
             $carrito = [
                 'items' => $payload['data']['items'] ?? [],
                 'subtotal' => $payload['subtotal'] ?? 0,
                 'delivery' => $payload['delivery'] ?? ['fee' => 0, 'currency' => '₡', 'distance' => 0],
                 'total' => $payload['total'] ?? 0,
-                'data' => $payload['data'] ?? [], // aquí vienen tipo_entrega, sucursal_id, etc.
+                'data' => $payload['data'] ?? [],
             ];
 
             return view('carrito.index', compact('carrito'));
@@ -267,9 +258,9 @@ class CarritoController extends Controller
 
         if ($response->successful()) {
             return back()->with('success', 'Cantidad actualizada correctamente');
-        } else {
-            return back()->with('error', 'Error al actualizar cantidad: '.$response->body());
         }
+
+        return back()->with('error', 'Error al actualizar cantidad: '.$response->body());
     }
 
     public function agregarPromocion(Request $request)
@@ -299,11 +290,11 @@ class CarritoController extends Controller
                 'message' => '🎉 Promoción agregada correctamente al carrito',
                 'data' => $response->json(),
             ]);
-        } else {
-            return response()->json([
-                'error' => $response->json('message') ?? 'No se pudo agregar la promoción.',
-            ], $response->status());
         }
+
+        return response()->json([
+            'error' => $response->json('message') ?? 'No se pudo agregar la promoción.',
+        ], $response->status());
     }
 
     public function createStripeIntent()
