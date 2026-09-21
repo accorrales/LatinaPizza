@@ -10,12 +10,12 @@ class AdminSaborController extends Controller
 {
     public function index()
     {
-
         $token = Session::get('token');
         if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
-        $response = Http::withToken($token)->get("$this->apiBase/sabores");
+
+        $response = Http::withToken($token)->get($this->apiUrl('/admin/sabores'));
 
         if ($response->successful()) {
             $sabores = $response->json();
@@ -23,7 +23,7 @@ class AdminSaborController extends Controller
             return view('admin.sabores.index', compact('sabores'));
         }
 
-        return back()->with('error', 'No se pudieron cargar los sabores.');
+        return back()->with('error', 'No se pudieron cargar los sabores: '.$response->body());
     }
 
     public function create()
@@ -37,23 +37,26 @@ class AdminSaborController extends Controller
         if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
+
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
-            'imagen' => 'nullable|url',
+            'imagen' => 'nullable|url:http,https|max:2048',
         ]);
 
         if (array_key_exists('imagen', $validated) && $validated['imagen'] === '') {
             $validated['imagen'] = null;
         }
 
-        $response = Http::withToken($token)->acceptJson()->post("{$this->apiBase}/sabores", $validated);
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->post($this->apiUrl('/admin/sabores'), $validated);
 
         if ($response->successful()) {
             return redirect()->route('admin.sabores.index')->with('success', 'Sabor creado correctamente.');
         }
 
-        return back()->with('error', 'Error al crear el sabor.');
+        return back()->withInput()->with('error', 'Error al crear el sabor: '.$response->body());
     }
 
     public function edit($id)
@@ -64,15 +67,15 @@ class AdminSaborController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->get("{$this->apiBase}/sabores/{$id}");
+        $response = Http::withToken($token)->get($this->apiUrl("/admin/sabores/{$id}"));
 
         if ($response->successful()) {
-            $sabor = (object) $response->json(); // <-- convertir a objeto
+            $sabor = (object) $response->json();
 
             return view('admin.sabores.edit', compact('sabor'));
-        } else {
-            return redirect()->route('admin.sabores.index')->with('error', 'No se pudo cargar el sabor.');
         }
+
+        return redirect()->route('admin.sabores.index')->with('error', 'No se pudo cargar el sabor: '.$response->body());
     }
 
     public function update(Request $request, $id)
@@ -83,17 +86,25 @@ class AdminSaborController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->put("{$this->apiBase}/sabores/{$id}", [
-            'nombre' => $request->nombre,
-            'descripcion' => $request->descripcion,
-            'imagen' => $request->imagen,
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'descripcion' => 'nullable|string',
+            'imagen' => 'nullable|url:http,https|max:2048',
         ]);
+
+        if (array_key_exists('imagen', $validated) && $validated['imagen'] === '') {
+            $validated['imagen'] = null;
+        }
+
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->put($this->apiUrl("/admin/sabores/{$id}"), $validated);
 
         if ($response->successful()) {
             return redirect()->route('admin.sabores.index')->with('success', 'Sabor actualizado correctamente.');
-        } else {
-            return back()->with('error', 'No se pudo actualizar el sabor.')->withInput();
         }
+
+        return back()->withInput()->with('error', 'No se pudo actualizar el sabor: '.$response->body());
     }
 
     public function destroy($id)
@@ -102,12 +113,13 @@ class AdminSaborController extends Controller
         if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
-        $response = Http::withToken($token)->delete("$this->apiBase/sabores/$id");
+
+        $response = Http::withToken($token)->delete($this->apiUrl("/admin/sabores/{$id}"));
 
         if ($response->successful()) {
             return redirect()->route('admin.sabores.index')->with('success', 'Sabor eliminado correctamente.');
         }
 
-        return back()->with('error', 'Error al eliminar el sabor.');
+        return back()->with('error', 'Error al eliminar el sabor: '.$response->body());
     }
 }

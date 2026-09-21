@@ -24,7 +24,7 @@ class AdminProductoController extends Controller
             return view('admin.productos.index', compact('productos'));
         }
 
-        return back()->with('error', 'Error al obtener los productos');
+        return back()->with('error', 'Error al obtener los productos: '.$response->body());
     }
 
     public function create()
@@ -51,6 +51,8 @@ class AdminProductoController extends Controller
             return view('admin.productos.create', compact('categorias', 'sabores', 'tamanos'));
 
         } catch (\Exception $e) {
+            Log::error('No se pudieron cargar los datos para crear un producto.', ['exception' => $e]);
+
             return back()->with('error', 'No se pudieron cargar los datos.')->withInput();
         }
     }
@@ -63,36 +65,38 @@ class AdminProductoController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        // Validación común
         $rules = [
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
             'imagen' => 'nullable|url:http,https|max:2048',
-            'categoria_id' => 'required|exists:categorias,id',
+            'categoria_id' => 'required|integer',
             'estado' => 'nullable|boolean',
         ];
 
-        // Si es categoría tipo pizza, también validamos sabor y tamaño
-        if ($request->categoria_id && strtolower($request->categoria_nombre) === 'pizza') {
-            $rules['sabor_id'] = 'required|exists:sabores,id';
-            $rules['tamano_id'] = 'required|exists:tamanos,id';
+        if ($request->categoria_id && strtolower((string) $request->categoria_nombre) === 'pizza') {
+            $rules['sabor_id'] = 'required|integer';
+            $rules['tamano_id'] = 'required|integer';
         }
 
         $validated = $request->validate($rules);
 
         try {
-            // Enviar los datos a la API backend
             $response = Http::withToken($token)
+                ->acceptJson()
                 ->post($this->apiUrl('/admin/productos'), $validated);
 
             if ($response->successful()) {
                 return redirect()->route('admin.productos.index')->with('success', 'Producto creado correctamente');
             }
 
-            return back()->with('error', 'No se pudo crear el producto.')->withInput();
+            return back()
+                ->withInput()
+                ->with('error', 'No se pudo crear el producto: '.$response->body());
 
         } catch (\Exception $e) {
+            Log::error('No se pudo crear el producto.', ['exception' => $e]);
+
             return back()->with('error', 'Ocurrió un error inesperado.')->withInput();
         }
     }
@@ -106,24 +110,20 @@ class AdminProductoController extends Controller
         }
 
         try {
-            // Obtener el producto
             $productoResponse = Http::withToken($token)->get($this->apiUrl("/admin/productos/{$id}"));
             if (! $productoResponse->successful()) {
-                return back()->with('error', 'No se pudo cargar el producto');
+                return back()->with('error', 'No se pudo cargar el producto: '.$productoResponse->body());
             }
             $producto = $productoResponse->json();
 
-            // Obtener categorías
             $categorias = Http::withToken($token)
                 ->get($this->apiUrl('/categorias'))
                 ->json();
 
-            // Obtener sabores
             $sabores = Http::withToken($token)
                 ->get($this->apiUrl('/admin/sabores'))
                 ->json();
 
-            // Obtener tamaños
             $tamanos = Http::withToken($token)
                 ->get($this->apiUrl('/admin/tamanos'))
                 ->json()['data'] ?? [];
@@ -141,6 +141,10 @@ class AdminProductoController extends Controller
     {
         $token = Session::get('token');
 
+        if (! $token) {
+            return redirect()->route('login')->with('error', 'Debe iniciar sesión');
+        }
+
         $data = $request->validate([
             'nombre' => 'nullable|string|max:255',
             'descripcion' => 'nullable|string',
@@ -149,16 +153,20 @@ class AdminProductoController extends Controller
             'categoria_id' => 'required|integer',
             'sabor_id' => 'nullable|integer',
             'tamano_id' => 'nullable|integer',
-            'estado' => 'nullable|boolean',
+            'estado' => 'required|boolean',
         ]);
 
-        $response = Http::withToken($token)->put($this->apiUrl("/admin/productos/{$id}"), $data);
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->put($this->apiUrl("/admin/productos/{$id}"), $data);
 
         if ($response->successful()) {
             return redirect()->route('admin.productos.index')->with('success', 'Producto actualizado correctamente');
         }
 
-        return back()->with('error', 'No se pudo actualizar el producto');
+        return back()
+            ->withInput()
+            ->with('error', 'No se pudo actualizar el producto: '.$response->body());
     }
 
     public function destroy($id)
@@ -174,6 +182,6 @@ class AdminProductoController extends Controller
             return redirect()->route('admin.productos.index')->with('success', 'Producto eliminado correctamente');
         }
 
-        return back()->with('error', 'Hubo un problema al eliminar el producto');
+        return back()->with('error', 'Hubo un problema al eliminar el producto: '.$response->body());
     }
 }

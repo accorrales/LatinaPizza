@@ -15,7 +15,7 @@ class AdminExtraController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->get("$this->apiBase/extras-productos");
+        $response = Http::withToken($token)->get($this->apiUrl('/admin/extras-productos'));
 
         if ($response->successful()) {
             $extras = $response->json();
@@ -23,7 +23,7 @@ class AdminExtraController extends Controller
             return view('admin.extras.index', compact('extras'));
         }
 
-        return back()->with('error', 'No se pudieron cargar los extras.');
+        return back()->with('error', 'No se pudieron cargar los extras: '.$response->body());
     }
 
     public function create()
@@ -40,19 +40,21 @@ class AdminExtraController extends Controller
 
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
-            'precio_pequena' => 'nullable|numeric|min:0',
-            'precio_mediana' => 'nullable|numeric|min:0',
-            'precio_grande' => 'nullable|numeric|min:0',
-            'precio_extragrande' => 'nullable|numeric|min:0',
+            'precio_pequena' => 'required|numeric|min:0',
+            'precio_mediana' => 'required|numeric|min:0',
+            'precio_grande' => 'required|numeric|min:0',
+            'precio_extragrande' => 'required|numeric|min:0',
         ]);
 
-        $response = Http::withToken($token)->post("$this->apiBase/extras-productos", $validated);
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->post($this->apiUrl('/admin/extras-productos'), $validated);
 
         if ($response->successful()) {
             return redirect()->route('admin.extras.index')->with('success', 'Extra creado correctamente.');
         }
 
-        return back()->with('error', 'Error al crear el extra.')->withInput();
+        return back()->with('error', 'Error al crear el extra: '.$response->body())->withInput();
     }
 
     public function edit($id)
@@ -62,7 +64,7 @@ class AdminExtraController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->get("$this->apiBase/extras-productos/{$id}");
+        $response = Http::withToken($token)->get($this->apiUrl("/admin/extras-productos/{$id}"));
 
         if ($response->successful()) {
             $extra = (object) $response->json();
@@ -70,7 +72,7 @@ class AdminExtraController extends Controller
             return view('admin.extras.edit', compact('extra'));
         }
 
-        return redirect()->route('admin.extras.index')->with('error', 'No se pudo cargar el extra.');
+        return redirect()->route('admin.extras.index')->with('error', 'No se pudo cargar el extra: '.$response->body());
     }
 
     public function update(Request $request, $id)
@@ -82,19 +84,21 @@ class AdminExtraController extends Controller
 
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
-            'precio_pequena' => 'nullable|numeric|min:0',
-            'precio_mediana' => 'nullable|numeric|min:0',
-            'precio_grande' => 'nullable|numeric|min:0',
-            'precio_extragrande' => 'nullable|numeric|min:0',
+            'precio_pequena' => 'required|numeric|min:0',
+            'precio_mediana' => 'required|numeric|min:0',
+            'precio_grande' => 'required|numeric|min:0',
+            'precio_extragrande' => 'required|numeric|min:0',
         ]);
 
-        $response = Http::withToken($token)->put("$this->apiBase/extras-productos/{$id}", $validated);
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->put($this->apiUrl("/admin/extras-productos/{$id}"), $validated);
 
         if ($response->successful()) {
             return redirect()->route('admin.extras.index')->with('success', 'Extra actualizado correctamente.');
         }
 
-        return back()->with('error', 'No se pudo actualizar el extra.')->withInput();
+        return back()->with('error', 'No se pudo actualizar el extra: '.$response->body())->withInput();
     }
 
     public function destroy($id)
@@ -104,12 +108,12 @@ class AdminExtraController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->delete("$this->apiBase/extras-productos/{$id}");
+        $response = Http::withToken($token)->delete($this->apiUrl("/admin/extras-productos/{$id}"));
 
         if ($response->successful()) {
             return redirect()->route('admin.extras.index')->with('success', 'Extra eliminado correctamente.');
         }
 
-        return back()->with('error', 'No se pudo eliminar el extra.');
+        return back()->with('error', 'No se pudo eliminar el extra: '.$response->body());
     }
 }

@@ -16,7 +16,7 @@ class AdminMasaController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->get("$this->apiBase/masas");
+        $response = Http::withToken($token)->get($this->apiUrl('/admin/masas'));
 
         if ($response->successful()) {
             $masas = $response->json();
@@ -24,7 +24,7 @@ class AdminMasaController extends Controller
             return view('admin.masas.index', compact('masas'));
         }
 
-        return back()->with('error', 'No se pudieron cargar las masas.');
+        return back()->with('error', 'No se pudieron cargar las masas: '.$response->body());
     }
 
     public function create()
@@ -45,13 +45,15 @@ class AdminMasaController extends Controller
             'precio_extra' => 'nullable|numeric|min:0',
         ]);
 
-        $response = Http::withToken($token)->post("$this->apiBase/masas", $validated);
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->post($this->apiUrl('/admin/masas'), $validated);
 
         if ($response->successful()) {
             return redirect()->route('admin.masas.index')->with('success', 'Masa creada correctamente.');
         }
 
-        return back()->with('error', 'Error al crear la masa.');
+        return back()->withInput()->with('error', 'Error al crear la masa: '.$response->body());
     }
 
     public function edit($id)
@@ -62,7 +64,7 @@ class AdminMasaController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->get("$this->apiBase/masas/{$id}");
+        $response = Http::withToken($token)->get($this->apiUrl("/admin/masas/{$id}"));
 
         if ($response->successful()) {
             $masa = (object) $response->json();
@@ -70,7 +72,7 @@ class AdminMasaController extends Controller
             return view('admin.masas.edit', compact('masa'));
         }
 
-        return redirect()->route('admin.masas.index')->with('error', 'No se pudo cargar la masa.');
+        return redirect()->route('admin.masas.index')->with('error', 'No se pudo cargar la masa: '.$response->body());
     }
 
     public function update(Request $request, $id)
@@ -81,16 +83,20 @@ class AdminMasaController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->put("$this->apiBase/masas/{$id}", [
-            'tipo' => $request->tipo,
-            'precio_extra' => $request->precio_extra,
+        $validated = $request->validate([
+            'tipo' => 'required|string|max:255',
+            'precio_extra' => 'nullable|numeric|min:0',
         ]);
+
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->put($this->apiUrl("/admin/masas/{$id}"), $validated);
 
         if ($response->successful()) {
             return redirect()->route('admin.masas.index')->with('success', 'Masa actualizada correctamente.');
         }
 
-        return back()->with('error', 'No se pudo actualizar la masa.')->withInput();
+        return back()->withInput()->with('error', 'No se pudo actualizar la masa: '.$response->body());
     }
 
     public function destroy($id)
@@ -101,12 +107,12 @@ class AdminMasaController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->delete("$this->apiBase/masas/{$id}");
+        $response = Http::withToken($token)->delete($this->apiUrl("/admin/masas/{$id}"));
 
         if ($response->successful()) {
             return redirect()->route('admin.masas.index')->with('success', 'Masa eliminada correctamente.');
         }
 
-        return back()->with('error', 'Error al eliminar la masa.');
+        return back()->with('error', 'Error al eliminar la masa: '.$response->body());
     }
 }
