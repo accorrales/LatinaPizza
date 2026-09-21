@@ -29,6 +29,32 @@
   animation: fade-in-down 0.3s ease-out;
 }
 
+.site-header {
+  transition: box-shadow 220ms ease, border-color 220ms ease, background-color 220ms ease;
+}
+
+.site-header.is-scrolled {
+  border-color: rgba(226, 232, 240, 0.9);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
+}
+
+#menu-toggle .hamburger-line {
+  transition: transform 240ms ease, opacity 180ms ease;
+}
+
+#menu-toggle.is-open .hamburger-line:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+#menu-toggle.is-open .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+#menu-toggle.is-open .hamburger-line:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
 @keyframes home-pizza-float {
   0%, 100% { translate: 0 0; }
   50% { translate: 0 -5px; }
@@ -71,8 +97,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .site-header,
+  #menu-toggle .hamburger-line,
+  [data-mobile-menu-panel],
   .home-pizza-orbit {
-    animation: none;
+    transition: none !important;
+    animation: none !important;
   }
 
   .home-storefront *,
