@@ -1,80 +1,68 @@
 <x-guest-layout>
-    <div class="min-h-screen flex items-center justify-center bg-gray-100 px-4 py-8">
-        <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border-t-4 border-red-600">
-            
-            <!-- Logo -->
-            <div class="flex justify-center mb-6">               
-                <a href="/">
-                        <img src="{{ asset('images/Logo.png') }}" alt="Latina Pizza" class="h-16">
-                </a>
-            </div>
-
-            <!-- Título -->
-            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Iniciar sesión</h2>
-
-            <!-- Session Status -->
-            @if (session('status'))
-                <div class="mb-4 text-sm text-green-600">
-                    {{ session('status') }}
-                </div>
-            @endif
-
-            <!-- Formulario -->
-            <form method="POST" action="{{ route('login') }}">
-                @csrf
-
-                <!-- Email -->
-                <div class="mb-4">
-                    <label for="email" class="block text-sm font-medium text-gray-700">Correo electrónico</label>
-                    <input id="email" type="email" name="email" required autofocus
-                        class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:ring-red-500 focus:border-red-500"
-                        value="{{ old('email') }}">
-                    @error('email')
-                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Password -->
-                <div class="mb-4">
-                    <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
-                    <input id="password" type="password" name="password" required
-                        class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:ring-red-500 focus:border-red-500">
-                    @error('password')
-                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Remember + Forgot -->
-                <div class="flex items-center justify-between mb-6">
-                    <label class="flex items-center">
-                        <input type="checkbox" name="remember" class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500">
-                        <span class="ml-2 text-sm text-gray-600">Recuérdame</span>
-                    </label>
-                    @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}" class="text-sm text-red-600 hover:underline">¿Olvidaste tu contraseña?</a>
-                    @endif
-                </div>
-
-                <!-- Botón -->
-                <button type="submit"
-                    class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition shadow">
-                    Iniciar sesión
-                </button>
-                                <!-- Separador -->
-                <div class="my-6 text-center border-t border-gray-200 relative">
-                    <span class="absolute left-1/2 -translate-x-1/2 -top-3 bg-white px-2 text-gray-500 text-sm">¿Nuevo aquí?</span>
-                </div>
-
-                <!-- Botón de registrarse -->
-                <a href="{{ route('register') }}"
-                class="block w-full text-center bg-gray-100 hover:bg-gray-200 text-red-600 font-semibold py-2 px-4 rounded-md transition shadow border border-red-300">
-                    Crear una cuenta
-                </a>
-
-            </form>
-
-            <!-- Footer -->
-            <p class="text-xs text-center text-gray-500 mt-6">© {{ now()->year }} Latina Pizza. Todos los derechos reservados.</p>
-        </div>
+    <div class="mb-8">
+        <span class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">
+            <i class="fas fa-user-lock"></i>
+            Bienvenido de vuelta
+        </span>
+        <h2 class="mt-4 text-3xl font-bold tracking-[-0.035em] text-[#071426] sm:text-4xl">Iniciar sesión</h2>
+        <p class="mt-3 text-sm leading-6 text-slate-500">Entrá a tu cuenta para continuar con tu pedido, revisar historial y administrar tus datos.</p>
     </div>
+
+    @if (session('status'))
+        <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            <i class="fas fa-circle-check mr-2"></i>{{ session('status') }}
+        </div>
+    @endif
+
+    <form method="POST" action="{{ route('login') }}" class="space-y-5">
+        @csrf
+
+        <div>
+            <label for="email" class="mb-2 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+            <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400"><i class="far fa-envelope"></i></span>
+                <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username"
+                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                    placeholder="tu@email.com">
+            </div>
+            @error('email')<p class="mt-2 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+        </div>
+
+        <div>
+            <div class="mb-2 flex items-center justify-between gap-4">
+                <label for="password" class="block text-sm font-semibold text-slate-700">Contraseña</label>
+                @if (Route::has('password.request'))
+                    <a href="{{ route('password.request') }}" class="text-xs font-semibold text-blue-700 transition hover:text-blue-900">¿La olvidaste?</a>
+                @endif
+            </div>
+            <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400"><i class="fas fa-key"></i></span>
+                <input id="password" type="password" name="password" required autocomplete="current-password"
+                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                    placeholder="••••••••">
+            </div>
+            @error('password')<p class="mt-2 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+        </div>
+
+        <label class="flex cursor-pointer items-center gap-3 text-sm text-slate-500">
+            <input type="checkbox" name="remember" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+            <span>Recordarme en este dispositivo</span>
+        </label>
+
+        <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-red-600/20 transition hover:-translate-y-0.5 hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100">
+            Entrar a mi cuenta
+            <i class="fas fa-arrow-right text-xs"></i>
+        </button>
+    </form>
+
+    <div class="my-7 flex items-center gap-4 text-xs font-medium text-slate-400">
+        <span class="h-px flex-1 bg-slate-200"></span>
+        ¿Primera vez aquí?
+        <span class="h-px flex-1 bg-slate-200"></span>
+    </div>
+
+    <a href="{{ route('register') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-bold text-blue-700 transition hover:border-blue-200 hover:bg-blue-50">
+        Crear una cuenta
+        <i class="fas fa-user-plus text-xs"></i>
+    </a>
 </x-guest-layout>
