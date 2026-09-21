@@ -24,6 +24,9 @@
     <div class="ml-auto text-sm text-gray-500">Hora servidor: <span x-text="meta.server_time"></span></div>
   </div>
 
+  <!-- Mensaje de error visible -->
+  <div x-show="errMsg" x-cloak class="mb-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700" x-text="errMsg"></div>
+
   <!-- Grid de pedidos -->
   <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
     <template x-for="o in orders" :key="o.id">
@@ -108,7 +111,6 @@ function kitchenPanel(){
     return h;
   };
 
-  // --- helper de error (existía como this._asErr; ahora función local) ---
   async function asErr(res){
     let msg = `HTTP ${res.status}`;
     try { const j = await res.json(); if (j?.message) msg = j.message; } catch {}
@@ -137,7 +139,6 @@ function kitchenPanel(){
   }
 
   return {
-    // state
     orders: [],
     counts: { nuevo: 0, preparacion: 0, listo: 0 },
     meta:   { server_time:'', pagination:{ current_page:1, per_page:50, total:0, last_page:1 } },
@@ -146,13 +147,11 @@ function kitchenPanel(){
     loading:false,
     errMsg:'',
 
-    // helpers UI
     tabBtn(s){ return 'px-3 py-1 text-sm rounded ' + (this.filters.status===s ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border'); },
     setStatus(s){ this.filters.status = s; this.fetchOrders(true); },
     nextLabel(st){ return st==='nuevo' ? '→ Preparación' : (st==='preparacion' ? '→ Listo' : 'Listo'); },
 
     async init(){
-      console.log('API_BASE =', API_BASE); // para verificar que trae /api
       await this.fetchOrders(true);
       this.timer = setInterval(()=>this.fetchOrders(), 6000);
       window.addEventListener('beforeunload', ()=>clearInterval(this.timer));
@@ -168,7 +167,7 @@ function kitchenPanel(){
         if (this.filters.tipo_pedido) qs.set('tipo_pedido', this.filters.tipo_pedido);
         if (this.filters.search)      qs.set('search', this.filters.search);
 
-        const data = await getJson(`/kitchen/orders?${qs}`);
+        const data = await getJson(`/orders?${qs}`);
         this.orders = data.data || [];
         this.counts = data.meta?.counts || this.counts;
         this.meta   = data.meta || this.meta;
@@ -183,8 +182,12 @@ function kitchenPanel(){
     },
 
     async updateStatus(o, status){
-      await patchJson(`/kitchen/orders/${o.id}/status`, { status });
-      await this.fetchOrders();
+      try {
+        await patchJson(`/orders/${o.id}/status`, { status });
+        await this.fetchOrders();
+      } catch (e) {
+        this.errMsg = e.message || 'No se pudo actualizar el estado';
+      }
     },
 
     async advance(o){
@@ -193,26 +196,42 @@ function kitchenPanel(){
     },
 
     async markReady(o){
-      await patchJson(`/kitchen/orders/${o.id}/ready`);
-      await this.fetchOrders();
+      try {
+        await patchJson(`/orders/${o.id}/ready`);
+        await this.fetchOrders();
+      } catch (e) {
+        this.errMsg = e.message || 'No se pudo marcar el pedido como listo';
+      }
     },
 
     async togglePriority(o){
-      await patchJson(`/kitchen/orders/${o.id}/priority`, { priority: !o.priority });
-      await this.fetchOrders();
+      try {
+        await patchJson(`/orders/${o.id}/priority`, { priority: !o.priority });
+        await this.fetchOrders();
+      } catch (e) {
+        this.errMsg = e.message || 'No se pudo cambiar la prioridad';
+      }
     },
 
     async updateSla(o, minutes){
       const m = parseInt(minutes,10);
       if (isNaN(m) || m < 5 || m > 240) return;
-      await patchJson(`/kitchen/orders/${o.id}/sla`, { sla_minutes: m });
-      await this.fetchOrders();
+      try {
+        await patchJson(`/orders/${o.id}/sla`, { sla_minutes: m });
+        await this.fetchOrders();
+      } catch (e) {
+        this.errMsg = e.message || 'No se pudo actualizar el SLA';
+      }
     },
 
     async updateNotes(o, notes){
-      await patchJson(`/kitchen/orders/${o.id}/notes`, { notes });
-      const target = this.orders.find(x => x.id === o.id);
-      if (target) target.notas = notes;
+      try {
+        await patchJson(`/orders/${o.id}/notes`, { notes });
+        const target = this.orders.find(x => x.id === o.id);
+        if (target) target.notas = notes;
+      } catch (e) {
+        this.errMsg = e.message || 'No se pudo guardar la nota';
+      }
     },
   }
 }
