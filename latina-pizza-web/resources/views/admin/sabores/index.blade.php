@@ -26,7 +26,7 @@
                         </div>
                         <div class="p-5">
                             <h3 class="text-lg font-black text-slate-900">{{ $sabor['nombre'] }}</h3>
-                            <p class="mt-2 min-h-10 text-sm leading-5 text-slate-500">{{ $sabor['descripcion'] ?? __('viewAdmin/sabores_admin.index.sin_imagen') }}</p>
+                            <p class="mt-2 min-h-10 text-sm leading-5 text-slate-500">{{ $sabor['descripcion'] ?? 'Sin descripción' }}</p>
                             <div class="mt-5 flex gap-2 border-t border-slate-100 pt-4">
                                 <a href="{{ route('admin.sabores.edit', $sabor['id']) }}" data-show-loading class="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-blue-50 px-4 py-2.5 text-xs font-bold text-blue-700 transition hover:bg-blue-100"><i class="fa-solid fa-pen"></i>{{ __('viewAdmin/sabores_admin.index.editar') }}</a>
                                 <form action="{{ route('admin.sabores.destroy', $sabor['id']) }}" method="POST" class="flex-1" data-show-loading data-confirm="{{ __('viewAdmin/sabores_admin.index.confirmar_eliminar') }}">
