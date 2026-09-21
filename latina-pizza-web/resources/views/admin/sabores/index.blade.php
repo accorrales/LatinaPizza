@@ -1,35 +1,46 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto p-6">
-    <h1 class="text-3xl font-bold text-red-600 mb-6">{{ __('viewAdmin/sabores_admin.index.titulo') }}</h1>
-    @if(session('success'))<div class="bg-green-100 text-green-800 border border-green-300 p-3 rounded mb-4">{{ session('success') }}</div>@endif
-    @if(session('error'))<div class="bg-red-100 text-red-800 border border-red-300 p-3 rounded mb-4">{{ session('error') }}</div>@endif
+<div class="mx-auto max-w-7xl px-1 sm:px-2">
+    @include('admin.partials.catalog-nav')
 
-    <div class="mb-4 text-right"><a href="{{ route('admin.sabores.create') }}" data-show-loading class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition">{{ __('viewAdmin/sabores_admin.index.nuevo') }}</a></div>
+    <section class="rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+        <div class="flex flex-col gap-4 border-b border-slate-100 px-6 py-7 sm:px-8 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+                <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600"><i class="fa-solid fa-pizza-slice"></i> Recetas</div>
+                <h1 class="text-3xl font-black tracking-tight text-slate-900">{{ __('viewAdmin/sabores_admin.index.titulo') }}</h1>
+                <p class="mt-2 text-sm text-slate-500">Gestioná sabores, descripciones e imágenes que alimentan el catálogo de pizzas.</p>
+            </div>
+            <a href="{{ route('admin.sabores.create') }}" data-show-loading class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-red-500 px-6 text-sm font-bold text-white transition hover:bg-red-600"><i class="fa-solid fa-plus"></i>{{ __('viewAdmin/sabores_admin.index.nuevo') }}</a>
+        </div>
 
-    <div class="overflow-x-auto bg-white shadow rounded-lg">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-100"><tr><th class="px-6 py-3 text-left text-sm font-bold text-gray-700">{{ __('viewAdmin/sabores_admin.index.nombre') }}</th><th class="px-6 py-3 text-left text-sm font-bold text-gray-700">{{ __('viewAdmin/sabores_admin.index.descripcion') }}</th><th class="px-6 py-3 text-left text-sm font-bold text-gray-700">{{ __('viewAdmin/sabores_admin.index.imagen') }}</th><th class="px-6 py-3 text-center text-sm font-bold text-gray-700">{{ __('viewAdmin/sabores_admin.index.acciones') }}</th></tr></thead>
-            <tbody class="divide-y divide-gray-100 text-sm text-gray-800">
+        <div class="p-6 sm:p-8">
+            @if(session('success'))<div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{{ session('success') }}</div>@endif
+            @if(session('error'))<div class="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{{ session('error') }}</div>@endif
+
+            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 @forelse ($sabores as $sabor)
-                    <tr>
-                        <td class="px-6 py-4">{{ $sabor['nombre'] }}</td>
-                        <td class="px-6 py-4">{{ $sabor['descripcion'] ?? '—' }}</td>
-                        <td class="px-6 py-4">@if (!empty($sabor['imagen']))<img src="{{ $sabor['imagen'] }}" alt="{{ $sabor['nombre'] }}" class="h-12 rounded shadow">@else<span class="text-gray-400 italic">{{ __('viewAdmin/sabores_admin.index.sin_imagen') }}</span>@endif</td>
-                        <td class="px-6 py-4 text-center">
-                            <a href="{{ route('admin.sabores.edit', $sabor['id']) }}" data-show-loading class="text-blue-600 hover:underline mr-3">{{ __('viewAdmin/sabores_admin.index.editar') }}</a>
-                            <form action="{{ route('admin.sabores.destroy', $sabor['id']) }}" method="POST" class="inline-block" data-show-loading data-confirm="{{ __('viewAdmin/sabores_admin.index.confirmar_eliminar') }}">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:underline">{{ __('viewAdmin/sabores_admin.index.eliminar') }}</button>
-                            </form>
-                        </td>
-                    </tr>
+                    <article class="overflow-hidden rounded-3xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-950/5">
+                        <div class="aspect-[16/9] bg-slate-100">
+                            @if (!empty($sabor['imagen']))<img src="{{ $sabor['imagen'] }}" alt="{{ $sabor['nombre'] }}" class="h-full w-full object-cover">@else<div class="grid h-full place-items-center text-4xl text-slate-300"><i class="fa-solid fa-pizza-slice"></i></div>@endif
+                        </div>
+                        <div class="p-5">
+                            <h3 class="text-lg font-black text-slate-900">{{ $sabor['nombre'] }}</h3>
+                            <p class="mt-2 min-h-10 text-sm leading-5 text-slate-500">{{ $sabor['descripcion'] ?? 'Sin descripción' }}</p>
+                            <div class="mt-5 flex gap-2 border-t border-slate-100 pt-4">
+                                <a href="{{ route('admin.sabores.edit', $sabor['id']) }}" data-show-loading class="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-blue-50 px-4 py-2.5 text-xs font-bold text-blue-700 transition hover:bg-blue-100"><i class="fa-solid fa-pen"></i>{{ __('viewAdmin/sabores_admin.index.editar') }}</a>
+                                <form action="{{ route('admin.sabores.destroy', $sabor['id']) }}" method="POST" class="flex-1" data-show-loading data-confirm="{{ __('viewAdmin/sabores_admin.index.confirmar_eliminar') }}">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-red-50 px-4 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-100"><i class="fa-solid fa-trash"></i>{{ __('viewAdmin/sabores_admin.index.eliminar') }}</button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
                 @empty
-                    <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">{{ __('viewAdmin/sabores_admin.index.vacio') }}</td></tr>
+                    <div class="col-span-full rounded-3xl border border-dashed border-slate-200 py-14 text-center text-sm text-slate-400">{{ __('viewAdmin/sabores_admin.index.vacio') }}</div>
                 @endforelse
-            </tbody>
-        </table>
-    </div>
+            </div>
+        </div>
+    </section>
 </div>
 @endsection
