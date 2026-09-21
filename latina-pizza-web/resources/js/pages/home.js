@@ -132,6 +132,25 @@ function initPrimaryCtaFeedback(root) {
     button.addEventListener('pointerleave', release);
 }
 
+function initHashNavigation(root) {
+    const scrollToHash = () => {
+        if (window.location.hash !== '#promociones') return;
+
+        const target = root.querySelector('.home-promos-swiper');
+        if (!target) return;
+
+        window.requestAnimationFrame(() => {
+            target.scrollIntoView({
+                behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+                block: 'center',
+            });
+        });
+    };
+
+    scrollToHash();
+    window.addEventListener('hashchange', scrollToHash);
+}
+
 export function initHomePage() {
     const root = document.querySelector('[data-home-page]');
     if (!root) return;
@@ -141,4 +160,5 @@ export function initHomePage() {
     initRail(root, '.home-products-swiper');
     initRevealAnimations(root);
     initPrimaryCtaFeedback(root);
+    initHashNavigation(root);
 }
