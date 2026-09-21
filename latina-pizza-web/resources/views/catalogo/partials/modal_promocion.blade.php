@@ -1,4 +1,4 @@
-<div id="modalPromocion" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#071426]/75 p-3 backdrop-blur-md sm:p-5">
+<div id="modalPromocion" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-[#071426]/75 p-3 backdrop-blur-md sm:p-5">
   <div class="flex max-h-[94vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] border border-white/20 bg-white shadow-[0_35px_100px_rgba(7,20,38,0.45)]">
     <div class="flex items-center justify-between border-b border-slate-100 bg-white px-5 py-5 sm:px-8">
       <div>
