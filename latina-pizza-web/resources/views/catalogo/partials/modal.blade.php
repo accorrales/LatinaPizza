@@ -1,4 +1,4 @@
-<div id="modalSabor" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#071426]/75 p-3 backdrop-blur-md sm:p-5">
+<div id="modalSabor" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-[#071426]/75 p-3 backdrop-blur-md sm:p-5">
   <div class="relative flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] border border-white/20 bg-white shadow-[0_35px_100px_rgba(7,20,38,0.45)] lg:flex-row">
     <button
       type="button"
@@ -77,7 +77,7 @@
   </div>
 </div>
 
-<div id="modalConfirmacion" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#071426]/70 px-4 backdrop-blur-sm">
+<div id="modalConfirmacion" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-[#071426]/70 px-4 backdrop-blur-sm">
   <div class="w-full max-w-md rounded-[28px] border border-white/20 bg-white p-7 text-center shadow-[0_30px_80px_rgba(7,20,38,0.4)] sm:p-8">
     <span class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-2xl text-emerald-600"><i class="fas fa-check"></i></span>
     <h3 class="mt-5 text-2xl font-bold tracking-[-0.025em] text-slate-950">{{ __('catalogo.producto_agregado') }}</h3>
