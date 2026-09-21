@@ -20,21 +20,24 @@ class AdminCategoriaController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nombre' => 'required|string|max:255',
+            'descripcion' => 'nullable|string',
         ]);
 
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->post($this->apiUrl('/categorias'), [
-            'nombre' => $request->nombre,
-        ]);
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->post($this->apiUrl('/categorias'), $validated);
 
         if ($response->successful()) {
             return redirect()->route('admin.categorias.index')->with('success', '✅ Categoría creada correctamente');
         }
 
-        return redirect()->route('admin.categorias.index')->with('error', '❌ Error al crear la categoría: '.$response->body());
+        return back()
+            ->withInput()
+            ->with('error', '❌ Error al crear la categoría: '.$response->body());
     }
 
     public function edit($id)
@@ -51,16 +54,23 @@ class AdminCategoriaController extends Controller
 
     public function update(Request $request, $id)
     {
-        $token = Session::get('token');
-        $response = Http::withToken($token)->put($this->apiUrl("/categorias/{$id}"), [
-            'nombre' => $request->input('nombre'),
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'descripcion' => 'nullable|string',
         ]);
+
+        $token = Session::get('token');
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->put($this->apiUrl("/categorias/{$id}"), $validated);
 
         if ($response->successful()) {
             return redirect()->route('admin.categorias.index')->with('success', 'Categoría actualizada correctamente');
         }
 
-        return redirect()->route('admin.categorias.index')->with('error', 'Error al actualizar la categoría.');
+        return back()
+            ->withInput()
+            ->with('error', 'Error al actualizar la categoría: '.$response->body());
     }
 
     public function destroy($id)
@@ -72,6 +82,6 @@ class AdminCategoriaController extends Controller
             return redirect()->route('admin.categorias.index')->with('success', 'Categoría eliminada correctamente');
         }
 
-        return redirect()->route('admin.categorias.index')->with('error', 'Error al eliminar la categoría.');
+        return redirect()->route('admin.categorias.index')->with('error', 'Error al eliminar la categoría: '.$response->body());
     }
 }
