@@ -1,80 +1,66 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-3xl mx-auto mt-10 bg-white p-6 rounded shadow" data-promotion-editor data-next-index="0">
-    <h1 class="text-2xl font-bold mb-6">{{ __('viewAdmin/promociones_admin.create.titulo') }}</h1>
+<div class="mx-auto max-w-6xl px-1 sm:px-2" data-promotion-editor data-next-index="0">
+    @include('admin.partials.catalog-nav')
 
-    @if (session('error'))
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{{ session('error') }}</div>
-    @endif
-
-    <form action="{{ route('admin.promociones.store') }}" method="POST" data-show-loading>
-        @csrf
-        <div class="mb-4">
-            <label class="block font-semibold mb-2">{{ __('viewAdmin/promociones_admin.create.nombre') }}</label>
-            <input type="text" name="nombre" class="w-full border rounded p-2" required>
-        </div>
-        <div class="mb-4">
-            <label class="block font-semibold mb-2">{{ __('viewAdmin/promociones_admin.create.descripcion') }}</label>
-            <textarea name="descripcion" class="w-full border rounded p-2"></textarea>
-        </div>
-        <div class="mb-4">
-            <label class="block font-semibold mb-2">{{ __('viewAdmin/promociones_admin.create.precio_total') }}</label>
-            <input type="number" name="precio_total" step="0.01" min="0" class="w-full border rounded p-2" required>
-        </div>
-        <div class="mb-4">
-            <label class="block font-semibold mb-2">{{ __('viewAdmin/promociones_admin.create.precio_sugerido') }}</label>
-            <input type="number" name="precio_sugerido" step="0.01" min="0" class="w-full border rounded p-2">
-        </div>
-        <div class="mb-4">
-            <label class="block font-semibold mb-2">{{ __('viewAdmin/promociones_admin.create.imagen') }}</label>
-            <input type="text" name="imagen" class="w-full border rounded p-2">
-        </div>
-        <div class="mb-4">
-            <label class="inline-flex items-center">
-                <input type="checkbox" name="incluye_bebida" value="1" class="form-checkbox">
-                <span class="ml-2">{{ __('viewAdmin/promociones_admin.create.incluye_bebida') }}</span>
-            </label>
-        </div>
-
-        <hr class="my-6">
-        <h2 class="text-xl font-semibold mb-4">{{ __('viewAdmin/promociones_admin.create.componentes_titulo') }}</h2>
-        <div id="componentes"></div>
-        <button type="button" id="agregar-componente" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-            {{ __('viewAdmin/promociones_admin.create.agregar_componente') }}
-        </button>
-
-        <hr class="my-6">
-        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
-            {{ __('viewAdmin/promociones_admin.create.guardar') }}
-        </button>
-    </form>
-
-    <template id="promotion-component-template">
-        <div class="componente border p-4 rounded mb-4 bg-gray-100" data-component>
-            <div class="flex justify-end"><button type="button" class="text-sm text-red-700" data-remove>Eliminar componente</button></div>
-            <label class="block mb-2 font-semibold">{{ __('viewAdmin/promociones_admin.create.tipo') }}</label>
-            <select name="componentes[__INDEX__][tipo]" class="component-type w-full border rounded p-2" required>
-                <option value="pizza">{{ __('viewAdmin/promociones_admin.create.tipo_pizza') }}</option>
-                <option value="bebida">{{ __('viewAdmin/promociones_admin.create.tipo_bebida') }}</option>
-            </select>
-            <label class="block mt-4 font-semibold">{{ __('viewAdmin/promociones_admin.create.cantidad') }}</label>
-            <input type="number" name="componentes[__INDEX__][cantidad]" value="1" min="1" class="w-full border rounded p-2" required>
-            <div data-pizza-fields>
-                <label class="block mt-4 font-semibold">{{ __('viewAdmin/promociones_admin.create.tamano') }}</label>
-                <select name="componentes[__INDEX__][tamano_id]" class="w-full border rounded p-2">
-                    <option value="">{{ __('viewAdmin/promociones_admin.create.seleccionar_tamano') }}</option>
-                    @foreach($tamanos as $tamano)<option value="{{ $tamano['id'] }}">{{ $tamano['nombre'] }}</option>@endforeach
-                </select>
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,.6fr)]">
+        <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div class="mb-8 flex items-start justify-between gap-4">
+                <div><div class="mb-3 inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600"><i class="fa-solid fa-tags"></i> Nueva promoción</div><h1 class="text-3xl font-black tracking-tight text-slate-900">{{ __('viewAdmin/promociones_admin.create.titulo') }}</h1><p class="mt-2 text-sm text-slate-500">Combiná pizzas y bebidas en un combo listo para vender.</p></div>
+                <a href="{{ route('admin.promociones.index') }}" data-show-loading class="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 px-4 text-xs font-bold text-slate-600"><i class="fa-solid fa-arrow-left"></i>Volver</a>
             </div>
-            <div data-drink-fields class="hidden">
-                <label class="block mt-4 font-semibold">Bebida</label>
-                <select name="componentes[__INDEX__][producto_id]" class="w-full border rounded p-2">
-                    <option value="">Seleccione una bebida</option>
-                    @foreach($bebidas as $bebida)<option value="{{ $bebida['id'] }}">{{ $bebida['nombre'] }}</option>@endforeach
-                </select>
-            </div>
-        </div>
-    </template>
+
+            @if (session('error'))<div class="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{{ session('error') }}</div>@endif
+            @if($errors->any())<div class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"><ul class="list-disc space-y-1 pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+
+            <form action="{{ route('admin.promociones.store') }}" method="POST" data-show-loading class="space-y-7">
+                @csrf
+                <div class="grid gap-5 md:grid-cols-2">
+                    <div class="md:col-span-2"><label class="mb-2 block text-sm font-bold text-slate-700">{{ __('viewAdmin/promociones_admin.create.nombre') }}</label><input type="text" name="nombre" value="{{ old('nombre') }}" class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-blue-400 focus:ring-blue-400" required></div>
+                    <div class="md:col-span-2"><label class="mb-2 block text-sm font-bold text-slate-700">{{ __('viewAdmin/promociones_admin.create.descripcion') }}</label><textarea name="descripcion" rows="4" class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-blue-400 focus:ring-blue-400">{{ old('descripcion') }}</textarea></div>
+                    <div><label class="mb-2 block text-sm font-bold text-slate-700">{{ __('viewAdmin/promociones_admin.create.precio_total') }}</label><div class="relative"><span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">₡</span><input type="number" name="precio_total" step="0.01" min="0" value="{{ old('precio_total') }}" class="w-full rounded-2xl border-slate-200 bg-slate-50 py-3 pl-9 pr-4 text-sm focus:border-blue-400 focus:ring-blue-400" required></div></div>
+                    <div><label class="mb-2 block text-sm font-bold text-slate-700">{{ __('viewAdmin/promociones_admin.create.precio_sugerido') }}</label><div class="relative"><span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">₡</span><input type="number" name="precio_sugerido" step="0.01" min="0" value="{{ old('precio_sugerido') }}" class="w-full rounded-2xl border-slate-200 bg-slate-50 py-3 pl-9 pr-4 text-sm focus:border-blue-400 focus:ring-blue-400"></div></div>
+                    <div class="md:col-span-2"><label class="mb-2 block text-sm font-bold text-slate-700">{{ __('viewAdmin/promociones_admin.create.imagen') }}</label><input type="text" name="imagen" value="{{ old('imagen') }}" placeholder="https://..." class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-blue-400 focus:ring-blue-400"></div>
+                </div>
+
+                <label class="flex cursor-pointer items-center justify-between gap-4 rounded-3xl border border-blue-100 bg-[#F6F9FF] p-5">
+                    <div><p class="font-black text-slate-900">{{ __('viewAdmin/promociones_admin.create.incluye_bebida') }}</p><p class="mt-1 text-xs text-slate-500">Marcá esta opción cuando el combo incluya bebidas.</p></div>
+                    <input type="checkbox" name="incluye_bebida" value="1" @checked(old('incluye_bebida')) class="h-5 w-5 rounded border-blue-200 text-blue-600 focus:ring-blue-500">
+                </label>
+
+                <div class="border-t border-slate-100 pt-7">
+                    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Constructor</p><h2 class="mt-1 text-xl font-black text-slate-900">{{ __('viewAdmin/promociones_admin.create.componentes_titulo') }}</h2></div>
+                        <button type="button" id="agregar-componente" class="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-blue-600 px-5 text-xs font-bold text-white transition hover:bg-blue-700"><i class="fa-solid fa-plus"></i>{{ __('viewAdmin/promociones_admin.create.agregar_componente') }}</button>
+                    </div>
+                    <div id="componentes" class="space-y-4"></div>
+                    <div class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-xs text-slate-400">Agregá uno o más componentes para definir qué contiene la promoción.</div>
+                </div>
+
+                <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-6 sm:flex-row sm:justify-end">
+                    <a href="{{ route('admin.promociones.index') }}" data-show-loading class="inline-flex h-12 items-center justify-center rounded-full border border-slate-200 px-6 text-sm font-bold text-slate-600">Cancelar</a>
+                    <button type="submit" class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-red-500 px-7 text-sm font-bold text-white transition hover:bg-red-600"><i class="fa-solid fa-floppy-disk"></i>{{ __('viewAdmin/promociones_admin.create.guardar') }}</button>
+                </div>
+            </form>
+
+            <template id="promotion-component-template">
+                <div class="componente rounded-3xl border border-slate-200 bg-slate-50 p-5" data-component>
+                    <div class="mb-4 flex items-center justify-between gap-4"><div class="flex items-center gap-3"><div class="grid h-9 w-9 place-items-center rounded-2xl bg-white text-blue-600 shadow-sm"><i class="fa-solid fa-puzzle-piece"></i></div><span class="text-sm font-black text-slate-900">Componente</span></div><button type="button" class="rounded-full bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600" data-remove><i class="fa-solid fa-trash mr-1"></i>Eliminar</button></div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div><label class="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{{ __('viewAdmin/promociones_admin.create.tipo') }}</label><select name="componentes[__INDEX__][tipo]" class="component-type w-full rounded-2xl border-slate-200 bg-white px-4 py-3 text-sm" required><option value="pizza">{{ __('viewAdmin/promociones_admin.create.tipo_pizza') }}</option><option value="bebida">{{ __('viewAdmin/promociones_admin.create.tipo_bebida') }}</option></select></div>
+                        <div><label class="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{{ __('viewAdmin/promociones_admin.create.cantidad') }}</label><input type="number" name="componentes[__INDEX__][cantidad]" value="1" min="1" class="w-full rounded-2xl border-slate-200 bg-white px-4 py-3 text-sm" required></div>
+                    </div>
+                    <div data-pizza-fields class="mt-4"><label class="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{{ __('viewAdmin/promociones_admin.create.tamano') }}</label><select name="componentes[__INDEX__][tamano_id]" class="w-full rounded-2xl border-slate-200 bg-white px-4 py-3 text-sm"><option value="">{{ __('viewAdmin/promociones_admin.create.seleccionar_tamano') }}</option>@foreach($tamanos as $tamano)<option value="{{ $tamano['id'] }}">{{ $tamano['nombre'] }}</option>@endforeach</select></div>
+                    <div data-drink-fields class="mt-4 hidden"><label class="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Bebida</label><select name="componentes[__INDEX__][producto_id]" class="w-full rounded-2xl border-slate-200 bg-white px-4 py-3 text-sm"><option value="">Seleccione una bebida</option>@foreach($bebidas as $bebida)<option value="{{ $bebida['id'] }}">{{ $bebida['nombre'] }}</option>@endforeach</select></div>
+                </div>
+            </template>
+        </section>
+
+        <aside class="space-y-4">
+            <div class="rounded-[2rem] bg-[#071426] p-6 text-white shadow-xl shadow-slate-950/10"><div class="grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-red-300"><i class="fa-solid fa-tags"></i></div><h2 class="mt-5 text-xl font-black">Cómo armar una promo</h2><p class="mt-2 text-sm leading-6 text-slate-300">Definí el precio comercial, agregá componentes y especificá cantidades. Las pizzas pueden fijar tamaño y las bebidas un producto concreto.</p></div>
+            <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Checklist</p><div class="mt-4 space-y-3 text-sm text-slate-600"><p><i class="fa-solid fa-check mr-2 text-emerald-500"></i>Nombre claro</p><p><i class="fa-solid fa-check mr-2 text-emerald-500"></i>Precio final</p><p><i class="fa-solid fa-check mr-2 text-emerald-500"></i>Componentes completos</p><p><i class="fa-solid fa-check mr-2 text-emerald-500"></i>Imagen promocional</p></div></div>
+        </aside>
+    </div>
 </div>
 @endsection
