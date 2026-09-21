@@ -201,13 +201,13 @@ class CarritoController extends Controller
                 'direccion_usuario_id' => $carrito->direccion_usuario_id,
                 'items' => $items,
             ],
-            'subtotal' => $subtotalOk,         // 👈 ya incluye extras de promo
+            'subtotal' => $subtotalOk,
             'delivery' => [
                 'fee' => $deliveryFee,
                 'currency' => $carrito->delivery_currency,
                 'distance' => (float) ($carrito->delivery_distance_km ?? 0),
             ],
-            'total' => $totalOk,               // 👈 ya correcto
+            'total' => $totalOk,
         ]);
     }
 
@@ -272,7 +272,6 @@ class CarritoController extends Controller
             $item->extras()->sync($extras->pluck('id')->all());
         }
 
-        // 👇 invalida el intent porque el carrito cambió
         $this->invalidateStripePI($carrito);
 
         return response()->json(['message' => 'Producto agregado al carrito']);
@@ -353,14 +352,20 @@ class CarritoController extends Controller
                 return response()->json(['message' => 'Debe seleccionar la bebida incluida.'], 422);
             }
         }
+
         $drinkIds = $drinks->pluck('producto_id')->unique()->values();
-        $validDrinkCount = Producto::whereIn('id', $drinkIds)
+        $validDrinkCount = Producto::query()
+            ->whereIn('id', $drinkIds)
             ->where('estado', true)
-            ->whereHas('categoria', fn ($query) => $query->whereRaw(
-                'LOWER(nombre) IN (?, ?, ?)',
-                ['bebidas', 'bebida', 'refrescos']
-            ))
+            ->whereHas('categoria', function ($query) {
+                $query->where(function ($categoria) {
+                    $categoria
+                        ->whereRaw('LOWER(TRIM(nombre)) LIKE ?', ['%bebid%'])
+                        ->orWhereRaw('LOWER(TRIM(nombre)) LIKE ?', ['%refresc%']);
+                });
+            })
             ->count();
+
         if ($validDrinkCount !== $drinkIds->count()) {
             return response()->json(['message' => 'La bebida seleccionada no está disponible.'], 422);
         }
@@ -446,7 +451,6 @@ class CarritoController extends Controller
         $item->extras()->detach();
         $item->delete();
 
-        // 👇 invalida el intent porque el carrito cambió
         $this->invalidateStripePI($carrito);
 
         return response()->json(['success' => 'Producto eliminado correctamente.']);
@@ -468,7 +472,6 @@ class CarritoController extends Controller
 
         CarritoItem::whereIn('id', $itemsIds)->delete();
 
-        // 👇 invalida el intent porque el carrito cambió
         $this->invalidateStripePI($carrito);
 
         return response()->json(['message' => 'Carrito vaciado.']);
