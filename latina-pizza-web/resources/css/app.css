@@ -28,3 +28,56 @@
 .animate-fade-in-down {
   animation: fade-in-down 0.3s ease-out;
 }
+
+@keyframes home-pizza-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -5px; }
+}
+
+.home-pizza-orbit {
+  animation: home-pizza-float 4.5s ease-in-out infinite;
+}
+
+.home-hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.home-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.home-storefront .swiper-pagination-bullet {
+  width: 7px;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.58);
+  opacity: 1;
+  transition: width 220ms ease, background-color 220ms ease;
+}
+
+.home-storefront .swiper-pagination-bullet-active {
+  width: 24px;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.home-storefront .swiper-button-disabled {
+  opacity: 0.25 !important;
+}
+
+.home-storefront .home-promos-swiper,
+.home-storefront .home-products-swiper {
+  overflow: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-pizza-orbit {
+    animation: none;
+  }
+
+  .home-storefront *,
+  .home-storefront *::before,
+  .home-storefront *::after {
+    scroll-behavior: auto !important;
+  }
+}
