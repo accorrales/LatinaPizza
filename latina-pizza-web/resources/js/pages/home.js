@@ -1,70 +1,164 @@
 import Swiper from 'swiper/bundle';
 
-function safeImageUrl(value) {
-    try {
-        const url = new URL(String(value || ''), window.location.origin);
-        return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
-    } catch {
-        return '';
+function prefersReducedMotion() {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function initRevealAnimations(root) {
+    const elements = Array.from(root.querySelectorAll('.home-reveal'));
+    if (!elements.length) return;
+
+    if (prefersReducedMotion() || !('IntersectionObserver' in window)) {
+        elements.forEach(element => {
+            element.style.opacity = '1';
+            element.style.transform = 'none';
+        });
+        return;
     }
+
+    elements.forEach(element => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(24px)';
+    });
+
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+
+            entry.target.animate(
+                [
+                    { opacity: 0, transform: 'translateY(24px)' },
+                    { opacity: 1, transform: 'translateY(0)' },
+                ],
+                {
+                    duration: 360,
+                    easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                    fill: 'forwards',
+                },
+            );
+
+            observer.unobserve(entry.target);
+        });
+    }, { threshold: 0.16 });
+
+    elements.forEach(element => observer.observe(element));
+}
+
+function initHeroCarousel(root) {
+    const hero = root.querySelector('.home-hero-swiper');
+    if (!hero) return;
+
+    const reducedMotion = prefersReducedMotion();
+
+    new Swiper(hero, {
+        loop: hero.querySelectorAll('.swiper-slide').length > 1,
+        speed: reducedMotion ? 0 : 650,
+        grabCursor: true,
+        keyboard: { enabled: true },
+        autoplay: reducedMotion
+            ? false
+            : {
+                delay: 5200,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true,
+            },
+        pagination: {
+            el: hero.querySelector('.home-hero-pagination'),
+            clickable: true,
+        },
+        navigation: {
+            nextEl: hero.querySelector('.home-hero-next'),
+            prevEl: hero.querySelector('.home-hero-prev'),
+        },
+    });
+}
+
+function initRail(root, selector, { autoplay = false } = {}) {
+    const rail = root.querySelector(selector);
+    if (!rail) return;
+
+    const reducedMotion = prefersReducedMotion();
+
+    new Swiper(rail, {
+        slidesPerView: 'auto',
+        spaceBetween: 16,
+        freeMode: true,
+        grabCursor: true,
+        watchOverflow: true,
+        speed: reducedMotion ? 0 : 520,
+        autoplay: autoplay && !reducedMotion
+            ? {
+                delay: 2800,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true,
+            }
+            : false,
+        breakpoints: {
+            640: { spaceBetween: 18 },
+        },
+    });
+}
+
+function initPrimaryCtaFeedback(root) {
+    const button = root.querySelector('.home-primary-cta');
+    if (!button || prefersReducedMotion()) return;
+
+    button.addEventListener('pointerdown', () => {
+        button.animate(
+            [
+                { transform: 'scale(1)' },
+                { transform: 'scale(0.97)' },
+            ],
+            { duration: 110, fill: 'forwards' },
+        );
+    });
+
+    const release = () => {
+        button.animate(
+            [
+                { transform: 'scale(0.97)' },
+                { transform: 'scale(1)' },
+            ],
+            {
+                duration: 220,
+                easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                fill: 'forwards',
+            },
+        );
+    };
+
+    button.addEventListener('pointerup', release);
+    button.addEventListener('pointercancel', release);
+    button.addEventListener('pointerleave', release);
+}
+
+function initHashNavigation(root) {
+    const scrollToHash = () => {
+        if (window.location.hash !== '#promociones') return;
+
+        const target = root.querySelector('.home-promos-swiper');
+        if (!target) return;
+
+        window.requestAnimationFrame(() => {
+            target.scrollIntoView({
+                behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+                block: 'center',
+            });
+        });
+    };
+
+    scrollToHash();
+    window.addEventListener('hashchange', scrollToHash);
 }
 
 export function initHomePage() {
-    const wrapper = document.getElementById('carrusel-promos');
     const root = document.querySelector('[data-home-page]');
-    if (!wrapper || !root) return;
+    if (!root) return;
 
-    const apiBase = root.dataset.apiUrl || '';
-
-    fetch(`${apiBase}/api/promociones`, { headers: { Accept: 'application/json' } })
-        .then(response => response.json())
-        .then(response => {
-            if (!response.success || !Array.isArray(response.data)) return;
-
-            response.data.forEach(promo => {
-                const promoId = Number(promo.id);
-                if (!Number.isInteger(promoId) || promoId < 1) return;
-
-                const slide = document.createElement('div');
-                slide.className = 'swiper-slide';
-
-                const card = document.createElement('button');
-                card.type = 'button';
-                card.className = 'relative group w-full h-full cursor-pointer text-left';
-                card.addEventListener('click', () => {
-                    if (document.body.dataset.authenticated !== '1') {
-                        window.location.assign('/login');
-                        return;
-                    }
-                    document.dispatchEvent(new CustomEvent('latina:open-promotion', { detail: promoId }));
-                });
-
-                const image = document.createElement('img');
-                image.src = safeImageUrl(promo.imagen);
-                image.alt = String(promo.nombre || 'Promoción');
-                image.className = 'w-full h-56 sm:h-64 md:h-80 lg:h-[32rem] object-cover rounded-xl transition duration-300';
-
-                const overlay = document.createElement('div');
-                overlay.className = 'absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 rounded-xl';
-
-                const label = document.createElement('span');
-                label.className = 'text-white text-xl sm:text-2xl font-bold animate-pulse';
-                label.textContent = '👆 Pick me para comprar';
-
-                overlay.appendChild(label);
-                card.append(image, overlay);
-                slide.appendChild(card);
-                wrapper.appendChild(slide);
-            });
-
-            if (wrapper.children.length) {
-                new Swiper('.mySwiper', {
-                    loop: true,
-                    autoplay: { delay: 4000, disableOnInteraction: false },
-                    pagination: { el: '.swiper-pagination', clickable: true },
-                    navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
-                });
-            }
-        })
-        .catch(error => console.error('Error al cargar promociones:', error));
+    initHeroCarousel(root);
+    initRail(root, '.home-promos-swiper', { autoplay: true });
+    initRail(root, '.home-products-swiper');
+    initRevealAnimations(root);
+    initPrimaryCtaFeedback(root);
+    initHashNavigation(root);
 }

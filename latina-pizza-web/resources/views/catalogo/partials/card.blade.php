@@ -1,44 +1,69 @@
-<div class="relative bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 group border border-gray-100">
-    <div class="relative h-48 sm:h-52 md:h-56">
-        <img src="{{ $sabor['imagen'] }}"
-             alt="{{ $sabor['sabor_nombre'] }}"
-             class="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+@php
+    $promedio = round((float) ($sabor['promedio'] ?? 0), 1);
+    $totalResenas = (int) ($sabor['total_resenas'] ?? 0);
+    $precios = collect($sabor['tamanos'] ?? [])->pluck('precio_base')->filter(fn ($precio) => is_numeric($precio));
+    $precioDesde = $precios->isNotEmpty() ? (float) $precios->min() : null;
+@endphp
 
-        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent z-10"></div>
-
-        <div class="absolute bottom-4 left-4 z-20">
-            <h3 class="text-white text-2xl font-bold drop-shadow-sm">{{ $sabor['sabor_nombre'] }}</h3>
-            <p class="text-white text-sm">{{ $sabor['descripcion'] }}</p>
+<article class="group flex h-full flex-col overflow-hidden rounded-[26px] border border-slate-200 bg-white p-[18px] shadow-sm transition duration-300 hover:-translate-y-1.5 hover:border-blue-100 hover:shadow-xl">
+    <button
+        type="button"
+        data-catalog-product
+        data-sabor='@json($sabor)'
+        class="block w-full text-left"
+        aria-label="Personalizar {{ $sabor['sabor_nombre'] }}"
+    >
+        <div class="relative h-52 overflow-hidden rounded-[20px] bg-gradient-to-br from-blue-50 via-white to-red-50 sm:h-56">
+            <img
+                src="{{ $sabor['imagen'] }}"
+                alt="{{ $sabor['sabor_nombre'] }}"
+                class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            >
+            <div class="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950/20 to-transparent"></div>
+            <span class="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-semibold text-slate-700 shadow-sm backdrop-blur">
+                <i class="fas fa-star text-amber-400"></i>
+                {{ number_format($promedio, 1) }}
+            </span>
         </div>
+    </button>
 
-        <div class="absolute top-3 left-3 z-20">
-            <span class="bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">🔥 {{ __('catalogo.favorito') }}</span>
-        </div>
-    </div>
-
-    <div class="p-4 flex flex-col gap-2">
-        <div class="flex items-center gap-1 text-yellow-400 text-sm">
-            @php $promedio = round($sabor['promedio'], 1); @endphp
-            @for ($i = 1; $i <= 5; $i++)
-                @if ($promedio >= $i)
-                    <i class="fas fa-star"></i>
-                @elseif ($promedio >= $i - 0.5)
-                    <i class="fas fa-star-half-alt"></i>
-                @else
-                    <i class="far fa-star"></i>
-                @endif
-            @endfor
-        </div>
-
-        <a href="{{ route('sabor.resenas', $sabor['sabor_id']) }}" class="text-sm text-blue-600 hover:underline">
-            {{ __('catalogo.ver_resenas') }}
-        </a>
-    </div>
-
-    <button type="button"
+    <div class="flex flex-1 flex-col pt-5">
+        <button
+            type="button"
             data-catalog-product
             data-sabor='@json($sabor)'
-            class="absolute bottom-4 right-4 z-20 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg transition-all duration-300">
-        {{ __('catalogo.ver_tamanos') }} 🍕
-    </button>
-</div>
+            class="text-left"
+        >
+            <h3 class="text-xl font-bold tracking-[-0.02em] text-slate-950 transition group-hover:text-blue-600">{{ $sabor['sabor_nombre'] }}</h3>
+            <p class="mt-2 line-clamp-2 min-h-[40px] text-sm leading-5 text-slate-500">{{ $sabor['descripcion'] }}</p>
+        </button>
+
+        <div class="mt-4 flex items-center justify-between gap-3 text-xs">
+            <a href="{{ route('sabor.resenas', $sabor['sabor_id']) }}" class="font-semibold text-slate-500 transition hover:text-blue-600">
+                {{ $totalResenas > 0 ? $totalResenas.' reseñas' : __('catalogo.ver_resenas') }}
+            </a>
+            <span class="text-slate-400">{{ count($sabor['tamanos'] ?? []) }} tamaños</span>
+        </div>
+
+        <div class="mt-auto flex items-end justify-between gap-4 pt-6">
+            <div>
+                @if ($precioDesde !== null)
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Desde</p>
+                    <p class="mt-1 text-xl font-bold text-red-500">₡{{ number_format($precioDesde, 0) }}</p>
+                @else
+                    <p class="text-sm font-semibold text-red-500">Ver tamaños</p>
+                @endif
+            </div>
+
+            <button
+                type="button"
+                data-catalog-product
+                data-sabor='@json($sabor)'
+                class="inline-flex h-11 items-center gap-2 rounded-full bg-blue-500 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-950/10 transition hover:bg-blue-600 active:scale-[0.97]"
+            >
+                Personalizar
+                <span class="text-lg leading-none">+</span>
+            </button>
+        </div>
+    </div>
+</article>
