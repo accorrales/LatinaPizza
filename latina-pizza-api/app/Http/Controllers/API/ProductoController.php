@@ -200,8 +200,8 @@ class ProductoController extends Controller
                 // Antes solo funcionaba si el nombre coincidía exactamente con tres valores.
                 $query->where(function ($categoria) {
                     $categoria
-                        ->whereRaw("LOWER(TRIM(nombre)) LIKE ?", ['%bebid%'])
-                        ->orWhereRaw("LOWER(TRIM(nombre)) LIKE ?", ['%refresc%']);
+                        ->whereRaw('LOWER(TRIM(nombre)) LIKE ?', ['%bebid%'])
+                        ->orWhereRaw('LOWER(TRIM(nombre)) LIKE ?', ['%refresc%']);
                 });
             })
             ->orderBy('nombre')
