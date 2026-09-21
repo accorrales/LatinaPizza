@@ -1,5 +1,4 @@
 <div class="relative bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 group border border-gray-100">
-
     <div class="relative h-48 sm:h-52 md:h-56">
         <img src="{{ $sabor['imagen'] }}"
              alt="{{ $sabor['sabor_nombre'] }}"
@@ -13,9 +12,7 @@
         </div>
 
         <div class="absolute top-3 left-3 z-20">
-            <span class="bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
-                🔥 {{ __('catalogo.favorito') }}
-            </span>
+            <span class="bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">🔥 {{ __('catalogo.favorito') }}</span>
         </div>
     </div>
 
@@ -33,24 +30,15 @@
             @endfor
         </div>
 
-        <a href="{{ route('sabor.resenas', $sabor['sabor_id']) }}"
-           class="text-sm text-blue-600 hover:underline">
+        <a href="{{ route('sabor.resenas', $sabor['sabor_id']) }}" class="text-sm text-blue-600 hover:underline">
             {{ __('catalogo.ver_resenas') }}
         </a>
     </div>
 
-    <button
-        onclick="abrirModal(this)"
-        data-sabor='@json($sabor)'
-        class="absolute bottom-4 right-4 z-20 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg transition-all duration-300"
-    >
+    <button type="button"
+            data-catalog-product
+            data-sabor='@json($sabor)'
+            class="absolute bottom-4 right-4 z-20 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg transition-all duration-300">
         {{ __('catalogo.ver_tamanos') }} 🍕
     </button>
 </div>
-                   
-
-
-
-
-
-
