@@ -47,7 +47,7 @@
             @else
                 <div class="grid gap-4 lg:grid-cols-2">
                     @foreach($sabores as $sabor)
-                        @foreach($sabor['resenas'] as $resena)
+                        @foreach(($sabor['resenas'] ?? []) as $resena)
                             <article class="rounded-3xl border border-slate-200 bg-white p-5 transition hover:border-amber-200 hover:shadow-lg hover:shadow-amber-950/5 sm:p-6">
                                 <div class="flex items-start justify-between gap-4">
                                     <div class="flex min-w-0 items-center gap-3">
