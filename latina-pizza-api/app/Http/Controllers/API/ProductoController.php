@@ -193,11 +193,19 @@ class ProductoController extends Controller
 
     public function bebidas()
     {
-        $bebidas = Producto::whereHas('categoria', function ($query) {
-            $query->whereRaw('LOWER(nombre) IN (?, ?, ?)', ['bebidas', 'bebida', 'refrescos']);
-        })
+        $bebidas = Producto::query()
             ->where('estado', true)
-            ->get(['id', 'nombre']);
+            ->whereHas('categoria', function ($query) {
+                // Tolera nombres como "Bebidas", "Bebidas frías", "Refresco" o "Refrescos".
+                // Antes solo funcionaba si el nombre coincidía exactamente con tres valores.
+                $query->where(function ($categoria) {
+                    $categoria
+                        ->whereRaw('LOWER(TRIM(nombre)) LIKE ?', ['%bebid%'])
+                        ->orWhereRaw('LOWER(TRIM(nombre)) LIKE ?', ['%refresc%']);
+                });
+            })
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'categoria_id']);
 
         return response()->json($bebidas);
     }

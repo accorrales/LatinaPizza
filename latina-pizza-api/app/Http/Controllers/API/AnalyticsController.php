@@ -129,47 +129,113 @@ class AnalyticsController extends Controller
         $now = Carbon::now();
 
         [$from, $to] = match ($range) {
-            'day' => [$now->copy()->startOfDay(),  $now->copy()->endOfDay()],
+            'day' => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
             'week' => [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()],
             default => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
         };
 
+        // detalle_json es el snapshot preferido, pero pedidos históricos pueden no tenerlo.
+        // Cargamos también las relaciones normalizadas para poder construir el top en esos casos.
         $pedidos = $this->baseQuery($request)
             ->whereBetween('paid_at', [$from, $to])
-            ->select(['detalle_json'])
+            ->with([
+                'detalles.producto:id,nombre,precio',
+                'detalles.sabor:id,nombre',
+                'detalles.tamano:id,nombre',
+                'detalles.masa:id,tipo',
+                'productos:id,nombre,precio',
+                'promociones.promocion:id,nombre',
+            ])
             ->get();
 
-        $map = []; // nombre => ['name'=>..., 'qty'=>..., 'revenue'=>...]
-        foreach ($pedidos as $p) {
-            $det = $p->detalle_json ?? [];
-            foreach (($det['items'] ?? []) as $it) {
-                $qty = (int) ($it['cantidad'] ?? 1);
-                $name = ($it['tipo'] ?? '') === 'promocion'
-                    ? 'Promoción: '.($it['nombre'] ?? 'Sin nombre')
-                    : trim(
-                        ($it['nombre'] ?? 'Producto').' '.
-                        ($it['tamano'] ?? '').' '.
-                        ($it['sabor'] ?? '').' '.
-                        ($it['masa'] ?? $it['masa_nombre'] ?? '')
-                    );
-                $name = preg_replace('/\s+/', ' ', $name);
+        $map = [];
 
-                $lineRevenue = 0.0;
-                if (isset($it['precio_total'])) {
-                    $lineRevenue = (float) $it['precio_total'];
-                } elseif (isset($it['precio'])) {
-                    $lineRevenue = (float) $it['precio'] * $qty;
+        foreach ($pedidos as $pedido) {
+            $items = $pedido->detalle_json['items'] ?? [];
+
+            // Pedidos nuevos: el snapshot conserva mejor el nombre y el total exacto de cada línea.
+            if (is_array($items) && count($items) > 0) {
+                foreach ($items as $item) {
+                    $qty = max(1, (int) ($item['cantidad'] ?? 1));
+                    $name = ($item['tipo'] ?? '') === 'promocion'
+                        ? 'Promoción: '.($item['nombre'] ?? 'Sin nombre')
+                        : trim(
+                            ($item['nombre'] ?? 'Producto').' '.
+                            ($item['tamano'] ?? '').' '.
+                            ($item['sabor'] ?? '').' '.
+                            ($item['masa'] ?? $item['masa_nombre'] ?? '')
+                        );
+                    $name = preg_replace('/\s+/', ' ', $name) ?: 'Producto';
+
+                    $lineRevenue = isset($item['precio_total'])
+                        ? (float) $item['precio_total']
+                        : (float) ($item['precio'] ?? 0) * $qty;
+
+                    $this->accumulateTopProduct($map, $name, $qty, $lineRevenue);
                 }
 
-                if (! isset($map[$name])) {
-                    $map[$name] = ['name' => $name, 'qty' => 0, 'revenue' => 0.0];
+                continue;
+            }
+
+            $hasNormalizedDetails = false;
+
+            // Fallback para pedidos históricos con detalle_pedidos pero sin detalle_json.
+            foreach ($pedido->detalles as $detalle) {
+                $hasNormalizedDetails = true;
+                $qty = max(1, (int) ($detalle->cantidad ?? 1));
+                $name = trim((string) ($detalle->producto?->nombre ?? ''));
+
+                if ($name === '') {
+                    $name = trim(implode(' ', array_filter([
+                        $detalle->sabor?->nombre,
+                        $detalle->tamano?->nombre,
+                        $detalle->masa?->tipo,
+                    ])));
                 }
-                $map[$name]['qty'] += $qty;
-                $map[$name]['revenue'] += $lineRevenue;
+
+                $this->accumulateTopProduct(
+                    $map,
+                    $name !== '' ? $name : 'Producto',
+                    $qty,
+                    (float) ($detalle->precio_total ?? 0)
+                );
+            }
+
+            // Las promociones se muestran como una línea de promoción, igual que en el snapshot.
+            if ($pedido->promociones->isNotEmpty()) {
+                $hasNormalizedDetails = true;
+
+                foreach ($pedido->promociones->groupBy('promocion_id') as $grupo) {
+                    $primero = $grupo->first();
+                    $name = 'Promoción: '.($primero?->promocion?->nombre ?? 'Sin nombre');
+                    $revenue = (float) $grupo->sum('precio_total');
+                    $qty = max(1, $grupo->filter(fn ($detalle) => (float) ($detalle->precio_total ?? 0) > 0)->count());
+
+                    $this->accumulateTopProduct($map, $name, $qty, $revenue);
+                }
+            }
+
+            if ($hasNormalizedDetails) {
+                continue;
+            }
+
+            // Último fallback para pedidos antiguos que solo conservan pedido_producto.
+            foreach ($pedido->productos as $producto) {
+                $qty = max(1, (int) ($producto->pivot->cantidad ?? 1));
+                $this->accumulateTopProduct(
+                    $map,
+                    $producto->nombre ?: 'Producto',
+                    $qty,
+                    (float) ($producto->precio ?? 0) * $qty
+                );
             }
         }
 
-        $top = collect($map)->sortByDesc('qty')->take(10)->values()->all();
+        $top = collect($map)
+            ->sortByDesc('qty')
+            ->take(10)
+            ->values()
+            ->all();
 
         return response()->json([
             'data' => $top,
@@ -179,5 +245,22 @@ class AnalyticsController extends Controller
                 'range' => $range,
             ],
         ]);
+    }
+
+    private function accumulateTopProduct(array &$map, string $name, int $qty, float $revenue): void
+    {
+        $name = trim(preg_replace('/\s+/', ' ', $name) ?? $name);
+        $name = $name !== '' ? $name : 'Producto';
+
+        if (! isset($map[$name])) {
+            $map[$name] = [
+                'name' => $name,
+                'qty' => 0,
+                'revenue' => 0.0,
+            ];
+        }
+
+        $map[$name]['qty'] += max(1, $qty);
+        $map[$name]['revenue'] += $revenue;
     }
 }
