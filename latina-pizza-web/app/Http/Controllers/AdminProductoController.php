@@ -51,9 +51,10 @@ class AdminProductoController extends Controller
                 ->get($this->apiUrl('/admin/sabores'))->throwIfServerError()
                 ->json();
 
-            $tamanos = Http::connectTimeout(3)->timeout(5)->withToken($token)
+            $tamanosResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)
                 ->get($this->apiUrl('/admin/tamanos'))->throwIfServerError()
-                ->json()['data'] ?? [];
+                ->json();
+            $tamanos = $tamanosResponse['data'] ?? $tamanosResponse;
 
             return view('admin.productos.create', compact('categorias', 'sabores', 'tamanos'));
 
@@ -72,19 +73,18 @@ class AdminProductoController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
+        $isPizza = str_contains(strtolower((string) $request->input('categoria_nombre')), 'pizza');
+
         $rules = [
-            'nombre' => 'required|string|max:255',
+            'nombre' => [$isPizza ? 'nullable' : 'required', 'string', 'max:255'],
             'descripcion' => 'nullable|string',
-            'precio' => 'required|numeric|min:0',
+            'precio' => [$isPizza ? 'nullable' : 'required', 'numeric', 'min:0'],
             'imagen' => 'nullable|url:http,https|max:2048',
             'categoria_id' => 'required|integer',
             'estado' => 'nullable|boolean',
+            'sabor_id' => [$isPizza ? 'required' : 'nullable', 'integer'],
+            'tamano_id' => [$isPizza ? 'required' : 'nullable', 'integer'],
         ];
-
-        if ($request->categoria_id && strtolower((string) $request->categoria_nombre) === 'pizza') {
-            $rules['sabor_id'] = 'required|integer';
-            $rules['tamano_id'] = 'required|integer';
-        }
 
         $validated = $request->validate($rules);
 
@@ -131,9 +131,10 @@ class AdminProductoController extends Controller
                 ->get($this->apiUrl('/admin/sabores'))->throwIfServerError()
                 ->json();
 
-            $tamanos = Http::connectTimeout(3)->timeout(5)->withToken($token)
+            $tamanosResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)
                 ->get($this->apiUrl('/admin/tamanos'))->throwIfServerError()
-                ->json()['data'] ?? [];
+                ->json();
+            $tamanos = $tamanosResponse['data'] ?? $tamanosResponse;
 
             return view('admin.productos.edit', compact('producto', 'categorias', 'sabores', 'tamanos'));
 
@@ -152,15 +153,17 @@ class AdminProductoController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
+        $isPizza = $request->filled('sabor_id') || $request->filled('tamano_id');
+
         $data = $request->validate([
-            'nombre' => 'nullable|string|max:255',
+            'nombre' => [$isPizza ? 'nullable' : 'required', 'string', 'max:255'],
             'descripcion' => 'nullable|string',
-            'precio' => 'required|numeric|min:0',
+            'precio' => [$isPizza ? 'nullable' : 'required', 'numeric', 'min:0'],
             'imagen' => 'nullable|url:http,https|max:2048',
             'categoria_id' => 'required|integer',
-            'sabor_id' => 'nullable|integer',
-            'tamano_id' => 'nullable|integer',
-            'estado' => 'required|boolean',
+            'sabor_id' => [$isPizza ? 'required' : 'nullable', 'integer'],
+            'tamano_id' => [$isPizza ? 'required' : 'nullable', 'integer'],
+            'estado' => 'nullable|boolean',
         ]);
 
         try {
