@@ -23,8 +23,8 @@
                 <div class="swiper-wrapper">
                     <article class="swiper-slide min-h-[500px] sm:min-h-[560px] lg:min-h-[610px]">
                         <div class="relative min-h-[500px] sm:min-h-[560px] lg:min-h-[610px] overflow-hidden bg-[#071426]">
-                            <div class="absolute -right-20 -top-28 h-[430px] w-[430px] rounded-full bg-blue-600/25 blur-3xl"></div>
-                            <div class="absolute -bottom-36 right-16 h-[360px] w-[360px] rounded-full bg-red-500/20 blur-3xl"></div>
+                            <div class="home-blob home-parallax absolute -right-20 -top-28 h-[430px] w-[430px] rounded-full bg-blue-600/25 blur-3xl"></div>
+                            <div class="home-blob home-blob--slow home-blob--delayed home-parallax absolute -bottom-36 right-16 h-[360px] w-[360px] rounded-full bg-red-500/20 blur-3xl"></div>
 
                             <div class="relative z-10 grid min-h-[500px] sm:min-h-[560px] lg:min-h-[610px] grid-cols-1 lg:grid-cols-2 gap-8 px-6 py-8 sm:px-10 sm:py-12 lg:px-14 lg:py-14">
                                 <div class="flex flex-col justify-center max-w-xl">
@@ -32,13 +32,13 @@
                                         Hecha al momento
                                     </span>
                                     <h1 class="text-4xl sm:text-5xl lg:text-6xl xl:text-[64px] leading-[1.02] font-bold tracking-[-0.04em] text-white">
-                                        Tu pizza.<br>A tu manera.
+                                        Tu pizza.<br><span class="home-gradient-text">A tu manera.</span>
                                     </h1>
                                     <p class="mt-6 max-w-lg text-sm sm:text-base lg:text-lg leading-7 text-slate-300">
                                         Elegí tus sabores, masa y extras. Nosotros la preparamos y la llevamos caliente, rápido y exactamente como la querés.
                                     </p>
                                     <div class="mt-8 flex flex-wrap gap-3">
-                                        <a href="{{ route('catalogo.index') }}" class="home-primary-cta inline-flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-red-950/20 transition">
+                                        <a href="{{ route('catalogo.index') }}" class="home-primary-cta home-shine inline-flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-red-950/20 transition">
                                             Ordenar ahora
                                         </a>
                                         <a href="{{ route('catalogo.index') }}" class="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 hover:bg-white/15 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition">
@@ -53,12 +53,17 @@
                                 </div>
 
                                 <div class="relative hidden min-h-[430px] items-center justify-center lg:flex">
-                                    <div class="absolute h-[420px] w-[420px] rounded-full bg-blue-600/20"></div>
+                                    <div class="home-parallax absolute h-[420px] w-[420px] rounded-full bg-blue-600/20"></div>
+                                    <div class="home-steam pointer-events-none absolute left-1/2 top-[12%] z-20 h-16 w-40 -translate-x-1/2">
+                                        <span></span><span></span><span></span>
+                                    </div>
                                     <div class="home-pizza-orbit relative h-[340px] w-[340px] rounded-full bg-gradient-to-br from-yellow-300 via-amber-300 to-orange-400 shadow-[0_34px_80px_rgba(0,0,0,0.35)] ring-[14px] ring-orange-500">
-                                        <div class="absolute inset-[16px] rounded-full border-[8px] border-red-500/90"></div>
-                                        @foreach ([[27,25],[63,21],[72,55],[31,66],[53,72]] as $pep)
-                                            <span class="absolute h-9 w-9 rounded-full bg-red-500 shadow-inner" style="left: {{ $pep[0] }}%; top: {{ $pep[1] }}%;"></span>
-                                        @endforeach
+                                        <div class="home-pizza-spin absolute inset-0">
+                                            <div class="absolute inset-[16px] rounded-full border-[8px] border-red-500/90"></div>
+                                            @foreach ([[27,25],[63,21],[72,55],[31,66],[53,72]] as $pep)
+                                                <span class="absolute h-9 w-9 rounded-full bg-red-500 shadow-inner" style="left: {{ $pep[0] }}%; top: {{ $pep[1] }}%;"></span>
+                                            @endforeach
+                                        </div>
                                     </div>
                                     <div class="absolute bottom-8 right-4 rounded-[22px] bg-white px-5 py-4 shadow-2xl">
                                         <p class="text-xs font-semibold text-slate-700">Especial Latina</p>
@@ -120,14 +125,14 @@
             </div>
 
             <div class="flex gap-3 overflow-x-auto pb-2 home-hide-scrollbar snap-x snap-mandatory">
-                <a href="{{ route('catalogo.index') }}" class="snap-start shrink-0 min-w-[150px] sm:min-w-[180px] rounded-[22px] bg-blue-500 px-5 py-5 text-white shadow-lg shadow-blue-900/10 transition hover:-translate-y-1">
+                <a href="{{ route('catalogo.index') }}" data-reveal-child class="snap-start shrink-0 min-w-[150px] sm:min-w-[180px] rounded-[22px] bg-blue-500 px-5 py-5 text-white shadow-lg shadow-blue-900/10 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-900/20">
                     <span class="flex items-center gap-3 text-sm font-semibold">
                         <span class="grid h-9 w-9 place-items-center rounded-full bg-white/20">🍕</span>
                         Pizzas
                     </span>
                 </a>
                 @foreach (collect($categorias ?? [])->take(5) as $cat)
-                    <a href="{{ route('catalogo.index', ['categoria_id' => $cat['id']]) }}" class="snap-start shrink-0 min-w-[150px] sm:min-w-[180px] rounded-[22px] border border-slate-200 bg-[#F6F9FF] px-5 py-5 text-slate-900 transition hover:-translate-y-1 hover:border-blue-200 hover:bg-blue-50">
+                    <a href="{{ route('catalogo.index', ['categoria_id' => $cat['id']]) }}" data-reveal-child class="snap-start shrink-0 min-w-[150px] sm:min-w-[180px] rounded-[22px] border border-slate-200 bg-[#F6F9FF] px-5 py-5 text-slate-900 transition hover:-translate-y-1 hover:border-blue-200 hover:bg-blue-50 hover:shadow-lg hover:shadow-blue-900/5">
                         <span class="flex items-center gap-3 text-sm font-semibold">
                             <span class="grid h-9 w-9 place-items-center rounded-full bg-white text-blue-500 shadow-sm">•</span>
                             {{ $cat['nombre'] }}
@@ -155,7 +160,7 @@
                                 <button
                                     type="button"
                                     data-promotion-id="{{ $promo['id'] }}"
-                                    class="group relative h-[330px] w-full overflow-hidden rounded-[28px] bg-[#071426] text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+                                    class="home-tilt group relative h-[330px] w-full overflow-hidden rounded-[28px] bg-[#071426] text-left shadow-sm hover:shadow-2xl"
                                 >
                                     <img
                                         src="{{ $promo['imagen'] ?? asset('images/Logo.png') }}"
@@ -163,6 +168,7 @@
                                         class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
                                     >
                                     <div class="absolute inset-0 bg-gradient-to-t from-[#071426]/95 via-[#071426]/55 to-[#071426]/10"></div>
+                                    <span class="home-tilt-glow"></span>
                                     <div class="absolute inset-x-0 bottom-0 p-6">
                                         <span class="inline-flex rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-white backdrop-blur">Promo</span>
                                         <h3 class="mt-3 text-xl sm:text-2xl font-bold text-white">{{ $promo['nombre'] }}</h3>
@@ -197,7 +203,8 @@
                                 $precioDesde = $precios->isNotEmpty() ? (float) $precios->min() : null;
                             @endphp
                             <article class="swiper-slide !w-[250px] sm:!w-[286px] lg:!w-[306px]">
-                                <div class="group relative min-h-[400px] overflow-hidden rounded-[26px] border border-slate-200 bg-white p-[18px] shadow-sm transition duration-300 hover:-translate-y-1.5 hover:shadow-xl">
+                                <div class="home-tilt group relative min-h-[400px] overflow-hidden rounded-[26px] border border-slate-200 bg-white p-[18px] shadow-sm hover:shadow-2xl">
+                                    <span class="home-tilt-glow"></span>
                                     <button
                                         type="button"
                                         data-catalog-product
@@ -241,7 +248,7 @@
             <div class="grid gap-10 lg:grid-cols-2 lg:items-center">
                 <div>
                     <span class="inline-flex rounded-full bg-blue-500 px-4 py-2 text-[10px] sm:text-xs font-semibold tracking-[0.14em] text-white uppercase">Custom Pizza Builder</span>
-                    <h2 class="mt-6 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-[-0.04em] text-slate-950">Armala exactamente<br class="hidden sm:block"> como te gusta.</h2>
+                    <h2 class="mt-6 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-[-0.04em] text-slate-950">Armala <span class="home-gradient-text">exactamente</span><br class="hidden sm:block"> como te gusta.</h2>
                     <p class="mt-5 max-w-xl text-sm sm:text-base leading-7 text-slate-500">Escogé tamaño, masa, sabores y extras. El precio se actualiza mientras construís tu pizza.</p>
 
                     <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
@@ -256,7 +263,7 @@
                         @endforeach
                     </div>
 
-                    <a href="{{ route('catalogo.index') }}" class="mt-8 inline-flex rounded-full bg-red-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-red-950/10 transition hover:bg-red-600 hover:-translate-y-0.5">
+                    <a href="{{ route('catalogo.index') }}" class="home-shine mt-8 inline-flex rounded-full bg-red-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-red-950/10 transition hover:bg-red-600 hover:-translate-y-0.5">
                         Empezar a crear
                     </a>
                 </div>
@@ -264,10 +271,12 @@
                 <div class="relative min-h-[340px] sm:min-h-[470px] overflow-hidden rounded-[26px] sm:rounded-[30px] bg-[#071426]">
                     <div class="absolute left-1/2 top-1/2 h-[250px] w-[250px] sm:h-[360px] sm:w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600/25"></div>
                     <div class="home-pizza-orbit absolute left-1/2 top-1/2 h-[210px] w-[210px] sm:h-[310px] sm:w-[310px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-yellow-300 via-amber-300 to-orange-400 ring-[12px] ring-orange-500 shadow-2xl">
-                        <div class="absolute inset-[14px] rounded-full border-[7px] border-red-500"></div>
-                        @foreach ([[28,26],[64,22],[72,57],[31,66],[55,73]] as $pep)
-                            <span class="absolute h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-red-500" style="left: {{ $pep[0] }}%; top: {{ $pep[1] }}%;"></span>
-                        @endforeach
+                        <div class="home-pizza-spin absolute inset-0">
+                            <div class="absolute inset-[14px] rounded-full border-[7px] border-red-500"></div>
+                            @foreach ([[28,26],[64,22],[72,57],[31,66],[55,73]] as $pep)
+                                <span class="absolute h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-red-500" style="left: {{ $pep[0] }}%; top: {{ $pep[1] }}%;"></span>
+                            @endforeach
+                        </div>
                     </div>
                     <div class="absolute bottom-5 right-5 rounded-[20px] bg-white px-5 py-4 shadow-2xl">
                         <p class="text-[10px] font-medium text-slate-500">Tu pizza</p>
@@ -299,10 +308,10 @@
             </div>
         </section>
     </div>
-
-    @include('catalogo.partials.modal')
-    @include('catalogo.partials.modal_promocion')
 </div>
+
+@include('catalogo.partials.modal')
+@include('catalogo.partials.modal_promocion')
 
 @once
 <div
