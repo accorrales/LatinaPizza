@@ -96,59 +96,269 @@
   overflow: visible;
 }
 
-/* Dynamic controls rendered by catalog.js */
-#modalTamanos label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  min-height: 44px;
-  border: 1px solid #e2e8f0;
-  border-radius: 9999px;
-  background: #fff;
-  padding: 0.65rem 1rem;
-  color: #475569;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease, transform 180ms ease;
-}
-
-#modalTamanos label:hover {
-  border-color: #93c5fd;
-  color: #2563eb;
-  transform: translateY(-1px);
-}
-
-#modalTamanos input[type="radio"],
-#extrasOpciones input[type="checkbox"],
+/* ============================================================
+   Pizza Builder (Dribbble-style) — controls rendered by catalog.js
+   ============================================================ */
 .promotion-builder input[type="checkbox"] {
   accent-color: #1680ff;
 }
 
-#modalTamanos label:has(input:checked) {
+/* Escenario con la foto de la pizza */
+.pizza-builder__stage {
+  background: radial-gradient(125% 90% at 50% 0%, #0b2036 0%, #071426 72%);
+}
+
+.pizza-builder__glow {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+  opacity: 0.5;
+  z-index: 0;
+}
+
+.pizza-builder__glow--red {
+  width: 260px;
+  height: 260px;
+  background: #ef4444;
+  top: -50px;
+  right: -40px;
+}
+
+.pizza-builder__glow--blue {
+  width: 240px;
+  height: 240px;
+  background: #1680ff;
+  bottom: -60px;
+  left: -30px;
+}
+
+.pizza-builder__pizza {
+  animation: home-pizza-float 5s ease-in-out infinite;
+}
+
+/* Selector de tamaño (S / M / L / XL) */
+.size-pill {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 84px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 18px;
+  background: #fff;
+  padding: 0.6rem 0.35rem;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.size-pill input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.size-pill:hover {
+  border-color: #fecaca;
+  transform: translateY(-2px);
+}
+
+.size-pill__abbr {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #0f172a;
+}
+
+.size-pill__name {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+}
+
+.size-pill__price {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.size-pill:has(input:checked) {
+  border-color: #ef4444;
+  background: #fff5f5;
+  box-shadow: 0 10px 24px rgba(239, 68, 68, 0.14);
+}
+
+.size-pill:has(input:checked) .size-pill__abbr,
+.size-pill:has(input:checked) .size-pill__price {
+  color: #ef4444;
+}
+
+/* Selector de masa (estilo salsa) */
+.sauce-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 42px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9999px;
+  background: #fff;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+.sauce-pill input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sauce-pill__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 2px solid #cbd5e1;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.sauce-pill:hover {
+  border-color: #bfdbfe;
+}
+
+.sauce-pill:has(input:checked) {
   border-color: #1680ff;
   background: #eff6ff;
   color: #1d4ed8;
 }
 
-#extrasOpciones label {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  min-height: 46px;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  background: #fff;
-  padding: 0.7rem 0.85rem;
-  color: #475569;
-  font-size: 0.78rem;
-  cursor: pointer;
-  transition: border-color 180ms ease, background-color 180ms ease;
+.sauce-pill:has(input:checked) .sauce-pill__dot {
+  border-color: #1680ff;
+  box-shadow: inset 0 0 0 3px #1680ff;
 }
 
-#extrasOpciones label:has(input:checked) {
-  border-color: #93c5fd;
-  background: #eff6ff;
+.sauce-pill__extra {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+/* Toppings con switch on/off */
+.extra-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 52px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  padding: 0.5rem 0.5rem 0.5rem 0.9rem;
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.extra-switch:hover {
+  border-color: #cbd5e1;
+}
+
+.extra-switch:has(input:checked) {
+  border-color: #bfdbfe;
+  background: #f5f9ff;
+  box-shadow: 0 6px 18px rgba(22, 128, 255, 0.08);
+}
+
+.extra-switch__info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.extra-switch__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #cbd5e1;
+  transition: background 180ms ease;
+}
+
+.extra-switch:has(input:checked) .extra-switch__dot {
+  background: #1680ff;
+}
+
+.extra-switch__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.extra-switch__right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.extra-switch__price {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+/* Switch UI */
+.switch {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.switch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.switch__track {
+  display: inline-flex;
+  align-items: center;
+  width: 44px;
+  height: 24px;
+  padding: 3px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  transition: background 200ms ease;
+}
+
+.switch__thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.switch input:checked + .switch__track {
+  background: #1680ff;
+}
+
+.switch input:checked + .switch__track .switch__thumb {
+  transform: translateX(20px);
 }
 
 .promotion-builder > div {
@@ -188,13 +398,202 @@
   font-weight: 600;
 }
 
+.promotion-builder .promo-pizza__head {
+  margin-bottom: 0.9rem;
+}
+
+.promotion-builder .promo-pizza__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 9999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.promotion-builder .promo-field {
+  margin-bottom: 0.9rem;
+}
+
+.promotion-builder .promo-field:last-child {
+  margin-bottom: 0;
+}
+
+.promotion-builder .promo-field__label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+/* ============================================================
+   Modern motion layer (home)
+   ============================================================ */
+
+/* Drifting / breathing gradient blobs */
+@keyframes home-blob-drift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  33%  { transform: translate3d(24px, -18px, 0) scale(1.08); }
+  66%  { transform: translate3d(-18px, 14px, 0) scale(0.95); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+.home-blob {
+  will-change: transform;
+  animation: home-blob-drift 14s ease-in-out infinite;
+}
+
+.home-blob--slow {
+  animation-duration: 20s;
+  animation-direction: reverse;
+}
+
+.home-blob--delayed {
+  animation-delay: -6s;
+}
+
+/* Parallax offset applied from JS via custom properties */
+.home-parallax {
+  transform: translate3d(var(--px, 0px), var(--py, 0px), 0);
+  transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Animated gradient text for headings */
+@keyframes home-gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+.home-gradient-text {
+  background-image: linear-gradient(100deg, #ef4444 0%, #f97316 25%, #3b82f6 60%, #ef4444 100%);
+  background-size: 220% 220%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: home-gradient-shift 8s ease-in-out infinite;
+}
+
+/* Shine sweep on primary buttons */
+.home-shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.home-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, 0.55) 50%, transparent 80%);
+  transform: translateX(-130%);
+  pointer-events: none;
+}
+
+.home-shine:hover::after {
+  animation: home-shine-sweep 900ms ease;
+}
+
+@keyframes home-shine-sweep {
+  to { transform: translateX(130%); }
+}
+
+/* 3D tilt cards */
+.home-tilt {
+  transform-style: preserve-3d;
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 260ms ease;
+  will-change: transform;
+}
+
+.home-tilt-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(220px circle at var(--glow-x, 50%) var(--glow-y, 0%), rgba(59, 130, 246, 0.22), transparent 60%);
+  transition: opacity 260ms ease;
+}
+
+.home-tilt:hover .home-tilt-glow {
+  opacity: 1;
+}
+
+/* Slow spin + steam for the hero pizza */
+@keyframes home-pizza-spin {
+  to { transform: rotate(360deg); }
+}
+
+.home-pizza-spin {
+  animation: home-pizza-spin 34s linear infinite;
+}
+
+@keyframes home-steam-rise {
+  0%   { opacity: 0; transform: translateY(0) scale(0.8); }
+  20%  { opacity: 0.55; }
+  100% { opacity: 0; transform: translateY(-46px) scale(1.5); }
+}
+
+.home-steam span {
+  position: absolute;
+  bottom: 100%;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.5);
+  filter: blur(4px);
+  animation: home-steam-rise 3.6s ease-in infinite;
+}
+
+.home-steam span:nth-child(1) { left: 34%; animation-delay: 0s; }
+.home-steam span:nth-child(2) { left: 50%; animation-delay: 1.2s; }
+.home-steam span:nth-child(3) { left: 64%; animation-delay: 2.2s; }
+
+/* Staggered reveal children */
+.home-reveal [data-reveal-child] {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.home-reveal.is-revealed [data-reveal-child] {
+  animation: home-child-in 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(var(--stagger, 0) * 90ms);
+}
+
+@keyframes home-child-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .site-header,
   #menu-toggle .hamburger-line,
   [data-mobile-menu-panel],
-  .home-pizza-orbit {
+  .home-pizza-orbit,
+  .home-blob,
+  .home-gradient-text,
+  .home-pizza-spin,
+  .home-steam span,
+  .home-parallax,
+  .home-tilt,
+  .pizza-builder__pizza {
     transition: none !important;
     animation: none !important;
+    transform: none !important;
+  }
+
+  .home-shine::after { display: none !important; }
+
+  .home-reveal [data-reveal-child] {
+    opacity: 1 !important;
+    transform: none !important;
   }
 
   .home-storefront *,
