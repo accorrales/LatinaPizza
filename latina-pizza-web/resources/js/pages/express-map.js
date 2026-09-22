@@ -95,15 +95,73 @@ function buildMarkerElement(type = 'branch') {
     return wrapper;
 }
 
+function resolveMapDependencies(maplibreModule, circleModule) {
+    const maplibregl = maplibreModule?.Map
+        ? maplibreModule
+        : maplibreModule?.default;
+    const circle = circleModule?.default ?? circleModule?.circle;
+
+    const requiredMapLibreApis = [
+        'Map',
+        'Marker',
+        'Popup',
+        'NavigationControl',
+        'AttributionControl',
+        'LngLatBounds',
+    ];
+
+    const hasMapLibreApi = requiredMapLibreApis.every(api => typeof maplibregl?.[api] === 'function');
+
+    if (!hasMapLibreApi) {
+        throw new Error('MapLibre no expuso la API esperada para inicializar el mapa.');
+    }
+
+    if (typeof circle !== 'function') {
+        throw new Error('Turf Circle no expuso una función válida para dibujar la cobertura.');
+    }
+
+    return { maplibregl, circle };
+}
+
+function showMapError(element, message) {
+    element.replaceChildren();
+    element.classList.add('grid', 'place-items-center', 'bg-slate-50');
+
+    const card = document.createElement('div');
+    card.className = 'mx-auto max-w-md rounded-2xl border border-red-100 bg-white p-5 text-center shadow-sm';
+
+    const title = document.createElement('div');
+    title.className = 'text-sm font-extrabold text-slate-900';
+    title.textContent = 'No se pudo cargar el mapa';
+
+    const detail = document.createElement('div');
+    detail.className = 'mt-2 text-xs leading-5 text-slate-500';
+    detail.textContent = message || 'Recargá la página e intentá nuevamente.';
+
+    card.append(title, detail);
+    element.append(card);
+}
+
 export async function initExpressMap() {
     const element = document.getElementById('map');
     if (!element) return;
 
-    const [{ default: maplibregl }, { default: circle }] = await Promise.all([
-        import('maplibre-gl'),
-        import('@turf/circle'),
-        import('maplibre-gl/dist/maplibre-gl.css'),
-    ]);
+    let maplibregl;
+    let circle;
+
+    try {
+        const [maplibreModule, circleModule] = await Promise.all([
+            import('maplibre-gl'),
+            import('@turf/circle'),
+            import('maplibre-gl/dist/maplibre-gl.css'),
+        ]);
+
+        ({ maplibregl, circle } = resolveMapDependencies(maplibreModule, circleModule));
+    } catch (error) {
+        showMapError(element, error instanceof Error ? error.message : 'Error al cargar las dependencias del mapa.');
+        console.error('No se pudieron cargar las dependencias del mapa Express:', error);
+        return;
+    }
 
     const apiKey = element.dataset.maptilerKey || '';
     const address = parseJson(element.dataset.address, {});
