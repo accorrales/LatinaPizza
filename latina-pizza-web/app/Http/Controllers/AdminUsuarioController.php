@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
@@ -17,7 +18,7 @@ class AdminUsuarioController extends Controller
                 'page' => max(1, $request->integer('page', 1)),
                 'per_page' => 50,
             ])->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             $response = null;
         } catch (\Throwable $e) {
             $response = null;
@@ -48,7 +49,7 @@ class AdminUsuarioController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl("/admin/usuarios/{$id}"))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -58,7 +59,7 @@ class AdminUsuarioController extends Controller
             $usuario = $response->json();
             try {
                 $sucursales = Http::connectTimeout(3)->timeout(5)->get($this->apiUrl('/sucursales'))->throwIfServerError()->json() ?? [];
-            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            } catch (ConnectionException $e) {
                 return $this->apiUnavailable();
             } catch (\Throwable $e) {
                 return $this->apiUnavailable();
@@ -87,7 +88,7 @@ class AdminUsuarioController extends Controller
                 'role' => $validated['role'],
                 'sucursal_id' => $validated['sucursal_id'] ?? null,
             ])->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -107,7 +108,7 @@ class AdminUsuarioController extends Controller
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
                 ->delete($this->apiUrl("/admin/usuarios/{$id}"))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();

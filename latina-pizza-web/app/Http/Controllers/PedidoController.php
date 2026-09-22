@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -18,7 +19,7 @@ class PedidoController extends Controller
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
                 ->get($this->apiUrl("/pedidos/{$id}"))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -47,7 +48,7 @@ class PedidoController extends Controller
                     'page' => max(1, $request->integer('page', 1)),
                     'per_page' => 20,
                 ])->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -77,7 +78,7 @@ class PedidoController extends Controller
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
                 ->get($this->apiUrl("/detalle-pedido-promocion/{$id}/detalles"))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();

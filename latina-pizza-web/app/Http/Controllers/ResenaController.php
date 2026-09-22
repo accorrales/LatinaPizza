@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
@@ -17,7 +18,7 @@ class ResenaController extends Controller
 
         try {
             $resenaResponse = Http::connectTimeout(3)->timeout(5)->get($this->apiUrl("/resenas/$id"))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -29,7 +30,7 @@ class ResenaController extends Controller
         if ($token) {
             try {
                 $verificacion = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl("/resenas/verificar-compra/$id"))->throwIfServerError();
-            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            } catch (ConnectionException $e) {
                 return $this->apiUnavailable();
             } catch (\Throwable $e) {
                 return $this->apiUnavailable();
@@ -58,7 +59,7 @@ class ResenaController extends Controller
                 'calificacion' => $request->calificacion,
                 'comentario' => $request->comentario,
             ])->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -82,7 +83,7 @@ class ResenaController extends Controller
                 'calificacion' => $request->calificacion,
                 'comentario' => $request->comentario,
             ])->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -103,7 +104,7 @@ class ResenaController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete($this->apiUrl("/resenas/$id"))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();

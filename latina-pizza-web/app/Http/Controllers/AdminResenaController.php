@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
 
@@ -13,7 +14,7 @@ class AdminResenaController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->get($this->apiUrl('/sabores-con-resenas'))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -32,7 +33,7 @@ class AdminResenaController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete($this->apiUrl("/resenas/$id"))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();

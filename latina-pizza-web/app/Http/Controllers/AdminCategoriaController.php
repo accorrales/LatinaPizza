@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
@@ -13,7 +14,7 @@ class AdminCategoriaController extends Controller
         $token = Session::get('token');
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl('/categorias'))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -37,7 +38,7 @@ class AdminCategoriaController extends Controller
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
                 ->acceptJson()
                 ->post($this->apiUrl('/categorias'), $validated)->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -57,7 +58,7 @@ class AdminCategoriaController extends Controller
         $token = Session::get('token');
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl("/categorias/{$id}"))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -82,7 +83,7 @@ class AdminCategoriaController extends Controller
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
                 ->acceptJson()
                 ->put($this->apiUrl("/categorias/{$id}"), $validated)->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -102,7 +103,7 @@ class AdminCategoriaController extends Controller
         $token = Session::get('token');
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete($this->apiUrl("/categorias/{$id}"))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();

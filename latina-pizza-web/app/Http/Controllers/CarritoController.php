@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -239,7 +240,7 @@ class CarritoController extends Controller
         $accion = $request->validate(['accion' => ['required', 'in:sumar,restar']])['accion'];
         try {
             $carritoResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/carrito")->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -262,7 +263,7 @@ class CarritoController extends Controller
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->put("{$this->apiBase}/carrito/items/{$id}", [
                 'cantidad' => $nuevaCantidad,
             ])->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -297,7 +298,7 @@ class CarritoController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->post("{$this->apiBase}/carrito/agregar-promocion", $payload)->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable(true);
         } catch (\Throwable $e) {
             return $this->apiUnavailable(true);

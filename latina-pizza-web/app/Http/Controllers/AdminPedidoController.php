@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
@@ -18,9 +19,9 @@ class AdminPedidoController extends Controller
                 'page' => max(1, $request->integer('page', 1)),
                 'per_page' => 25,
             ])->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $this->apiUnavailable();
         }
 
@@ -43,9 +44,9 @@ class AdminPedidoController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl("/admin/pedidos/{$id}/ver"))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $this->apiUnavailable();
         }
 
@@ -66,9 +67,9 @@ class AdminPedidoController extends Controller
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->put($this->apiUrl("/admin/pedidos/{$id}/estado"), [
                 'estado' => $request->estado,
             ])->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $this->apiUnavailable();
         }
 
@@ -85,9 +86,9 @@ class AdminPedidoController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl("/admin/pedidos/{$id}/historial"))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $this->apiUnavailable();
         }
 

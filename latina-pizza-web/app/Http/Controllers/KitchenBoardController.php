@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -31,7 +32,7 @@ class KitchenBoardController extends Controller
                     'query' => $request->query(),
                     'json' => $request->all(),
                 ])->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable(true);
         } catch (\Throwable $e) {
             return $this->apiUnavailable(true);

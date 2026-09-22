@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
@@ -14,7 +15,7 @@ class AdminPromocionController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/promociones")->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -38,7 +39,7 @@ class AdminPromocionController extends Controller
             $saboresResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/admin/sabores")->throw()->json();
             $masasResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/admin/masas")->throw()->json();
             $bebidasResponse = Http::connectTimeout(3)->timeout(5)->get("{$this->apiBase}/bebidas")->throw()->json();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -83,7 +84,7 @@ class AdminPromocionController extends Controller
         }
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->post("{$this->apiBase}/promociones", $data)->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -110,7 +111,7 @@ class AdminPromocionController extends Controller
             $saboresResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/admin/sabores")->throw()->json();
             $masasResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/admin/masas")->throw()->json();
             $bebidasResponse = Http::connectTimeout(3)->timeout(5)->get("{$this->apiBase}/bebidas")->throw()->json();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -151,7 +152,7 @@ class AdminPromocionController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->put("{$this->apiBase}/promociones/{$id}", $data)->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -174,7 +175,7 @@ class AdminPromocionController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete("{$this->apiBase}/promociones/{$id}")->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();

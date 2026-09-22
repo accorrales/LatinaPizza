@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
@@ -22,7 +23,7 @@ class SucursalesExpressController extends Controller
             $resp = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/sucursales/cercanas", [
                 'direccion_usuario_id' => $r->direccion_usuario_id,
             ])->throwIfServerError()->throw();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -53,7 +54,7 @@ class SucursalesExpressController extends Controller
                 'direccion_usuario_id' => $data['direccion_usuario_id'],
                 'sucursal_id' => $data['sucursal_id'],
             ])->throwIfServerError()->throw();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();

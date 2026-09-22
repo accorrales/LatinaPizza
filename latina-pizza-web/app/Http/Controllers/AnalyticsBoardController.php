@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -26,7 +27,7 @@ class AnalyticsBoardController extends Controller
                 ->acceptJson()
                 ->timeout(5)
                 ->get($this->apiUrl('/analytics/'.$report), $request->query())->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable(true);
         } catch (\Throwable $e) {
             return $this->apiUnavailable(true);
