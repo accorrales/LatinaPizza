@@ -9,7 +9,7 @@
             <div>
                 <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700"><i class="fa-solid fa-layer-group"></i> Organización</div>
                 <h1 class="text-3xl font-black tracking-tight text-slate-900">{{ __('viewAdmin/categorias_admin.titulo') }}</h1>
-                <p class="mt-2 text-sm text-slate-500">Agrupá el catálogo, controlá visibilidad y mantené descripciones claras para el cliente.</p>
+                <p class="mt-2 text-sm text-slate-500">Agrupá el catálogo y mantené descripciones claras para el cliente.</p>
             </div>
             <form method="GET" action="{{ route('admin.categorias.index') }}" class="flex w-full max-w-lg gap-2">
                 <input type="text" name="q" value="{{ request('q') }}" placeholder="{{ __('viewAdmin/categorias_admin.buscar') }}..." class="min-w-0 flex-1 rounded-full border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-blue-400 focus:ring-blue-400">
@@ -27,17 +27,14 @@
                     <div class="grid h-10 w-10 place-items-center rounded-2xl bg-blue-600 text-white"><i class="fa-solid fa-plus"></i></div>
                     <div><h2 class="font-black text-slate-900">{{ __('viewAdmin/categorias_admin.nueva_categoria') }}</h2><p class="text-xs text-slate-500">Creala sin salir del listado.</p></div>
                 </div>
-                <form action="{{ route('admin.categorias.store') }}" method="POST" class="grid gap-3 lg:grid-cols-[1fr_1.4fr_180px_auto]" data-show-loading>
+                <form action="{{ route('admin.categorias.store') }}" method="POST" class="grid gap-3 lg:grid-cols-[1fr_1.4fr_auto]" data-show-loading>
                     @csrf
                     <input name="nombre" value="{{ old('nombre') }}" required placeholder="{{ __('viewAdmin/categorias_admin.nombre') }}" class="rounded-2xl border-blue-100 bg-white px-4 py-3 text-sm focus:border-blue-400 focus:ring-blue-400">
                     <input name="descripcion" value="{{ old('descripcion') }}" placeholder="{{ __('viewAdmin/categorias_admin.descripcion') }}" class="rounded-2xl border-blue-100 bg-white px-4 py-3 text-sm focus:border-blue-400 focus:ring-blue-400">
-                    <select name="estado" class="rounded-2xl border-blue-100 bg-white px-4 py-3 text-sm focus:border-blue-400 focus:ring-blue-400">
-                        <option value="1">{{ __('viewAdmin/categorias_admin.activa') }}</option>
-                        <option value="0">{{ __('viewAdmin/categorias_admin.inactiva') }}</option>
-                    </select>
                     <button type="submit" class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-red-500 px-5 text-sm font-bold text-white transition hover:bg-red-600"><i class="fa-solid fa-plus"></i>{{ __('viewAdmin/categorias_admin.crear') }}</button>
                 </form>
                 @error('nombre')<p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>@enderror
+                @error('descripcion')<p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>@enderror
             </div>
 
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -45,11 +42,6 @@
                     <article class="group rounded-3xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-950/5">
                         <div class="flex items-start justify-between gap-4">
                             <div class="grid h-11 w-11 place-items-center rounded-2xl bg-slate-50 text-blue-600"><i class="fa-solid fa-layer-group"></i></div>
-                            @if(($cat['estado'] ?? 1) == 1)
-                                <span class="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">{{ __('viewAdmin/categorias_admin.activa') }}</span>
-                            @else
-                                <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500">{{ __('viewAdmin/categorias_admin.inactiva') }}</span>
-                            @endif
                         </div>
                         <h3 class="mt-5 text-lg font-black text-slate-900">{{ $cat['nombre'] }}</h3>
                         <p class="mt-2 min-h-10 text-sm leading-5 text-slate-500">{{ $cat['descripcion'] ?? 'Sin descripción' }}</p>
