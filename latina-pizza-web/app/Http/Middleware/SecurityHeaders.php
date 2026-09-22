@@ -22,6 +22,7 @@ class SecurityHeaders
                 "'self'",
                 'https://api.maptiler.com',
                 'https://*.maptiler.com',
+                'https://tile.openstreetmap.org',
                 'https://api.stripe.com',
                 'https://*.stripe.com',
                 'https://*.stripe.network',
