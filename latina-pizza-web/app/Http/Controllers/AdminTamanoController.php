@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
@@ -16,7 +17,7 @@ class AdminTamanoController extends Controller
         }
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("$this->apiBase/admin/tamanos")->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -51,7 +52,7 @@ class AdminTamanoController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->post("$this->apiBase/admin/tamanos", $validated)->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -74,7 +75,7 @@ class AdminTamanoController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("$this->apiBase/admin/tamanos/$id")->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -104,7 +105,7 @@ class AdminTamanoController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->put("$this->apiBase/admin/tamanos/$id", $validated)->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -127,7 +128,7 @@ class AdminTamanoController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete("$this->apiBase/admin/tamanos/$id")->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();

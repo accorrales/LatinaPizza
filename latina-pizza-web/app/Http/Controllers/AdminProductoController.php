@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +19,7 @@ class AdminProductoController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl('/admin/productos'))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -166,7 +167,7 @@ class AdminProductoController extends Controller
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
                 ->acceptJson()
                 ->put($this->apiUrl("/admin/productos/{$id}"), $data)->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
@@ -190,7 +191,7 @@ class AdminProductoController extends Controller
 
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete($this->apiUrl("/admin/productos/{$id}"))->throwIfServerError();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
@@ -53,7 +54,7 @@ class ExpressController extends Controller
             $resp = Http::connectTimeout(3)->timeout(5)->withToken($token)
                 ->post("{$this->apiBase}/direcciones", $payload)->throwIfServerError()
                 ->throw();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return $this->apiUnavailable();
         } catch (\Throwable $e) {
             return $this->apiUnavailable();
