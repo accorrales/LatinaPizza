@@ -16,7 +16,13 @@ class AdminMasaController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->get($this->apiUrl('/admin/masas'));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl('/admin/masas'))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $masas = $response->json();
@@ -45,9 +51,15 @@ class AdminMasaController extends Controller
             'precio_extra' => 'nullable|numeric|min:0',
         ]);
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->post($this->apiUrl('/admin/masas'), $validated);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->acceptJson()
+                ->post($this->apiUrl('/admin/masas'), $validated)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.masas.index')->with('success', 'Masa creada correctamente.');
@@ -64,7 +76,13 @@ class AdminMasaController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->get($this->apiUrl("/admin/masas/{$id}"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl("/admin/masas/{$id}"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $masa = (object) $response->json();
@@ -88,9 +106,15 @@ class AdminMasaController extends Controller
             'precio_extra' => 'nullable|numeric|min:0',
         ]);
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->put($this->apiUrl("/admin/masas/{$id}"), $validated);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->acceptJson()
+                ->put($this->apiUrl("/admin/masas/{$id}"), $validated)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.masas.index')->with('success', 'Masa actualizada correctamente.');
@@ -107,7 +131,13 @@ class AdminMasaController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->delete($this->apiUrl("/admin/masas/{$id}"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete($this->apiUrl("/admin/masas/{$id}"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.masas.index')->with('success', 'Masa eliminada correctamente.');

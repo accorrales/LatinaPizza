@@ -23,13 +23,19 @@ class KitchenBoardController extends Controller
         $token = $request->session()->get('token');
         abort_unless($token, 401);
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->timeout(10)
-            ->send($request->method(), $this->apiUrl('/kitchen/'.$path), [
-                'query' => $request->query(),
-                'json' => $request->all(),
-            ]);
+        try {
+            $response = Http::connectTimeout(3)->withToken($token)
+                ->acceptJson()
+                ->timeout(5)
+                ->send($request->method(), $this->apiUrl('/kitchen/'.$path), [
+                    'query' => $request->query(),
+                    'json' => $request->all(),
+                ])->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable(true);
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable(true);
+        }
 
         return response($response->body(), $response->status())
             ->header('Content-Type', 'application/json');

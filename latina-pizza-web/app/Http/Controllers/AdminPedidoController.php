@@ -13,10 +13,16 @@ class AdminPedidoController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->get($this->apiUrl('/admin/pedidos'), [
-            'page' => max(1, $request->integer('page', 1)),
-            'per_page' => 25,
-        ]);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl('/admin/pedidos'), [
+                'page' => max(1, $request->integer('page', 1)),
+                'per_page' => 25,
+            ])->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $pedidos = $response->json('data', []);
@@ -35,7 +41,13 @@ class AdminPedidoController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->get($this->apiUrl("/admin/pedidos/{$id}/ver"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl("/admin/pedidos/{$id}/ver"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $pedido = $response->json();
@@ -50,9 +62,15 @@ class AdminPedidoController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->put($this->apiUrl("/admin/pedidos/{$id}/estado"), [
-            'estado' => $request->estado,
-        ]);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->put($this->apiUrl("/admin/pedidos/{$id}/estado"), [
+                'estado' => $request->estado,
+            ])->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return back()->with('success', 'Estado actualizado correctamente');
@@ -65,7 +83,13 @@ class AdminPedidoController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->get($this->apiUrl("/admin/pedidos/{$id}/historial"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl("/admin/pedidos/{$id}/historial"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $historial = $response->json();
@@ -83,7 +107,7 @@ class AdminPedidoController extends Controller
     {
         $token = Session::get('token');
         try {
-            $response = Http::withToken($token)->post($this->apiUrl("/admin/pedidos/{$id}/refund"));
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->post($this->apiUrl("/admin/pedidos/{$id}/refund"))->throwIfServerError();
         } catch (Throwable $exception) {
             report($exception);
 

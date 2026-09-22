@@ -49,7 +49,7 @@ class RegisteredUserController extends Controller
         Auth::login($user);
 
         try {
-            $response = Http::acceptJson()->timeout(10)->post(config('app.api_url').'/api/login', [
+            $response = Http::connectTimeout(3)->acceptJson()->timeout(5)->post(config('app.api_url').'/api/login', [
                 'email' => $request->email,
                 'password' => $request->password,
                 'token_name' => 'web-session',

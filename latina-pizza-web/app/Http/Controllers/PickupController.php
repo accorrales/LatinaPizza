@@ -18,7 +18,7 @@ class PickupController extends Controller
         }
 
         try {
-            $resp = Http::withToken($token)->get("{$this->apiBase}/sucursales");
+            $resp = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/sucursales")->throwIfServerError();
             if (! $resp->successful()) {
                 return back()->with('error', 'No se pudieron cargar las sucursales.');
             }
@@ -43,10 +43,10 @@ class PickupController extends Controller
         ]);
 
         try {
-            Http::withToken($token)->post("{$this->apiBase}/carrito/metodo-entrega", [
+            Http::connectTimeout(3)->timeout(5)->withToken($token)->post("{$this->apiBase}/carrito/metodo-entrega", [
                 'tipo' => 'pickup',
                 'sucursal_id' => (int) $data['sucursal_id'],
-            ])->throw();
+            ])->throwIfServerError()->throw();
 
             session(['delivery.type' => 'pickup']); // 👈 marca la elección en sesión
 

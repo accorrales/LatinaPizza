@@ -26,13 +26,13 @@ class CarritoController extends Controller
         $pending = Session::pull('cart.pending_item');
         if ($pending) {
             try {
-                $resp = Http::withToken($token)->post(config('services.latina_api.base_url').'/carrito/add', [
+                $resp = Http::connectTimeout(3)->timeout(5)->withToken($token)->post(config('services.latina_api.base_url').'/carrito/add', [
                     'producto_id' => $pending['producto_id'],
                     'cantidad' => $pending['cantidad'] ?? 1,
                     'masa_id' => $pending['masa_id'] ?? null,
                     'extras' => $pending['extras'] ?? [],
                     'nota_cliente' => $pending['nota_cliente'] ?? null,
-                ]);
+                ])->throwIfServerError();
                 if (! $resp->successful()) {
                     return redirect('/catalogo')->with('error', 'No se pudo agregar el producto pendiente: '.$resp->body());
                 }
@@ -87,13 +87,13 @@ class CarritoController extends Controller
 
         // ✅ Autenticado → llama a tu API
         try {
-            $resp = Http::withToken($token)->post(config('services.latina_api.base_url').'/carrito/add', [
+            $resp = Http::connectTimeout(3)->timeout(5)->withToken($token)->post(config('services.latina_api.base_url').'/carrito/add', [
                 'producto_id' => $payload['producto_id'],
                 'cantidad' => $payload['cantidad'],
                 'masa_id' => $payload['masa_id'] ?? null,
                 'extras' => $payload['extras'] ?? [],
                 'nota_cliente' => $payload['nota_cliente'] ?? null,
-            ]);
+            ])->throwIfServerError();
 
             if ($resp->successful()) {
                 // si es AJAX, devolvemos next como JSON para redirigir desde el JS
@@ -150,8 +150,8 @@ class CarritoController extends Controller
         ];
 
         try {
-            $resp = Http::withToken($token)
-                ->post("{$this->apiBase}/checkout", $payload);
+            $resp = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->post("{$this->apiBase}/checkout", $payload)->throwIfServerError();
 
             if ($resp->successful()) {
                 Session::forget('stripe_pi_id');
@@ -184,7 +184,7 @@ class CarritoController extends Controller
         }
 
         try {
-            $resp = Http::withToken($token)->get("{$this->apiBase}/carrito");
+            $resp = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/carrito")->throwIfServerError();
             if (! $resp->successful()) {
                 return redirect('/catalogo')->with('error', 'Error al cargar el carrito: '.$resp->body());
             }
@@ -215,7 +215,7 @@ class CarritoController extends Controller
         }
 
         try {
-            $resp = Http::withToken($token)->delete("{$this->apiBase}/carrito/remove/{$id}");
+            $resp = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete("{$this->apiBase}/carrito/remove/{$id}")->throwIfServerError();
             if ($resp->successful()) {
                 return redirect()->route('carrito.ver')->with('success', 'Producto eliminado del carrito');
             }
@@ -237,7 +237,13 @@ class CarritoController extends Controller
         }
 
         $accion = $request->validate(['accion' => ['required', 'in:sumar,restar']])['accion'];
-        $carritoResponse = Http::withToken($token)->get("{$this->apiBase}/carrito");
+        try {
+            $carritoResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/carrito")->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if (! $carritoResponse->successful()) {
             return back()->with('error', 'No se pudo obtener el carrito');
@@ -252,9 +258,15 @@ class CarritoController extends Controller
         $cantidadActual = (int) ($productoEnCarrito['cantidad'] ?? 1);
         $nuevaCantidad = $accion === 'sumar' ? $cantidadActual + 1 : max(1, $cantidadActual - 1);
 
-        $response = Http::withToken($token)->put("{$this->apiBase}/carrito/items/{$id}", [
-            'cantidad' => $nuevaCantidad,
-        ]);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->put("{$this->apiBase}/carrito/items/{$id}", [
+                'cantidad' => $nuevaCantidad,
+            ])->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return back()->with('success', 'Cantidad actualizada correctamente');
@@ -283,7 +295,13 @@ class CarritoController extends Controller
             'productos.*.nota_cliente' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $response = Http::withToken($token)->post("{$this->apiBase}/carrito/agregar-promocion", $payload);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->post("{$this->apiBase}/carrito/agregar-promocion", $payload)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable(true);
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable(true);
+        }
 
         if ($response->successful()) {
             return response()->json([
@@ -305,10 +323,10 @@ class CarritoController extends Controller
         }
 
         try {
-            $response = Http::withToken($token)
+            $response = Http::connectTimeout(3)->withToken($token)
                 ->acceptJson()
-                ->timeout(15)
-                ->post("{$this->apiBase}/pagos/stripe/intent");
+                ->timeout(5)
+                ->post("{$this->apiBase}/pagos/stripe/intent")->throwIfServerError();
 
             return response()->json($response->json(), $response->status());
         } catch (\Throwable $e) {

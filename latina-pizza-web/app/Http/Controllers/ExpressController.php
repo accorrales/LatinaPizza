@@ -17,7 +17,7 @@ class ExpressController extends Controller
 
         $direcciones = [];
         try {
-            $resp = Http::withToken($token)->get("{$this->apiBase}/direcciones");
+            $resp = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/direcciones")->throwIfServerError();
             if ($resp->ok()) {
                 $direcciones = $resp->json('data') ?? [];
             } elseif ($resp->status() === 401) {
@@ -49,9 +49,15 @@ class ExpressController extends Controller
             'longitud' => 'nullable|numeric|between:-180,180',
         ]);
 
-        $resp = Http::withToken($token)
-            ->post("{$this->apiBase}/direcciones", $payload)
-            ->throw();
+        try {
+            $resp = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->post("{$this->apiBase}/direcciones", $payload)->throwIfServerError()
+                ->throw();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         $dirId = data_get($resp->json(), 'data.id');
 

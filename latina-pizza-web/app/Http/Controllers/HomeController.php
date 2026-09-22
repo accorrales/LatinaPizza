@@ -19,9 +19,9 @@ class HomeController extends Controller
         try {
             // 🌐 Llamadas a la API pública
             $responses = Http::pool(fn (Pool $pool) => [
-                $pool->as('sabores')->timeout(5)->get($this->apiUrl('/productos-sabores-tamanos')),
-                $pool->as('categorias')->timeout(5)->get($this->apiUrl('/categorias')),
-                $pool->as('promociones')->timeout(5)->get($this->apiUrl('/promociones')),
+                $pool->as('sabores')->connectTimeout(3)->timeout(5)->get($this->apiUrl('/productos-sabores-tamanos')),
+                $pool->as('categorias')->connectTimeout(3)->timeout(5)->get($this->apiUrl('/categorias')),
+                $pool->as('promociones')->connectTimeout(3)->timeout(5)->get($this->apiUrl('/promociones')),
             ]);
             $responseSabores = $responses['sabores'];
             $responseCategorias = $responses['categorias'];
@@ -51,7 +51,8 @@ class HomeController extends Controller
             } else {
                 session()->flash('error', 'No se pudieron obtener los datos del catálogo.');
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            $sabores = $categorias = $promociones = [];
             session()->flash('error', 'Error de conexión con el servidor.');
         }
 

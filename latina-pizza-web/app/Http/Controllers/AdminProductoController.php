@@ -16,7 +16,13 @@ class AdminProductoController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->get($this->apiUrl('/admin/productos'));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl('/admin/productos'))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $productos = $response->json();
@@ -36,21 +42,21 @@ class AdminProductoController extends Controller
         }
 
         try {
-            $categorias = Http::withToken($token)
-                ->get($this->apiUrl('/categorias'))
+            $categorias = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->get($this->apiUrl('/categorias'))->throwIfServerError()
                 ->json();
 
-            $sabores = Http::withToken($token)
-                ->get($this->apiUrl('/admin/sabores'))
+            $sabores = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->get($this->apiUrl('/admin/sabores'))->throwIfServerError()
                 ->json();
 
-            $tamanos = Http::withToken($token)
-                ->get($this->apiUrl('/admin/tamanos'))
+            $tamanos = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->get($this->apiUrl('/admin/tamanos'))->throwIfServerError()
                 ->json()['data'] ?? [];
 
             return view('admin.productos.create', compact('categorias', 'sabores', 'tamanos'));
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('No se pudieron cargar los datos para crear un producto.', ['exception' => $e]);
 
             return back()->with('error', 'No se pudieron cargar los datos.')->withInput();
@@ -82,9 +88,9 @@ class AdminProductoController extends Controller
         $validated = $request->validate($rules);
 
         try {
-            $response = Http::withToken($token)
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
                 ->acceptJson()
-                ->post($this->apiUrl('/admin/productos'), $validated);
+                ->post($this->apiUrl('/admin/productos'), $validated)->throwIfServerError();
 
             if ($response->successful()) {
                 return redirect()->route('admin.productos.index')->with('success', 'Producto creado correctamente');
@@ -94,7 +100,7 @@ class AdminProductoController extends Controller
                 ->withInput()
                 ->with('error', 'No se pudo crear el producto: '.$response->body());
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('No se pudo crear el producto.', ['exception' => $e]);
 
             return back()->with('error', 'Ocurrió un error inesperado.')->withInput();
@@ -110,27 +116,27 @@ class AdminProductoController extends Controller
         }
 
         try {
-            $productoResponse = Http::withToken($token)->get($this->apiUrl("/admin/productos/{$id}"));
+            $productoResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl("/admin/productos/{$id}"))->throwIfServerError();
             if (! $productoResponse->successful()) {
                 return back()->with('error', 'No se pudo cargar el producto: '.$productoResponse->body());
             }
             $producto = $productoResponse->json();
 
-            $categorias = Http::withToken($token)
-                ->get($this->apiUrl('/categorias'))
+            $categorias = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->get($this->apiUrl('/categorias'))->throwIfServerError()
                 ->json();
 
-            $sabores = Http::withToken($token)
-                ->get($this->apiUrl('/admin/sabores'))
+            $sabores = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->get($this->apiUrl('/admin/sabores'))->throwIfServerError()
                 ->json();
 
-            $tamanos = Http::withToken($token)
-                ->get($this->apiUrl('/admin/tamanos'))
+            $tamanos = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->get($this->apiUrl('/admin/tamanos'))->throwIfServerError()
                 ->json()['data'] ?? [];
 
             return view('admin.productos.edit', compact('producto', 'categorias', 'sabores', 'tamanos'));
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('No se pudo cargar el producto para editarlo.', ['exception' => $e]);
 
             return back()->with('error', 'No se pudieron cargar los datos del producto.');
@@ -156,9 +162,15 @@ class AdminProductoController extends Controller
             'estado' => 'required|boolean',
         ]);
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->put($this->apiUrl("/admin/productos/{$id}"), $data);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->acceptJson()
+                ->put($this->apiUrl("/admin/productos/{$id}"), $data)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.productos.index')->with('success', 'Producto actualizado correctamente');
@@ -176,7 +188,13 @@ class AdminProductoController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->delete($this->apiUrl("/admin/productos/{$id}"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete($this->apiUrl("/admin/productos/{$id}"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.productos.index')->with('success', 'Producto eliminado correctamente');

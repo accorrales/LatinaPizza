@@ -15,7 +15,13 @@ class AdminSaborController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->get($this->apiUrl('/admin/sabores'));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl('/admin/sabores'))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $sabores = $response->json();
@@ -48,9 +54,15 @@ class AdminSaborController extends Controller
             $validated['imagen'] = null;
         }
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->post($this->apiUrl('/admin/sabores'), $validated);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->acceptJson()
+                ->post($this->apiUrl('/admin/sabores'), $validated)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.sabores.index')->with('success', 'Sabor creado correctamente.');
@@ -67,7 +79,13 @@ class AdminSaborController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->get($this->apiUrl("/admin/sabores/{$id}"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl("/admin/sabores/{$id}"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $sabor = (object) $response->json();
@@ -96,9 +114,15 @@ class AdminSaborController extends Controller
             $validated['imagen'] = null;
         }
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->put($this->apiUrl("/admin/sabores/{$id}"), $validated);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->acceptJson()
+                ->put($this->apiUrl("/admin/sabores/{$id}"), $validated)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.sabores.index')->with('success', 'Sabor actualizado correctamente.');
@@ -114,7 +138,13 @@ class AdminSaborController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->delete($this->apiUrl("/admin/sabores/{$id}"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete($this->apiUrl("/admin/sabores/{$id}"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.sabores.index')->with('success', 'Sabor eliminado correctamente.');

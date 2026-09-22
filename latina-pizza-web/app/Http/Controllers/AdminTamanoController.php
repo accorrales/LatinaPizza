@@ -14,7 +14,13 @@ class AdminTamanoController extends Controller
         if (! $token) {
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
-        $response = Http::withToken($token)->get("$this->apiBase/admin/tamanos");
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("$this->apiBase/admin/tamanos")->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $tamanos = $response->json()['data'] ?? []; // ✅ Corrección
@@ -43,7 +49,13 @@ class AdminTamanoController extends Controller
             'precio_base' => 'required|numeric|min:0',
         ]);
 
-        $response = Http::withToken($token)->post("$this->apiBase/admin/tamanos", $validated);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->post("$this->apiBase/admin/tamanos", $validated)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.tamanos.index')->with('success', 'Tamaño creado correctamente.');
@@ -60,7 +72,13 @@ class AdminTamanoController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->get("$this->apiBase/admin/tamanos/$id");
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("$this->apiBase/admin/tamanos/$id")->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $tamano = (object) $response->json();
@@ -84,7 +102,13 @@ class AdminTamanoController extends Controller
             'precio_base' => 'required|numeric|min:0',
         ]);
 
-        $response = Http::withToken($token)->put("$this->apiBase/admin/tamanos/$id", $validated);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->put("$this->apiBase/admin/tamanos/$id", $validated)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.tamanos.index')->with('success', 'Tamaño actualizado correctamente.');
@@ -101,7 +125,13 @@ class AdminTamanoController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->delete("$this->apiBase/admin/tamanos/$id");
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete("$this->apiBase/admin/tamanos/$id")->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.tamanos.index')->with('success', 'Tamaño eliminado correctamente.');

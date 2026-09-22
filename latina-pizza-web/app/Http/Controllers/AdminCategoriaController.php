@@ -11,7 +11,13 @@ class AdminCategoriaController extends Controller
     public function index()
     {
         $token = Session::get('token');
-        $response = Http::withToken($token)->get($this->apiUrl('/categorias'));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl('/categorias'))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         $categorias = $response->successful() ? $response->json() : [];
 
@@ -27,9 +33,15 @@ class AdminCategoriaController extends Controller
 
         $token = Session::get('token');
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->post($this->apiUrl('/categorias'), $validated);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->acceptJson()
+                ->post($this->apiUrl('/categorias'), $validated)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.categorias.index')->with('success', '✅ Categoría creada correctamente');
@@ -43,7 +55,13 @@ class AdminCategoriaController extends Controller
     public function edit($id)
     {
         $token = Session::get('token');
-        $response = Http::withToken($token)->get($this->apiUrl("/categorias/{$id}"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl("/categorias/{$id}"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return view('admin.categorias.edit', ['categoria' => $response->json()]);
@@ -60,9 +78,15 @@ class AdminCategoriaController extends Controller
         ]);
 
         $token = Session::get('token');
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->put($this->apiUrl("/categorias/{$id}"), $validated);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->acceptJson()
+                ->put($this->apiUrl("/categorias/{$id}"), $validated)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.categorias.index')->with('success', 'Categoría actualizada correctamente');
@@ -76,7 +100,13 @@ class AdminCategoriaController extends Controller
     public function destroy($id)
     {
         $token = Session::get('token');
-        $response = Http::withToken($token)->delete($this->apiUrl("/categorias/{$id}"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete($this->apiUrl("/categorias/{$id}"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.categorias.index')->with('success', 'Categoría eliminada correctamente');
