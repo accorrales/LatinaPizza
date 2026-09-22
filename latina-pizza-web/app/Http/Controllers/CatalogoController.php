@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Client\Pool;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -18,9 +19,9 @@ class CatalogoController extends Controller
         try {
             // 🌐 Llamadas a la API pública
             $responses = Http::pool(fn (Pool $pool) => [
-                $pool->as('sabores')->timeout(5)->get($this->apiUrl('/productos-sabores-tamanos')),
-                $pool->as('categorias')->timeout(5)->get($this->apiUrl('/categorias')),
-                $pool->as('promociones')->timeout(5)->get($this->apiUrl('/promociones')),
+                $pool->as('sabores')->connectTimeout(3)->timeout(5)->get($this->apiUrl('/productos-sabores-tamanos')),
+                $pool->as('categorias')->connectTimeout(3)->timeout(5)->get($this->apiUrl('/categorias')),
+                $pool->as('promociones')->connectTimeout(3)->timeout(5)->get($this->apiUrl('/promociones')),
             ]);
             $responseSabores = $responses['sabores'];
             $responseCategorias = $responses['categorias'];
@@ -28,6 +29,9 @@ class CatalogoController extends Controller
 
             // ✅ Si todo se obtuvo correctamente
             if (
+                $responseSabores instanceof Response &&
+                $responseCategorias instanceof Response &&
+                $responsePromociones instanceof Response &&
                 $responseSabores->successful() &&
                 $responseCategorias->successful() &&
                 $responsePromociones->successful()
@@ -48,7 +52,8 @@ class CatalogoController extends Controller
             } else {
                 session()->flash('error', 'No se pudieron obtener los datos del catálogo.');
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            $sabores = $categorias = $promociones = [];
             session()->flash('error', 'Error de conexión con el servidor.');
         }
 

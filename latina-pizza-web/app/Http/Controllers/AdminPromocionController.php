@@ -12,7 +12,13 @@ class AdminPromocionController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->get("{$this->apiBase}/promociones");
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/promociones")->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $promociones = $response->json()['data'];
@@ -27,10 +33,16 @@ class AdminPromocionController extends Controller
     {
         $token = Session::get('token');
 
-        $tamanosResponse = Http::withToken($token)->get("{$this->apiBase}/admin/tamanos")->json();
-        $saboresResponse = Http::withToken($token)->get("{$this->apiBase}/admin/sabores")->json();
-        $masasResponse = Http::withToken($token)->get("{$this->apiBase}/admin/masas")->json();
-        $bebidasResponse = Http::get("{$this->apiBase}/bebidas")->json();
+        try {
+            $tamanosResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/admin/tamanos")->throw()->json();
+            $saboresResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/admin/sabores")->throw()->json();
+            $masasResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/admin/masas")->throw()->json();
+            $bebidasResponse = Http::connectTimeout(3)->timeout(5)->get("{$this->apiBase}/bebidas")->throw()->json();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
         $tamanos = $tamanosResponse['data'] ?? $tamanosResponse;
         $sabores = $saboresResponse['data'] ?? $saboresResponse;
         $masas = $masasResponse['data'] ?? $masasResponse;
@@ -69,7 +81,13 @@ class AdminPromocionController extends Controller
             $componente['sabor_id'] = $componente['sabor_id'] ?? null;
             $componente['masa_id'] = $componente['masa_id'] ?? null;
         }
-        $response = Http::withToken($token)->post("{$this->apiBase}/promociones", $data);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->post("{$this->apiBase}/promociones", $data)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.promociones.index')->with('success', 'Promoción creada correctamente');
@@ -86,11 +104,17 @@ class AdminPromocionController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $promocion = Http::withToken($token)->get("{$this->apiBase}/promociones/{$id}")->json()['data'] ?? null;
-        $tamanosResponse = Http::withToken($token)->get("{$this->apiBase}/admin/tamanos")->json();
-        $saboresResponse = Http::withToken($token)->get("{$this->apiBase}/admin/sabores")->json();
-        $masasResponse = Http::withToken($token)->get("{$this->apiBase}/admin/masas")->json();
-        $bebidasResponse = Http::get("{$this->apiBase}/bebidas")->json();
+        try {
+            $promocion = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/promociones/{$id}")->throw()->json()['data'] ?? null;
+            $tamanosResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/admin/tamanos")->throw()->json();
+            $saboresResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/admin/sabores")->throw()->json();
+            $masasResponse = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/admin/masas")->throw()->json();
+            $bebidasResponse = Http::connectTimeout(3)->timeout(5)->get("{$this->apiBase}/bebidas")->throw()->json();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
         $tamanos = $tamanosResponse['data'] ?? $tamanosResponse;
         $sabores = $saboresResponse['data'] ?? $saboresResponse;
         $masas = $masasResponse['data'] ?? $masasResponse;
@@ -125,7 +149,13 @@ class AdminPromocionController extends Controller
             $componente['masa_id'] = $componente['masa_id'] ?? null;
         }
 
-        $response = Http::withToken($token)->put("{$this->apiBase}/promociones/{$id}", $data);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->put("{$this->apiBase}/promociones/{$id}", $data)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.promociones.index')->with('success', 'Promoción actualizada correctamente');
@@ -142,7 +172,13 @@ class AdminPromocionController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->delete("{$this->apiBase}/promociones/{$id}");
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete("{$this->apiBase}/promociones/{$id}")->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.promociones.index')->with('success', 'Promoción eliminada correctamente');

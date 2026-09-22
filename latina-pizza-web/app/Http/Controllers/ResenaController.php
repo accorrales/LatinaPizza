@@ -15,13 +15,25 @@ class ResenaController extends Controller
 
         $token = Session::get('token');
 
-        $resenaResponse = Http::get($this->apiUrl("/resenas/$id"));
+        try {
+            $resenaResponse = Http::connectTimeout(3)->timeout(5)->get($this->apiUrl("/resenas/$id"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
         if ($resenaResponse->successful()) {
             $resenas = $resenaResponse->json();
         }
 
         if ($token) {
-            $verificacion = Http::withToken($token)->get($this->apiUrl("/resenas/verificar-compra/$id"));
+            try {
+                $verificacion = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl("/resenas/verificar-compra/$id"))->throwIfServerError();
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                return $this->apiUnavailable();
+            } catch (\Throwable $e) {
+                return $this->apiUnavailable();
+            }
 
             if ($verificacion->successful()) {
                 $puedeCalificar = $verificacion->json()['comprado'];
@@ -40,11 +52,17 @@ class ResenaController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->post($this->apiUrl('/resenas'), [
-            'sabor_id' => $request->sabor_id,
-            'calificacion' => $request->calificacion,
-            'comentario' => $request->comentario,
-        ]);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->post($this->apiUrl('/resenas'), [
+                'sabor_id' => $request->sabor_id,
+                'calificacion' => $request->calificacion,
+                'comentario' => $request->comentario,
+            ])->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return back()->with('success', '¡Reseña registrada correctamente!');
@@ -59,10 +77,16 @@ class ResenaController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->put($this->apiUrl("/resenas/$id"), [
-            'calificacion' => $request->calificacion,
-            'comentario' => $request->comentario,
-        ]);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->put($this->apiUrl("/resenas/$id"), [
+                'calificacion' => $request->calificacion,
+                'comentario' => $request->comentario,
+            ])->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return back()->with('success', '¡Reseña actualizada correctamente!');
@@ -77,7 +101,13 @@ class ResenaController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->delete($this->apiUrl("/resenas/$id"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete($this->apiUrl("/resenas/$id"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return back()->with('success', '¡Reseña eliminada correctamente!');

@@ -18,9 +18,15 @@ class SucursalesExpressController extends Controller
 
         $r->validate(['direccion_usuario_id' => 'required|integer']);
 
-        $resp = Http::withToken($token)->get("{$this->apiBase}/sucursales/cercanas", [
-            'direccion_usuario_id' => $r->direccion_usuario_id,
-        ])->throw();
+        try {
+            $resp = Http::connectTimeout(3)->timeout(5)->withToken($token)->get("{$this->apiBase}/sucursales/cercanas", [
+                'direccion_usuario_id' => $r->direccion_usuario_id,
+            ])->throwIfServerError()->throw();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         $direccion = $resp->json('direccion');
         $sucursales = $resp->json('sucursales') ?? [];
@@ -41,11 +47,17 @@ class SucursalesExpressController extends Controller
             'sucursal_id' => 'required|integer',
         ]);
 
-        Http::withToken($token)->post("{$this->apiBase}/carrito/metodo-entrega", [
-            'tipo' => 'express',
-            'direccion_usuario_id' => $data['direccion_usuario_id'],
-            'sucursal_id' => $data['sucursal_id'],
-        ])->throw();
+        try {
+            Http::connectTimeout(3)->timeout(5)->withToken($token)->post("{$this->apiBase}/carrito/metodo-entrega", [
+                'tipo' => 'express',
+                'direccion_usuario_id' => $data['direccion_usuario_id'],
+                'sucursal_id' => $data['sucursal_id'],
+            ])->throwIfServerError()->throw();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         session(['delivery.type' => 'express']); // 👈 marca la elección en sesión
 

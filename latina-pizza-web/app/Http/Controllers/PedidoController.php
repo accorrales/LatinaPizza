@@ -15,8 +15,14 @@ class PedidoController extends Controller
             return abort(403, 'Token no disponible. Inicia sesión nuevamente.');
         }
 
-        $response = Http::withToken($token)
-            ->get($this->apiUrl("/pedidos/{$id}"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->get($this->apiUrl("/pedidos/{$id}"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $pedido = $response->json();
@@ -35,11 +41,17 @@ class PedidoController extends Controller
             return redirect()->route('login');
         }
 
-        $response = Http::withToken($token)
-            ->get($this->apiUrl('/mis-pedidos'), [
-                'page' => max(1, $request->integer('page', 1)),
-                'per_page' => 20,
-            ]);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->get($this->apiUrl('/mis-pedidos'), [
+                    'page' => max(1, $request->integer('page', 1)),
+                    'per_page' => 20,
+                ])->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $pedidos = $response->json('data', []);
@@ -62,8 +74,14 @@ class PedidoController extends Controller
             return abort(403, 'Token no disponible. Inicia sesión nuevamente.');
         }
 
-        $response = Http::withToken($token)
-            ->get($this->apiUrl("/detalle-pedido-promocion/{$id}/detalles"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->get($this->apiUrl("/detalle-pedido-promocion/{$id}/detalles"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $pedido = $response->json();

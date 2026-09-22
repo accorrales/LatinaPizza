@@ -34,7 +34,7 @@ class AuthenticatedSessionController extends Controller
 
         // Llamada a login de la API para obtener el token
         try {
-            $response = Http::acceptJson()->timeout(10)->post(config('app.api_url').'/api/login', [
+            $response = Http::connectTimeout(3)->acceptJson()->timeout(5)->post(config('app.api_url').'/api/login', [
                 'email' => $request->email,
                 'password' => $request->password,
                 'token_name' => 'web-session',
@@ -74,7 +74,7 @@ class AuthenticatedSessionController extends Controller
         $token = $request->session()->get('token');
         if ($token) {
             try {
-                Http::withToken($token)
+                Http::connectTimeout(3)->withToken($token)
                     ->acceptJson()
                     ->timeout(5)
                     ->post(config('app.api_url').'/api/logout');

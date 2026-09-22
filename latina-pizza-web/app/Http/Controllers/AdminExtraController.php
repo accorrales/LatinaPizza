@@ -15,7 +15,13 @@ class AdminExtraController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->get($this->apiUrl('/admin/extras-productos'));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl('/admin/extras-productos'))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $extras = $response->json();
@@ -46,9 +52,15 @@ class AdminExtraController extends Controller
             'precio_extragrande' => 'required|numeric|min:0',
         ]);
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->post($this->apiUrl('/admin/extras-productos'), $validated);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->acceptJson()
+                ->post($this->apiUrl('/admin/extras-productos'), $validated)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.extras.index')->with('success', 'Extra creado correctamente.');
@@ -64,7 +76,13 @@ class AdminExtraController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->get($this->apiUrl("/admin/extras-productos/{$id}"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->get($this->apiUrl("/admin/extras-productos/{$id}"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $extra = (object) $response->json();
@@ -90,9 +108,15 @@ class AdminExtraController extends Controller
             'precio_extragrande' => 'required|numeric|min:0',
         ]);
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->put($this->apiUrl("/admin/extras-productos/{$id}"), $validated);
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)
+                ->acceptJson()
+                ->put($this->apiUrl("/admin/extras-productos/{$id}"), $validated)->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.extras.index')->with('success', 'Extra actualizado correctamente.');
@@ -108,7 +132,13 @@ class AdminExtraController extends Controller
             return redirect()->route('login')->with('error', 'Debe iniciar sesión');
         }
 
-        $response = Http::withToken($token)->delete($this->apiUrl("/admin/extras-productos/{$id}"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete($this->apiUrl("/admin/extras-productos/{$id}"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return redirect()->route('admin.extras.index')->with('success', 'Extra eliminado correctamente.');

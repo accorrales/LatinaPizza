@@ -11,7 +11,13 @@ class AdminResenaController extends Controller
     {
         $sabores = [];
 
-        $response = Http::get($this->apiUrl('/sabores-con-resenas'));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->get($this->apiUrl('/sabores-con-resenas'))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             $sabores = $response->json();
@@ -24,7 +30,13 @@ class AdminResenaController extends Controller
     {
         $token = Session::get('token');
 
-        $response = Http::withToken($token)->delete($this->apiUrl("/resenas/$id"));
+        try {
+            $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->delete($this->apiUrl("/resenas/$id"))->throwIfServerError();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->apiUnavailable();
+        } catch (\Throwable $e) {
+            return $this->apiUnavailable();
+        }
 
         if ($response->successful()) {
             return back()->with('success', 'Reseña eliminada correctamente.');

@@ -37,7 +37,7 @@ class PasswordController extends Controller
         }
 
         try {
-            $response = Http::acceptJson()->timeout(10)->post(config('app.api_url').'/api/login', [
+            $response = Http::connectTimeout(3)->acceptJson()->timeout(5)->post(config('app.api_url').'/api/login', [
                 'email' => $request->user()->email,
                 'password' => $validated['password'],
                 'token_name' => 'web-session',
@@ -51,7 +51,9 @@ class PasswordController extends Controller
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('login')->with('status', 'Contraseña actualizada. Inicie sesión nuevamente.');
+            return redirect()->route('login')
+                ->with('status', 'Contraseña actualizada. Inicie sesión nuevamente.')
+                ->withErrors(['email' => 'No se pudo conectar con el servidor, intenta de nuevo.']);
         }
 
         $request->session()->put('token', $response->json('token'));
