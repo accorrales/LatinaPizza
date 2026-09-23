@@ -3,40 +3,30 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\PasswordRecoveryClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
 use Illuminate\View\View;
-use Throwable;
 
 class PasswordResetLinkController extends Controller
 {
-    /**
-     * Display the password reset link request view.
-     */
     public function create(): View
     {
         return view('auth.forgot-password');
     }
 
-    /**
-     * Handle a reset-link request without disclosing whether the email exists.
-     */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, PasswordRecoveryClient $client): RedirectResponse
     {
-        $request->validate([
-            'email' => ['required', 'email'],
+        $request->validate(['email' => ['required', 'string', 'email', 'max:255']], [
+            'email.required' => 'Ingresá tu correo electrónico.',
+            'email.email' => 'Ingresá un correo electrónico válido.',
         ]);
+        $email = strtolower(trim($request->input('email')));
+        $client->post('forgot-password', ['email' => $email]);
+        $request->session()->put('recovery_email', $email);
+        $request->session()->put('recovery_resend_at', now()->addMinute()->timestamp);
 
-        try {
-            Password::sendResetLink($request->only('email'));
-        } catch (Throwable $exception) {
-            report($exception);
-        }
-
-        return back()->with(
-            'status',
-            __('If an account exists for that email address, we have sent a password reset link.')
-        );
+        return redirect()->route('password.reset')->with('status',
+            'Si existe una cuenta con ese correo, recibirás un código de recuperación. Revisá también la carpeta de spam.');
     }
 }

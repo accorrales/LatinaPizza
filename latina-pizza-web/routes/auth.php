@@ -30,8 +30,12 @@ Route::middleware('guest')->group(function () {
         ->middleware('throttle:5,1')
         ->name('password.email');
 
-    Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
+    Route::get('reset-password', [NewPasswordController::class, 'create'])
         ->name('password.reset');
+
+    // Old email links no longer authorize resets; guide users to request a code.
+    Route::get('reset-password/{token}', fn () => redirect()->route('password.request')
+        ->with('status', 'Solicitá un código nuevo para recuperar tu contraseña.'));
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->middleware('throttle:5,1')
