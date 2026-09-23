@@ -69,6 +69,7 @@ class RegisteredUserController extends Controller
         }
 
         $request->session()->put('token', $response->json('token'));
+        $request->session()->put('password_hash_web', Auth::guard('web')->hashPasswordForCookie($user->getAuthPassword()));
 
         return redirect(route('verification.notice', absolute: false));
     }

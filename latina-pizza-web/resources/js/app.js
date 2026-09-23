@@ -1,4 +1,5 @@
 import './bootstrap';
+import { initPasswordRecovery } from './pages/password-recovery';
 import AOS from 'aos';
 import '@fortawesome/fontawesome-free/css/all.css';
 import 'aos/dist/aos.css';
@@ -27,6 +28,7 @@ async function loadCspAlpine() {
 }
 
 async function bootApplication() {
+    initPasswordRecovery();
     installGlobalDeliverySelector();
     if (normalizeDeliverySelectionEntry()) return;
 

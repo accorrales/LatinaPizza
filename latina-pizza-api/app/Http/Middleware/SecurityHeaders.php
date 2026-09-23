@@ -12,6 +12,10 @@ class SecurityHeaders
     {
         $response = $next($request);
 
+        if ($request->is('api/forgot-password', 'api/reset-password')) {
+            $response->headers->set('Cache-Control', 'no-store, private');
+        }
+
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('Referrer-Policy', 'no-referrer');
