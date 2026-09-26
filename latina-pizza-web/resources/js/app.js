@@ -1,4 +1,7 @@
 import './bootstrap';
+import { initTracking } from './pages/tracking';
+import { initLiveTracking } from './pages/live-tracking';
+import { initDeliveryTracking } from './pages/delivery-tracking';
 import AOS from 'aos';
 import '@fortawesome/fontawesome-free/css/all.css';
 import 'aos/dist/aos.css';
@@ -27,6 +30,9 @@ async function loadCspAlpine() {
 }
 
 async function bootApplication() {
+    initTracking();
+    initLiveTracking();
+    initDeliveryTracking();
     installGlobalDeliverySelector();
     if (normalizeDeliverySelectionEntry()) return;
 

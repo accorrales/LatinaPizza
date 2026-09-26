@@ -22,6 +22,22 @@
             @if (session('success'))<div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{{ session('success') }}</div>@endif
             @if (session('error'))<div class="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{{ session('error') }}</div>@endif
 
+            @if(($pedido['estado'] ?? '') === 'listo' && ($pedido['tipo_entrega'] ?? $pedido['tipo_pedido'] ?? '') === 'express')
+                <form method="POST" action="{{ route('admin.pedidos.estado', $pedido['id']) }}" class="mb-6 flex flex-wrap items-end gap-4 rounded-2xl border border-blue-100 bg-blue-50 p-5">
+                    @csrf @method('PUT')
+                    <input type="hidden" name="estado" value="en_camino">
+                    <label class="text-sm font-bold text-slate-700">Repartidor de esta sucursal
+                        <select name="delivery_user_id" required class="mt-2 block rounded-xl border-slate-200">
+                            <option value="">Seleccionar repartidor</option>
+                            @foreach(($pedido['repartidores'] ?? []) as $driver)
+                                <option value="{{ $driver['id'] }}">{{ $driver['name'] }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <button class="rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white">Despachar · En camino</button>
+                    <p class="w-full text-xs text-slate-500">Solo aparecen repartidores con correo verificado. Asigná el rol y sucursal desde Usuarios.</p>
+                </form>
+            @endif
             <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5"><p class="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Cliente</p><p class="mt-2 font-black text-slate-900">{{ $pedido['usuario']['name'] ?? 'N/A' }}</p></div>
                 <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5"><p class="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Sucursal</p><p class="mt-2 font-black text-slate-900">{{ $pedido['sucursal']['nombre'] ?? 'N/A' }}</p></div>
@@ -32,7 +48,7 @@
             <div class="mt-6 grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
                 <div class="rounded-3xl border border-slate-200 p-5 sm:p-6">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Estado del pedido</p><div class="mt-2"><span class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold @switch($pedido['estado']) @case('pendiente') bg-amber-50 text-amber-700 @break @case('pagado') bg-emerald-50 text-emerald-700 @break @case('preparando') bg-orange-50 text-orange-700 @break @case('listo') bg-blue-50 text-blue-700 @break @case('entregado') bg-green-50 text-green-700 @break @case('cancelado') bg-red-50 text-red-600 @break @default bg-slate-100 text-slate-600 @endswitch"><span class="h-1.5 w-1.5 rounded-full bg-current"></span>{{ ucfirst($pedido['estado']) }}</span></div></div>
+                        <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Estado del pedido</p><div class="mt-2"><span class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold @switch($pedido['estado']) @case('pendiente') bg-amber-50 text-amber-700 @break @case('pagado') bg-emerald-50 text-emerald-700 @break @case('preparando') bg-orange-50 text-orange-700 @break @case('listo') bg-blue-50 text-blue-700 @break @case('entregado') bg-green-50 text-green-700 @break @case('cancelado') bg-red-50 text-red-600 @break @default bg-slate-100 text-slate-600 @endswitch"><span class="h-1.5 w-1.5 rounded-full bg-current"></span>{{ ucfirst(str_replace('_', ' ', $pedido['estado'])) }}</span></div></div>
                         <div class="sm:text-right"><p class="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Pago</p><p class="mt-2 text-sm font-black capitalize text-slate-900">{{ ucfirst($pedido['payment_status'] ?? 'pendiente') }}</p><p class="mt-1 text-xs capitalize text-slate-400">{{ $pedido['payment_provider'] ?? 'Sin proveedor' }}</p></div>
                     </div>
 

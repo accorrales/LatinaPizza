@@ -23,7 +23,7 @@
                 Volver a mis pedidos
             </a>
             <span class="inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] {{ $statusClasses }}">
-                {{ ucfirst($status) }}
+                {{ ucfirst(str_replace('_', ' ', $status)) }}
             </span>
         </div>
 
@@ -67,7 +67,7 @@
             <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><i class="fas fa-fire-burner"></i></div>
                 <p class="mt-3 text-xs font-bold uppercase tracking-[0.13em] text-slate-400">Estado</p>
-                <p class="mt-1 text-sm font-semibold text-[#071426]">{{ ucfirst($status) }}</p>
+                <p class="mt-1 text-sm font-semibold text-[#071426]">{{ ucfirst(str_replace('_', ' ', $status)) }}</p>
             </div>
         </section>
 

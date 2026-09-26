@@ -21,6 +21,7 @@ use App\Http\Controllers\PickupController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResenaController;
 use App\Http\Controllers\SucursalesExpressController;
+use App\Http\Controllers\TrackingController;
 use App\Http\Middleware\CheckRole;
 use Illuminate\Support\Facades\Route;
 
@@ -49,6 +50,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/carrito/stripe/intent', [CarritoController::class, 'createStripeIntent'])->name('carrito.stripe.intent');
 
     Route::get('/mis-pedidos', [PedidoController::class, 'vistaHistorial'])->name('usuario.pedidos');
+    Route::get('/mis-pedidos/{id}/rastreo', [TrackingController::class, 'customer'])->whereNumber('id')->name('tracking.customer');
+    Route::get('/mis-pedidos/{id}/ubicacion', [TrackingController::class, 'location'])->whereNumber('id')->name('tracking.location');
     Route::get('/mis-pedidos/{id}', [PedidoController::class, 'detalleHistorial'])->name('usuario.pedidos.detalle');
     Route::get('/mis-pedidos/{id}/promocion', [PedidoController::class, 'detallePromocion'])->name('usuario.pedidos.promocion');
 
@@ -67,10 +70,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified', CheckRole::class.':admin,cocina'])->group(function () {
+    Route::get('/rastreo', [TrackingController::class, 'index'])->name('tracking.index');
+    Route::get('/rastreo/pedidos', [TrackingController::class, 'orders'])->name('tracking.orders');
     Route::get('/kitchen', [KitchenBoardController::class, 'index'])->name('kitchen.index');
     Route::match(['get', 'post', 'patch'], '/kitchen/api/{path?}', [KitchenBoardController::class, 'proxy'])
         ->where('path', '.*')
         ->name('kitchen.proxy');
+});
+
+Route::middleware(['auth', 'verified', CheckRole::class.':delivery'])->group(function () {
+    Route::get('/repartos', [TrackingController::class, 'delivery'])->name('tracking.delivery');
+    Route::get('/repartos/pedidos', [TrackingController::class, 'deliveryOrders'])->name('tracking.delivery.orders');
+    Route::post('/repartos/{id}/ubicacion', [TrackingController::class, 'sendLocation'])->whereNumber('id')->name('tracking.delivery.location');
 });
 
 Route::prefix('admin')

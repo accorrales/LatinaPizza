@@ -19,7 +19,7 @@
                     <p class="mt-2 max-w-2xl text-sm leading-6 text-blue-100/80">Seguimiento administrativo de pedidos, estados, sucursal y cobro.</p>
                 </div>
                 <div class="grid grid-cols-3 gap-2 text-center sm:min-w-[360px]">
-                    <div class="rounded-2xl border border-white/10 bg-white/10 px-3 py-3"><p class="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100/70">Activos</p><p class="mt-1 text-xl font-black">{{ $pedidosCollection->whereIn('estado', ['pendiente', 'pagado', 'preparando', 'listo'])->count() }}</p></div>
+                    <div class="rounded-2xl border border-white/10 bg-white/10 px-3 py-3"><p class="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100/70">Activos</p><p class="mt-1 text-xl font-black">{{ $pedidosCollection->whereIn('estado', ['pendiente', 'pagado', 'preparando', 'listo', 'en_camino'])->count() }}</p></div>
                     <div class="rounded-2xl border border-white/10 bg-white/10 px-3 py-3"><p class="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100/70">Entregados</p><p class="mt-1 text-xl font-black">{{ $pedidosCollection->where('estado', 'entregado')->count() }}</p></div>
                     <div class="rounded-2xl border border-white/10 bg-white/10 px-3 py-3"><p class="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100/70">Página</p><p class="mt-1 text-xl font-black">{{ count($pedidos) }}</p></div>
                 </div>
@@ -42,7 +42,8 @@
                                     $transiciones = match ($pedido['estado']) {
                                         'pendiente', 'pagado' => ['preparando', 'cancelado'],
                                         'preparando' => ['listo', 'cancelado'],
-                                        'listo' => ['entregado', 'cancelado'],
+                                        'listo' => ($pedido['tipo_entrega'] ?? $pedido['tipo_pedido'] ?? '') === 'express' ? ['cancelado'] : ['entregado', 'cancelado'],
+                                        'en_camino' => ['entregado', 'cancelado'],
                                         default => [],
                                     };
                                     if (($pedido['payment_provider'] ?? null) === 'stripe' && ($pedido['payment_status'] ?? null) === 'paid') {
@@ -65,7 +66,7 @@
                                                 @case('cancelado') bg-red-50 text-red-600 @break
                                                 @default bg-slate-100 text-slate-600
                                             @endswitch">
-                                            <span class="h-1.5 w-1.5 rounded-full current-color bg-current"></span>{{ ucfirst($pedido['estado']) }}
+                                            <span class="h-1.5 w-1.5 rounded-full current-color bg-current"></span>{{ ucfirst(str_replace('_', ' ', $pedido['estado'])) }}
                                         </span>
                                         @if ($transiciones)
                                             <form method="POST" action="{{ route('admin.pedidos.estado', $pedido['id']) }}" class="mt-2" data-show-loading>

@@ -9,6 +9,35 @@ class Pedido extends Model
 {
     use HasFactory;
 
+    public const EN_CAMINO = 'en_camino';
+
+    // GPS is exposed only by the authorized tracking endpoints, never generic serialization.
+    protected $hidden = ['delivery_latitude', 'delivery_longitude', 'delivery_accuracy', 'delivery_recorded_at', 'delivery_received_at'];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Pedido $pedido) {
+            if ($pedido->isDirty('estado') && in_array($pedido->estado, ['entregado', 'cancelado'], true)) {
+                $pedido->forceFill(['delivery_latitude' => null, 'delivery_longitude' => null, 'delivery_accuracy' => null, 'delivery_recorded_at' => null, 'delivery_received_at' => null]);
+            }
+        });
+    }
+
+    public function liveLocation(): ?array
+    {
+        if ($this->estado !== self::EN_CAMINO || $this->delivery_latitude === null || $this->delivery_longitude === null) {
+            return null;
+        }
+
+        return [
+            'latitude' => $this->delivery_latitude,
+            'longitude' => $this->delivery_longitude,
+            'accuracy' => $this->delivery_accuracy,
+            'recorded_at' => $this->delivery_recorded_at?->toIso8601String(),
+            'received_at' => $this->delivery_received_at?->toIso8601String(),
+        ];
+    }
+
     protected $fillable = [
         'user_id',
         'sucursal_id',
@@ -48,6 +77,11 @@ class Pedido extends Model
     ];
 
     protected $casts = [
+        'delivery_latitude' => 'float',
+        'delivery_longitude' => 'float',
+        'delivery_accuracy' => 'float',
+        'delivery_recorded_at' => 'datetime',
+        'delivery_received_at' => 'datetime',
         // tiempos
         'paid_at' => 'datetime',
         'promised_at' => 'datetime',

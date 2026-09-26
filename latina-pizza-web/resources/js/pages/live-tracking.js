@@ -1,0 +1,78 @@
+import { labels } from './tracking';
+import { createLiveMap, validLocation, isStale } from './live-map';
+
+export function initLiveTracking() {
+    const root = document.getElementById('live-tracking');
+    if (!root) return;
+    const field = name => root.querySelector(`[data-${name}]`);
+    let map, timer, controller, generation = 0, closed = false, lastLocation;
+    const removeMap = () => { map?.destroy(); map = null; lastLocation = null; field('map').hidden = true; };
+    const staleNotice = () => {
+        if (lastLocation) field('message').textContent = isStale(lastLocation)
+            ? 'Señal GPS desactualizada. Se muestra la última posición conocida.'
+            : 'Ubicación reciente del repartidor. Actualización cada 5 segundos.';
+    };
+    const freshness = setInterval(staleNotice, 5000);
+
+    async function refresh() {
+        if (closed) return;
+        clearTimeout(timer);
+        controller?.abort();
+        const request = controller = new AbortController();
+        const version = ++generation;
+        const timeout = setTimeout(() => request.abort(), 10000);
+        field('refresh').disabled = true;
+        try {
+            const response = await fetch(root.dataset.endpoint, { signal: request.signal, cache: 'no-store', headers: { Accept: 'application/json' } });
+            if (version !== generation) return;
+            if (!response.ok) {
+                if ([401, 403, 404, 419].includes(response.status)) { closed = true; removeMap(); }
+                throw new Error(response.status === 403 ? 'No tenés acceso a este pedido.' : 'No se pudo consultar el pedido. Revisá tu sesión o conexión.');
+            }
+            const { data } = await response.json();
+            if (version !== generation) return;
+            field('status').textContent = labels[data.estado] || data.estado;
+            field('error').hidden = true;
+            if (data.estado !== 'en_camino') {
+                removeMap();
+                field('updated').textContent = '';
+                field('message').textContent = ['entregado', 'cancelado'].includes(data.estado) ? 'El seguimiento de esta entrega finalizó.' : data.tipo === 'pickup' ? 'Este pedido se retira en sucursal.' : 'El mapa estará disponible cuando tu pedido esté en camino.';
+                closed = ['entregado', 'cancelado'].includes(data.estado) || data.tipo === 'pickup';
+                return;
+            }
+            if (!validLocation(data.location)) {
+                removeMap();
+                field('message').textContent = 'El pedido está en camino. Esperando la primera señal GPS del repartidor…';
+                field('updated').textContent = '';
+                return;
+            }
+            if (!map) {
+                const [module] = await Promise.all([import('maplibre-gl'), import('maplibre-gl/dist/maplibre-gl.css')]);
+                if (version !== generation || closed) return;
+                field('map').hidden = false;
+                map = createLiveMap(field('map'), module.default || module, () => {
+                    field('error').textContent = 'No se pudo cargar el fondo del mapa. Revisá la conexión.';
+                    field('error').hidden = false;
+                });
+            }
+            map.update(data.location);
+            lastLocation = data.location;
+            staleNotice();
+            field('updated').textContent = `Última señal: ${new Date(data.location.recorded_at).toLocaleString('es-CR')}${data.location.accuracy == null ? '' : ` · Precisión aproximada: ${Math.round(data.location.accuracy)} m`}`;
+        } catch (error) {
+            if (version !== generation) return;
+            field('error').textContent = error.name === 'AbortError' ? 'La conexión tardó demasiado. Reintentando…' : error.message;
+            field('error').hidden = false;
+        } finally {
+            clearTimeout(timeout);
+            if (version === generation) {
+                field('refresh').disabled = closed;
+                if (!closed && !document.hidden) timer = setTimeout(refresh, 5000);
+            }
+        }
+    }
+    field('refresh').addEventListener('click', refresh);
+    document.addEventListener('visibilitychange', () => { clearTimeout(timer); if (!document.hidden) refresh(); });
+    window.addEventListener('pagehide', () => { closed = true; generation++; clearTimeout(timer); clearInterval(freshness); controller?.abort(); removeMap(); });
+    refresh();
+}
