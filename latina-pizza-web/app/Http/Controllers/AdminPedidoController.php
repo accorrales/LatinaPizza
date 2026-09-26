@@ -66,6 +66,7 @@ class AdminPedidoController extends Controller
         try {
             $response = Http::connectTimeout(3)->timeout(5)->withToken($token)->put($this->apiUrl("/admin/pedidos/{$id}/estado"), [
                 'estado' => $request->estado,
+                'delivery_user_id' => $request->input('delivery_user_id'),
             ])->throwIfServerError();
         } catch (ConnectionException $e) {
             return $this->apiUnavailable();

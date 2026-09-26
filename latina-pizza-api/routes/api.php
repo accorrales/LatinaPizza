@@ -6,6 +6,7 @@ use App\Http\Controllers\API\CarritoController;
 use App\Http\Controllers\API\CategoriaController;
 use App\Http\Controllers\API\CheckoutController;
 use App\Http\Controllers\API\DetallePedidoPromocionController;
+use App\Http\Controllers\API\DeliveryLocationController;
 use App\Http\Controllers\API\DireccionUsuarioController;
 use App\Http\Controllers\API\EntregaController;
 use App\Http\Controllers\API\ExtraController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\API\SaborController;
 use App\Http\Controllers\API\StripeWebhookController;
 use App\Http\Controllers\API\SucursalController;
 use App\Http\Controllers\API\TamanoController;
+use App\Http\Controllers\API\TrackingController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Middleware\CheckRole;
 use App\Models\Pedido;
@@ -29,6 +31,17 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/auth.php';
+
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+    Route::get('/tracking/orders/{pedido}', [TrackingController::class, 'show']);
+    Route::middleware([CheckRole::class.':delivery'])->group(function () {
+        Route::get('/delivery/orders', [DeliveryLocationController::class, 'orders']);
+        Route::post('/delivery/orders/{pedido}/location', [DeliveryLocationController::class, 'update'])->middleware('throttle:30,1');
+    });
+});
+
+Route::get('/tracking/orders', [TrackingController::class, 'index'])
+    ->middleware(['auth:sanctum', 'verified', CheckRole::class.':admin,cocina']);
 
 // Public catalog.
 Route::apiResource('categorias', CategoriaController::class)->only(['index', 'show']);

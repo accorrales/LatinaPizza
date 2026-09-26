@@ -35,8 +35,8 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,'.$usuario->id,
-            'role' => 'required|string|in:admin,cliente,cocina',
-            'sucursal_id' => 'nullable|required_if:role,cocina|exists:sucursales,id',
+            'role' => 'required|string|in:admin,cliente,cocina,delivery',
+            'sucursal_id' => 'nullable|required_if:role,cocina,delivery|exists:sucursales,id',
         ]);
 
         if ($usuario->role === 'admin' && $validated['role'] !== 'admin'

@@ -68,6 +68,7 @@
                 @endphp
 
                 <article class="rounded-[26px] border border-slate-200 bg-white p-5 sm:p-6 shadow-[0_10px_35px_rgba(7,20,38,0.05)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_45px_rgba(7,20,38,0.09)]">
+                    <a href="{{ route('tracking.customer', $pedido['id']) }}" class="mb-4 inline-flex text-sm font-bold text-blue-600">Rastrear pedido →</a>
                     <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                         <div class="flex min-w-0 gap-4 sm:gap-5">
                             <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl {{ $isPromo ? 'bg-violet-50 text-violet-600' : 'bg-red-50 text-red-500' }}">
@@ -77,7 +78,7 @@
                                 <div class="flex flex-wrap items-center gap-2">
                                     <h3 class="text-lg font-bold text-[#071426]">Pedido #{{ $pedido['id'] }}</h3>
                                     <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide {{ $statusClasses }}">
-                                        {{ ucfirst($status) }}
+                                        {{ ucfirst(str_replace('_', ' ', $status)) }}
                                     </span>
                                     @if($isPromo)
                                         <span class="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-violet-700">Promoción</span>

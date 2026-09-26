@@ -81,11 +81,15 @@
                             <a href="{{ route('admin.extras.index') }}" class="rounded-xl px-3 py-2.5 hover:bg-slate-50 hover:text-blue-600">{{ __('layout.extras') }}</a>
                             <a href="{{ route('admin.resenas.index') }}" class="rounded-xl px-3 py-2.5 hover:bg-slate-50 hover:text-blue-600">{{ __('layout.reviews') }}</a>
                             <a href="{{ route('admin.promociones.index') }}" class="rounded-xl px-3 py-2.5 hover:bg-slate-50 hover:text-blue-600">{{ __('layout.promos') }}</a>
+                            <a href="{{ route('tracking.index') }}" class="rounded-xl px-3 py-2.5 hover:bg-slate-50 hover:text-blue-600">Rastreo</a>
                             <a href="{{ route('kitchen.index') }}" class="rounded-xl px-3 py-2.5 hover:bg-slate-50 hover:text-blue-600">Cocina</a>
                             <a href="{{ route('admin.ventas') }}" class="rounded-xl px-3 py-2.5 hover:bg-slate-50 hover:text-blue-600">Ventas</a>
                         </div>
                     </details>
+                @elseif(Auth::user()->role === 'delivery')
+                    <a href="{{ route('tracking.delivery') }}" class="rounded-full border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700">Mis entregas</a>
                 @elseif(Auth::user()->role === 'cocina')
+                    <a href="{{ route('tracking.index') }}" class="rounded-full border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-blue-200 hover:text-blue-600">Rastreo</a>
                     <a href="{{ route('kitchen.index') }}" class="rounded-full border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-blue-200 hover:text-blue-600">Cocina</a>
                 @endif
 
@@ -151,7 +155,11 @@
                 @auth
                     <a href="{{ route('usuario.pedidos') }}" class="rounded-2xl px-4 py-3 hover:bg-blue-50 hover:text-blue-600">{{ __('layout.my_orders') }}</a>
                     @if(in_array(Auth::user()->role, ['admin', 'cocina']))
+                        <a href="{{ route('tracking.index') }}" class="rounded-2xl px-4 py-3 hover:bg-blue-50 hover:text-blue-600">Rastreo</a>
                         <a href="{{ route('kitchen.index') }}" class="rounded-2xl px-4 py-3 hover:bg-blue-50 hover:text-blue-600">Cocina</a>
+                    @endif
+                    @if(Auth::user()->role === 'delivery')
+                        <a href="{{ route('tracking.delivery') }}" class="rounded-2xl px-4 py-3 hover:bg-blue-50 hover:text-blue-600">Mis entregas</a>
                     @endif
                     @if(Auth::user()->role === 'admin')
                         <details class="rounded-2xl border border-slate-200 p-2">

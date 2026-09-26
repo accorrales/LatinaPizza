@@ -65,7 +65,8 @@ class StripeWebhookController extends Controller
                 match ($event->type) {
                     'payment_intent.succeeded' => $pedido->forceFill([
                         'payment_status' => 'paid',
-                        'estado' => $pedido->estado === 'cancelado' ? 'cancelado' : 'pagado',
+                        // A delayed payment confirmation must not roll back a dispatched order.
+                        'estado' => $pedido->estado === 'pendiente' ? 'pagado' : $pedido->estado,
                         'paid_at' => $pedido->paid_at ?: now(),
                     ])->save(),
                     'payment_intent.payment_failed' => $pedido->forceFill(['payment_status' => 'failed'])->save(),

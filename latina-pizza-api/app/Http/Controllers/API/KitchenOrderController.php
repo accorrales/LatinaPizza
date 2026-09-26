@@ -34,7 +34,7 @@ class KitchenOrderController extends Controller
                 'kitchen_status', 'priority', 'sla_minutes', 'promised_at', 'ready_at',
                 'detalle_json', 'created_at',
             ])
-            ->whereNotIn('estado', ['cancelado', 'entregado'])
+            ->whereNotIn('estado', ['cancelado', 'entregado', 'en_camino'])
             ->whereIn('kitchen_status', ['nuevo', 'preparacion', 'listo']);
 
         if ($user->role === 'cocina') {
@@ -66,7 +66,7 @@ class KitchenOrderController extends Controller
 
         $counts = Pedido::query()
             ->when($user->role === 'cocina', fn ($qq) => $qq->where('sucursal_id', $user->sucursal_id))
-            ->whereNotIn('estado', ['cancelado', 'entregado'])
+            ->whereNotIn('estado', ['cancelado', 'entregado', 'en_camino'])
             ->whereIn('kitchen_status', ['nuevo', 'preparacion', 'listo'])
             ->selectRaw('kitchen_status, COUNT(*) as c')
             ->groupBy('kitchen_status')
@@ -223,57 +223,60 @@ class KitchenOrderController extends Controller
     /** PATCH /status {status: nuevo|preparacion|listo} */
     public function updateStatus(Request $request, Pedido $pedido)
     {
-        $this->ensureKitchenAuthAndScope($pedido);
+        return DB::transaction(function () use ($request, $pedido) {
+            $pedido = Pedido::lockForUpdate()->findOrFail($pedido->id);
+            $this->ensureKitchenAuthAndScope($pedido);
 
-        $status = $request->input('status');
-        if (! in_array($status, ['nuevo', 'preparacion', 'listo'], true)) {
-            return response()->json(['message' => 'Estado inválido'], 422);
-        }
-        $transitions = [
-            'nuevo' => ['nuevo', 'preparacion'],
-            'preparacion' => ['preparacion', 'listo'],
-            'listo' => ['listo'],
-        ];
-        if (! in_array($status, $transitions[$pedido->kitchen_status] ?? [], true)) {
-            return response()->json(['message' => 'No se puede retroceder el estado de cocina.'], 422);
-        }
-        if (in_array($pedido->estado, ['cancelado', 'entregado'], true)) {
-            return response()->json(['message' => 'El pedido ya está cerrado.'], 409);
-        }
-
-        $pedido->kitchen_status = $status;
-
-        if ($status === 'preparacion') {
-            if (! $pedido->sla_minutes) {
-                $pedido->sla_minutes = $pedido->tipo_pedido === 'express' ? 45 : 20; // ajusta a tu operación
+            $status = $request->input('status');
+            if (! in_array($status, ['nuevo', 'preparacion', 'listo'], true)) {
+                return response()->json(['message' => 'Estado inválido'], 422);
             }
-            if (! $pedido->promised_at) {
-                $pedido->promised_at = $pedido->created_at->clone()->addMinutes($pedido->sla_minutes);
+            $transitions = [
+                'nuevo' => ['nuevo', 'preparacion'],
+                'preparacion' => ['preparacion', 'listo'],
+                'listo' => ['listo'],
+            ];
+            if (! in_array($status, $transitions[$pedido->kitchen_status] ?? [], true)) {
+                return response()->json(['message' => 'No se puede retroceder el estado de cocina.'], 422);
             }
-        }
+            if (in_array($pedido->estado, ['cancelado', 'entregado', 'en_camino'], true)) {
+                return response()->json(['message' => 'El pedido ya está cerrado.'], 409);
+            }
 
-        if ($status === 'listo' && empty($pedido->ready_at)) {
-            $pedido->ready_at = now();
-        }
+            $pedido->kitchen_status = $status;
 
-        $pedido->save();
-        if ($status === 'preparacion') {
-            $pedido->estado = 'preparando';
-        } elseif ($status === 'listo') {
-            $pedido->estado = 'listo';
-        }
-        $pedido->save();
-        $pedido->guardarHistorial("kitchen:status:{$status}");
+            if ($status === 'preparacion') {
+                if (! $pedido->sla_minutes) {
+                    $pedido->sla_minutes = $pedido->tipo_pedido === 'express' ? 45 : 20; // ajusta a tu operación
+                }
+                if (! $pedido->promised_at) {
+                    $pedido->promised_at = $pedido->created_at->clone()->addMinutes($pedido->sla_minutes);
+                }
+            }
 
-        return response()->json([
-            'message' => 'OK',
-            'data' => [
-                'id' => $pedido->id,
-                'kitchen_status' => $pedido->kitchen_status,
-                'promised_at' => optional($pedido->promised_at)->toIso8601String(),
-                'ready_at' => optional($pedido->ready_at)->toIso8601String(),
-            ],
-        ]);
+            if ($status === 'listo' && empty($pedido->ready_at)) {
+                $pedido->ready_at = now();
+            }
+
+            $pedido->save();
+            if ($status === 'preparacion') {
+                $pedido->estado = 'preparando';
+            } elseif ($status === 'listo') {
+                $pedido->estado = 'listo';
+            }
+            $pedido->save();
+            $pedido->guardarHistorial("kitchen:status:{$status}");
+
+            return response()->json([
+                'message' => 'OK',
+                'data' => [
+                    'id' => $pedido->id,
+                    'kitchen_status' => $pedido->kitchen_status,
+                    'promised_at' => optional($pedido->promised_at)->toIso8601String(),
+                    'ready_at' => optional($pedido->ready_at)->toIso8601String(),
+                ],
+            ]);
+        });
     }
 
     /** PATCH /priority {priority: true|false} */
@@ -356,19 +359,22 @@ class KitchenOrderController extends Controller
     /** PATCH /ready  (marca listo ahora mismo) */
     public function markReady(Request $request, Pedido $pedido)
     {
-        $this->ensureKitchenAuthAndScope($pedido);
-        if (in_array($pedido->estado, ['cancelado', 'entregado'], true)) {
-            return response()->json(['message' => 'El pedido ya está cerrado.'], 409);
-        }
+        return DB::transaction(function () use ($request, $pedido) {
+            $pedido = Pedido::lockForUpdate()->findOrFail($pedido->id);
+            $this->ensureKitchenAuthAndScope($pedido);
+            if (in_array($pedido->estado, ['cancelado', 'entregado', 'en_camino'], true)) {
+                return response()->json(['message' => 'El pedido ya está cerrado.'], 409);
+            }
 
-        $pedido->kitchen_status = 'listo';
-        $pedido->estado = 'listo';
-        $pedido->ready_at = now();
-        $pedido->save();
+            $pedido->kitchen_status = 'listo';
+            $pedido->estado = 'listo';
+            $pedido->ready_at = now();
+            $pedido->save();
 
-        return response()->json(['message' => 'OK', 'data' => [
-            'id' => $pedido->id, 'kitchen_status' => $pedido->kitchen_status, 'ready_at' => $pedido->ready_at->toIso8601String(),
-        ]]);
+            return response()->json(['message' => 'OK', 'data' => [
+                'id' => $pedido->id, 'kitchen_status' => $pedido->kitchen_status, 'ready_at' => $pedido->ready_at->toIso8601String(),
+            ]]);
+        });
     }
 
     public function take(Pedido $pedido)
@@ -425,10 +431,10 @@ class KitchenOrderController extends Controller
                 abort_unless($user->sucursal_id, 403, 'Sucursal no asignada');
                 $q->where('sucursal_id', $user->sucursal_id);
             }
-            $pedidos = $q->get();
+            $pedidos = $q->lockForUpdate()->get();
 
             foreach ($pedidos as $p) {
-                if (in_array($p->estado, ['cancelado', 'entregado'], true)) {
+                if (in_array($p->estado, ['cancelado', 'entregado', 'en_camino'], true)) {
                     continue;
                 }
                 $transitions = [
