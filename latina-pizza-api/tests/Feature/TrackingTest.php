@@ -5,9 +5,10 @@ namespace Tests\Feature;
 use App\Models\Pedido;
 use App\Models\Sucursal;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class TrackingTest extends TestCase
@@ -132,7 +133,7 @@ class TrackingTest extends TestCase
         $this->postJson($endpoint, array_replace($this->coordinates(), ['recorded_at' => now()->addMinutes(3)->toIso8601String()]))->assertUnprocessable();
         $captured = now()->utc()->startOfSecond();
         $response = $this->postJson($endpoint, array_replace($this->coordinates(), ['recorded_at' => $captured->toIso8601String()]))->assertOk();
-        $this->assertSame($captured->timestamp, \Carbon\Carbon::parse($response->json('data.recorded_at'))->timestamp);
+        $this->assertSame($captured->timestamp, Carbon::parse($response->json('data.recorded_at'))->timestamp);
         $this->assertSame($captured->timestamp, $order->fresh()->delivery_recorded_at->timestamp);
         $this->postJson($endpoint, array_replace($this->coordinates(), ['recorded_at' => now()->subSeconds(10)->toIso8601String()]))->assertStatus(409);
     }

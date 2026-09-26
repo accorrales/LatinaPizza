@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pedido;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class TrackingController extends Controller
@@ -74,7 +75,7 @@ class TrackingController extends Controller
             'direccion' => collect($order->delivery_address_json ?? [])->only(['nombre', 'direccion_exacta', 'provincia', 'canton', 'distrito', 'telefono_contacto', 'referencias'])->all(),
             'historial' => $order->historial->map(fn ($event) => [
                 'estado' => $event->estado,
-                'fecha' => $event->fecha ? \Carbon\Carbon::parse($event->fecha)->toIso8601String() : null,
+                'fecha' => $event->fecha ? Carbon::parse($event->fecha)->toIso8601String() : null,
             ]),
         ]);
 

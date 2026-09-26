@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -42,7 +43,7 @@ class TrackingController extends Controller
         try {
             $response = Http::connectTimeout(3)->timeout(8)->withToken($token)->acceptJson()
                 ->send($method, $this->apiUrl($path), $method === 'POST' ? ['json' => $data] : []);
-        } catch (\Illuminate\Http\Client\ConnectionException $exception) {
+        } catch (ConnectionException $exception) {
             return $this->apiUnavailable(true);
         }
         if ($response->serverError()) {
@@ -65,7 +66,7 @@ class TrackingController extends Controller
         try {
             $response = Http::connectTimeout(3)->timeout(8)->withToken($token)->acceptJson()
                 ->get($this->apiUrl('/tracking/orders'), $request->only(['search', 'estado', 'tipo', 'page']));
-        } catch (\Illuminate\Http\Client\ConnectionException $exception) {
+        } catch (ConnectionException $exception) {
             return $this->apiUnavailable(true);
         }
 

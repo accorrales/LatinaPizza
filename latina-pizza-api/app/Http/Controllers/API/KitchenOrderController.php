@@ -359,7 +359,7 @@ class KitchenOrderController extends Controller
     /** PATCH /ready  (marca listo ahora mismo) */
     public function markReady(Request $request, Pedido $pedido)
     {
-        return DB::transaction(function () use ($request, $pedido) {
+        return DB::transaction(function () use ($pedido) {
             $pedido = Pedido::lockForUpdate()->findOrFail($pedido->id);
             $this->ensureKitchenAuthAndScope($pedido);
             if (in_array($pedido->estado, ['cancelado', 'entregado', 'en_camino'], true)) {
