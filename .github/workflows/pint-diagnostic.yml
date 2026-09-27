@@ -1,0 +1,25 @@
+name: Pint diagnostic
+
+on:
+  push:
+    branches: ["codex/delivery-route-optimization"]
+
+permissions:
+  contents: read
+
+jobs:
+  pint-diff:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: latina-pizza-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+      - uses: ramsey/composer-install@v3
+        with:
+          working-directory: latina-pizza-api
+      - run: vendor/bin/pint app/Services/DeliveryRoutePlanner.php
+      - run: git diff -- app/Services/DeliveryRoutePlanner.php
