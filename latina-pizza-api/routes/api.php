@@ -36,6 +36,8 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/tracking/orders/{pedido}', [TrackingController::class, 'show']);
     Route::middleware([CheckRole::class.':delivery'])->group(function () {
         Route::get('/delivery/orders', [DeliveryLocationController::class, 'orders']);
+        Route::get('/delivery/route', [DeliveryLocationController::class, 'route']);
+        Route::post('/delivery/location', [DeliveryLocationController::class, 'updateAll'])->middleware('throttle:30,1');
         Route::post('/delivery/orders/{pedido}/location', [DeliveryLocationController::class, 'update'])->middleware('throttle:30,1');
     });
 });

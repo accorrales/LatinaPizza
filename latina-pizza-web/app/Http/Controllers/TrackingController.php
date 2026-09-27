@@ -31,6 +31,17 @@ class TrackingController extends Controller
         return $this->forward($request, 'GET', '/delivery/orders');
     }
 
+    public function deliveryRoute(Request $request)
+    {
+        return $this->forward($request, 'GET', '/delivery/route');
+    }
+
+    public function sendLocationAll(Request $request)
+    {
+        return $this->forward($request, 'POST', '/delivery/location',
+            $request->only(['latitude', 'longitude', 'accuracy', 'recorded_at']));
+    }
+
     public function sendLocation(Request $request, int $id)
     {
         return $this->forward($request, 'POST', '/delivery/orders/'.$id.'/location',

@@ -1,6 +1,14 @@
 import { labels } from './tracking';
 import { createLiveMap, validLocation, isStale } from './live-map';
 
+function durationText(seconds) {
+    const minutes = Math.max(0, Math.round(Number(seconds || 0) / 60));
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    const rest = minutes % 60;
+    return rest ? `${hours} h ${rest} min` : `${hours} h`;
+}
+
 export function initLiveTracking() {
     const root = document.getElementById('live-tracking');
     if (!root) return;
@@ -13,6 +21,21 @@ export function initLiveTracking() {
             : 'Ubicación reciente del repartidor. Actualización cada 5 segundos.';
     };
     const freshness = setInterval(staleNotice, 5000);
+
+    function renderEta(route) {
+        if (!route?.eta_at) {
+            field('eta-card').hidden = true;
+            return;
+        }
+        field('eta-card').hidden = false;
+        field('eta').textContent = new Date(route.eta_at).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
+        field('eta-duration').textContent = `Aproximadamente ${durationText(route.eta_seconds)} desde ahora`;
+        const before = Number(route.stops_before || 0);
+        field('queue').textContent = before === 0
+            ? 'Tu pedido es la siguiente entrega de esta ruta.'
+            : `Hay ${before} entrega${before === 1 ? '' : 's'} antes de tu pedido.`;
+        field('estimate-note').textContent = `${route.approximate ? 'Estimación aproximada. ' : ''}El cálculo considera el orden de las entregas y el tiempo estimado en cada parada; no incluye tráfico en tiempo real.`;
+    }
 
     async function refresh() {
         if (closed) return;
@@ -33,6 +56,7 @@ export function initLiveTracking() {
             if (version !== generation) return;
             field('status').textContent = labels[data.estado] || data.estado;
             field('error').hidden = true;
+            renderEta(data.route);
             if (data.estado !== 'en_camino') {
                 removeMap();
                 field('updated').textContent = '';
@@ -55,7 +79,7 @@ export function initLiveTracking() {
                     field('error').hidden = false;
                 });
             }
-            map.update(data.location);
+            map.update(data.location, data.route?.destination || null);
             lastLocation = data.location;
             staleNotice();
             field('updated').textContent = `Última señal: ${new Date(data.location.recorded_at).toLocaleString('es-CR')}${data.location.accuracy == null ? '' : ` · Precisión aproximada: ${Math.round(data.location.accuracy)} m`}`;

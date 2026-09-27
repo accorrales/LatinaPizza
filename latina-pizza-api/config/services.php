@@ -17,6 +17,14 @@ return [
         'base_url' => rtrim(env('APP_API_URL', 'http://localhost:8001'), '/').'/api',
     ],
 
+    'routing' => [
+        'base_url' => rtrim(env('ROUTING_BASE_URL', 'https://router.project-osrm.org'), '/'),
+        'profile' => env('ROUTING_PROFILE', 'driving'),
+        'timeout' => (int) env('ROUTING_TIMEOUT', 6),
+        'stop_service_minutes' => (int) env('DELIVERY_STOP_SERVICE_MINUTES', 4),
+        'fallback_speed_kmh' => (float) env('DELIVERY_FALLBACK_SPEED_KMH', 30),
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
