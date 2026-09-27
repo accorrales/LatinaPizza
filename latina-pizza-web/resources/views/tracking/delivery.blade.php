@@ -14,7 +14,7 @@
                 <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Compartí una sola ubicación para todos tus pedidos asignados. Latina Pizza ordena las paradas, calcula los tiempos y te lleva a la siguiente entrega.</p>
             </div>
             <div class="flex flex-wrap gap-3">
-                <button data-start disabled type="button" class="rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Iniciar GPS</button>
+                <button data-start disabled type="button" class="rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Compartir mi ubicación</button>
                 <button data-stop disabled type="button" class="rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Detener GPS</button>
                 <button data-reload type="button" class="rounded-xl border border-white/20 px-5 py-3 text-sm font-bold text-white">Recalcular ruta</button>
             </div>
