@@ -30,9 +30,12 @@
                             <label for="role" class="mb-2 block text-sm font-bold text-slate-700">{{ __('viewAdmin/usuarios_admin.edit.rol') }}</label>
                             <select name="role" id="role" class="w-full rounded-2xl border-blue-100 bg-white px-4 py-3 text-sm focus:border-blue-400 focus:ring-blue-400" required>
                                 <option value="admin" @selected(old('role', $usuario['role']) === 'admin')>{{ __('viewAdmin/usuarios_admin.index.rol_admin') }}</option>
-                                <option value="cliente" @selected(old('role', $usuario['role']) === 'cliente')>{{ __('viewAdmin/usuarios_admin.index.rol_cliente') }}</option>
+                                <option value="gerente" @selected(old('role', $usuario['role']) === 'gerente')>Gerente de sucursal</option>
+                                <option value="cajero" @selected(old('role', $usuario['role']) === 'cajero')>Cajero / Vendedor</option>
+                                <option value="mesero" @selected(old('role', $usuario['role']) === 'mesero')>Mesero</option>
                                 <option value="cocina" @selected(old('role', $usuario['role']) === 'cocina')>Cocina</option>
                                 <option value="delivery" @selected(old('role', $usuario['role']) === 'delivery')>Repartidor</option>
+                                <option value="cliente" @selected(old('role', $usuario['role']) === 'cliente')>{{ __('viewAdmin/usuarios_admin.index.rol_cliente') }}</option>
                             </select>
                         </div>
                         <div>
@@ -41,7 +44,7 @@
                                 <option value="">Sin sucursal</option>
                                 @foreach($sucursales as $sucursal)<option value="{{ $sucursal['id'] }}" @selected(old('sucursal_id', $usuario['sucursal_id'] ?? null) == $sucursal['id'])>{{ $sucursal['nombre'] }}</option>@endforeach
                             </select>
-                            <p class="mt-2 text-xs text-slate-500">Es obligatoria para cocina y repartidores.</p>
+                            <p class="mt-2 text-xs text-slate-500">Obligatoria para gerente, cajero, mesero, cocina y repartidor. Admin y cliente pueden quedar sin sucursal.</p>
                         </div>
                     </div>
                 </div>
@@ -57,7 +60,7 @@
                 <p class="mt-1 text-sm text-slate-300">{{ $usuario['email'] }}</p>
                 <div class="mt-5 rounded-2xl bg-white/10 p-4 text-sm"><span class="text-slate-400">Rol actual</span><p class="mt-1 font-bold capitalize text-white">{{ $usuario['role'] }}</p></div>
             </div>
-            <div class="rounded-[2rem] border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-800"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Cambiar roles puede modificar acceso a administración, cocina y datos operativos.</div>
+            <div class="rounded-[2rem] border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-800"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Cambiar roles puede modificar acceso a administración, salón, caja, cocina y datos operativos.</div>
         </aside>
     </div>
 </div>

@@ -4,6 +4,7 @@
             $operationLinks = [
                 ['route' => 'admin.pedidos.index', 'pattern' => 'admin.pedidos.*', 'label' => 'Pedidos', 'icon' => 'fa-receipt'],
                 ['route' => 'admin.usuarios.index', 'pattern' => 'admin.usuarios.*', 'label' => 'Usuarios', 'icon' => 'fa-users'],
+                ['route' => 'salon.index', 'pattern' => 'salon.*', 'label' => 'Salón', 'icon' => 'fa-utensils'],
                 ['route' => 'admin.resenas.index', 'pattern' => 'admin.resenas.*', 'label' => 'Reseñas', 'icon' => 'fa-star'],
                 ['route' => 'kitchen.index', 'pattern' => 'kitchen.*', 'label' => 'Cocina', 'icon' => 'fa-fire-burner'],
                 ['route' => 'admin.ventas', 'pattern' => 'admin.ventas*', 'label' => 'Ventas', 'icon' => 'fa-chart-line'],

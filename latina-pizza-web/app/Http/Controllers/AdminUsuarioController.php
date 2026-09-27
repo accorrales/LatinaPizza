@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\Rule;
 
 class AdminUsuarioController extends Controller
 {
@@ -33,14 +35,14 @@ class AdminUsuarioController extends Controller
             ];
 
             return view('admin.usuarios.index', compact('usuarios', 'pagination'));
-        } else {
-            session()->flash('error', 'No se pudieron cargar los usuarios. Intenta de nuevo.');
-
-            return view('admin.usuarios.index', [
-                'usuarios' => [],
-                'pagination' => ['current_page' => 1, 'last_page' => 1],
-            ]);
         }
+
+        session()->flash('error', 'No se pudieron cargar los usuarios. Intenta de nuevo.');
+
+        return view('admin.usuarios.index', [
+            'usuarios' => [],
+            'pagination' => ['current_page' => 1, 'last_page' => 1],
+        ]);
     }
 
     public function edit($id)
@@ -66,9 +68,9 @@ class AdminUsuarioController extends Controller
             }
 
             return view('admin.usuarios.edit', compact('usuario', 'sucursales'));
-        } else {
-            return back()->with('error', 'Error al obtener el usuario');
         }
+
+        return back()->with('error', 'Error al obtener el usuario');
     }
 
     public function update(Request $request, $id)
@@ -76,8 +78,12 @@ class AdminUsuarioController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
-            'role' => ['required', 'in:admin,cliente,cocina,delivery'],
-            'sucursal_id' => ['nullable', 'integer'],
+            'role' => ['required', Rule::in(User::allowedRoles())],
+            'sucursal_id' => [
+                'nullable',
+                Rule::requiredIf(fn () => User::roleRequiresBranch((string) $request->input('role'))),
+                'integer',
+            ],
         ]);
         $token = Session::get('token');
 
@@ -96,9 +102,9 @@ class AdminUsuarioController extends Controller
 
         if ($response->successful()) {
             return redirect()->route('admin.usuarios.index')->with('success', 'Usuario actualizado correctamente');
-        } else {
-            return back()->with('error', 'Error al actualizar el usuario');
         }
+
+        return back()->with('error', 'Error al actualizar el usuario');
     }
 
     public function destroy($id)
@@ -116,8 +122,8 @@ class AdminUsuarioController extends Controller
 
         if ($response->successful()) {
             return redirect()->route('admin.usuarios.index')->with('success', 'Usuario eliminado correctamente');
-        } else {
-            return redirect()->route('admin.usuarios.index')->with('error', 'Error al eliminar el usuario');
         }
+
+        return redirect()->route('admin.usuarios.index')->with('error', 'Error al eliminar el usuario');
     }
 }

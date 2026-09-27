@@ -20,6 +20,8 @@ use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\PickupController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResenaController;
+use App\Http\Controllers\SalonController;
+use App\Http\Controllers\SalonSessionController;
 use App\Http\Controllers\SucursalesExpressController;
 use App\Http\Controllers\TrackingController;
 use App\Http\Middleware\CheckRole;
@@ -76,6 +78,27 @@ Route::middleware(['auth', 'verified', CheckRole::class.':admin,cocina'])->group
     Route::match(['get', 'post', 'patch'], '/kitchen/api/{path?}', [KitchenBoardController::class, 'proxy'])
         ->where('path', '.*')
         ->name('kitchen.proxy');
+});
+
+Route::middleware(['auth', 'verified', CheckRole::class.':admin,gerente,mesero,cajero'])->group(function () {
+    Route::get('/salon', [SalonController::class, 'index'])->name('salon.index');
+    Route::get('/salon/sesiones/{session}', [SalonSessionController::class, 'show'])->whereNumber('session')->name('salon.sessions.show');
+    Route::post('/salon/sesiones/{session}/cerrar', [SalonController::class, 'closeSession'])->whereNumber('session')->name('salon.sessions.close');
+});
+
+Route::middleware(['auth', 'verified', CheckRole::class.':admin,gerente,mesero'])->group(function () {
+    Route::post('/salon/mesas/{mesa}/abrir', [SalonController::class, 'openMesa'])->whereNumber('mesa')->name('salon.mesas.open');
+    Route::post('/salon/sesiones/{session}/rondas', [SalonSessionController::class, 'storeRound'])->whereNumber('session')->name('salon.sessions.rounds.store');
+    Route::post('/salon/pedidos/{pedido}/servir', [SalonSessionController::class, 'serve'])->whereNumber('pedido')->name('salon.orders.serve');
+});
+
+Route::middleware(['auth', 'verified', CheckRole::class.':admin,gerente,cajero'])->group(function () {
+    Route::post('/salon/sesiones/{session}/pagar', [SalonSessionController::class, 'pay'])->whereNumber('session')->name('salon.sessions.pay');
+});
+
+Route::middleware(['auth', 'verified', CheckRole::class.':admin,gerente'])->group(function () {
+    Route::post('/salon/mesas', [SalonController::class, 'storeMesa'])->name('salon.mesas.store');
+    Route::post('/salon/pedidos/{pedido}/cancelar', [SalonSessionController::class, 'cancel'])->whereNumber('pedido')->name('salon.orders.cancel');
 });
 
 Route::middleware(['auth', 'verified', CheckRole::class.':delivery'])->group(function () {

@@ -25,6 +25,21 @@ test('users can authenticate using the login screen', function () {
     $response->assertSessionHas('token', 'test-token');
 });
 
+test('waiters and branch managers enter directly into the dining room workspace', function (string $role) {
+    $user = User::factory()->create(['role' => $role]);
+    Http::fake([
+        '*/api/login' => Http::response(['token' => 'staff-token', 'user' => $user->toArray()]),
+    ]);
+
+    $response = $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    $this->assertAuthenticated();
+    $response->assertRedirect(route('salon.index', absolute: false));
+})->with([User::ROLE_MESERO, User::ROLE_GERENTE]);
+
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
