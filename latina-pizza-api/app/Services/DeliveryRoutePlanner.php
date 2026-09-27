@@ -32,6 +32,7 @@ class DeliveryRoutePlanner
             $point = $this->destination($order);
             if (! $point) {
                 $missing[] = $order->id;
+
                 continue;
             }
 
@@ -328,6 +329,7 @@ class DeliveryRoutePlanner
     private function matrixCost(array $matrix, int $from, int $to): float
     {
         $value = $matrix[$from][$to] ?? null;
+
         return is_numeric($value) ? (float) $value : 1.0e12;
     }
 
@@ -338,6 +340,7 @@ class DeliveryRoutePlanner
             ->first();
         if ($withGps) {
             $location = $withGps->liveLocation();
+
             return [
                 'latitude' => (float) $location['latitude'],
                 'longitude' => (float) $location['longitude'],
