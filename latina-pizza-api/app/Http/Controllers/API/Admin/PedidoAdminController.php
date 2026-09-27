@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pedido;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -26,6 +27,10 @@ class PedidoAdminController extends Controller
             'sucursal',
         ])->findOrFail($id);
 
+        $pedido->setAttribute('repartidores', User::where('role', 'delivery')
+            ->where('sucursal_id', $pedido->sucursal_id)->whereNotNull('email_verified_at')
+            ->orderBy('name')->get(['id', 'name']));
+
         return response()->json($pedido);
     }
 
@@ -42,47 +47,63 @@ class PedidoAdminController extends Controller
     public function actualizarEstado(Request $request, $id)
     {
         $request->validate([
-            'estado' => 'required|in:pendiente,preparando,listo,entregado,cancelado',
+            'estado' => 'required|in:pendiente,preparando,listo,en_camino,entregado,cancelado',
+            'delivery_user_id' => 'nullable|required_if:estado,en_camino|integer',
         ]);
 
-        $pedido = Pedido::findOrFail($id);
-        $allowed = [
-            'pendiente' => ['preparando', 'cancelado'],
-            'preparando' => ['listo', 'cancelado'],
-            'listo' => ['entregado', 'cancelado'],
-            'entregado' => [],
-            'cancelado' => [],
-            'pagado' => ['preparando', 'cancelado'],
-        ];
-        if (! in_array($request->estado, $allowed[$pedido->estado] ?? [], true)) {
-            return response()->json(['message' => 'Transición de estado no permitida.'], 422);
-        }
-        if ($request->estado === 'cancelado' && $pedido->payment_provider === 'stripe' && $pedido->payment_status === 'paid') {
-            return response()->json(['message' => 'El pedido requiere un reembolso de Stripe antes de cancelarlo.'], 409);
-        }
+        return DB::transaction(function () use ($request, $id) {
+            $pedido = Pedido::lockForUpdate()->findOrFail($id);
+            $express = ($pedido->tipo_entrega ?? $pedido->tipo_pedido) === 'express';
+            $allowed = [
+                'pendiente' => ['preparando', 'cancelado'],
+                'preparando' => ['listo', 'cancelado'],
+                'listo' => $express ? ['en_camino', 'cancelado'] : ['entregado', 'cancelado'],
+                'en_camino' => ['entregado', 'cancelado'],
+                'entregado' => [],
+                'cancelado' => [],
+                'pagado' => ['preparando', 'cancelado'],
+            ];
+            if (! in_array($request->estado, $allowed[$pedido->estado] ?? [], true)) {
+                return response()->json(['message' => 'Transición de estado no permitida.'], 422);
+            }
+            if ($request->estado === Pedido::EN_CAMINO) {
+                $driver = User::where('id', $request->integer('delivery_user_id'))->where('role', 'delivery')
+                    ->whereNotNull('email_verified_at')->where('sucursal_id', $pedido->sucursal_id)->first();
+                if (! $driver || ! $pedido->sucursal_id) {
+                    return response()->json(['message' => 'Seleccione un repartidor verificado de la sucursal del pedido.'], 422);
+                }
+                $pedido->delivery_user_id = $driver->id;
+            }
+            if ($request->estado === 'cancelado' && $pedido->payment_provider === 'stripe' && $pedido->payment_status === 'paid') {
+                return response()->json(['message' => 'El pedido requiere un reembolso de Stripe antes de cancelarlo.'], 409);
+            }
 
-        $pedido->estado = $request->estado;
-        $pedido->kitchen_status = match ($request->estado) {
-            'preparando' => 'preparacion',
-            'listo' => 'listo',
-            'entregado' => 'entregado',
-            'cancelado' => 'cancelado',
-            default => $pedido->kitchen_status,
-        };
-        if ($request->estado === 'entregado' && in_array($pedido->metodo_pago, ['efectivo', 'datafono'], true)) {
-            $pedido->payment_status = 'paid';
-            $pedido->paid_at = $pedido->paid_at ?: now();
-        }
-        if ($request->estado === 'cancelado' && $pedido->payment_status === 'pending') {
-            $pedido->payment_status = 'canceled';
-        }
-        $pedido->save();
-        $pedido->guardarHistorial($request->estado);
+            $pedido->estado = $request->estado;
+            $pedido->kitchen_status = match ($request->estado) {
+                'preparando' => 'preparacion',
+                'listo' => 'listo',
+                'entregado' => 'entregado',
+                'cancelado' => 'cancelado',
+                default => $pedido->kitchen_status,
+            };
+            if ($request->estado === 'entregado' && in_array($pedido->metodo_pago, ['efectivo', 'datafono'], true)) {
+                $pedido->payment_status = 'paid';
+                $pedido->paid_at = $pedido->paid_at ?: now();
+            }
+            if ($request->estado === 'cancelado' && $pedido->payment_status === 'pending') {
+                $pedido->payment_status = 'canceled';
+            }
+            if (in_array($request->estado, ['entregado', 'cancelado'], true)) {
+                $pedido->forceFill(['delivery_latitude' => null, 'delivery_longitude' => null, 'delivery_accuracy' => null, 'delivery_recorded_at' => null, 'delivery_received_at' => null]);
+            }
+            $pedido->save();
+            $pedido->guardarHistorial($request->estado);
 
-        return response()->json([
-            'message' => 'Estado actualizado correctamente',
-            'pedido' => $pedido,
-        ]);
+            return response()->json([
+                'message' => 'Estado actualizado correctamente',
+                'pedido' => $pedido,
+            ]);
+        });
     }
 
     public function refund(Pedido $pedido)

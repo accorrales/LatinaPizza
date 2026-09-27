@@ -32,6 +32,7 @@
                                 <option value="admin" @selected(old('role', $usuario['role']) === 'admin')>{{ __('viewAdmin/usuarios_admin.index.rol_admin') }}</option>
                                 <option value="cliente" @selected(old('role', $usuario['role']) === 'cliente')>{{ __('viewAdmin/usuarios_admin.index.rol_cliente') }}</option>
                                 <option value="cocina" @selected(old('role', $usuario['role']) === 'cocina')>Cocina</option>
+                                <option value="delivery" @selected(old('role', $usuario['role']) === 'delivery')>Repartidor</option>
                             </select>
                         </div>
                         <div>
@@ -40,7 +41,7 @@
                                 <option value="">Sin sucursal</option>
                                 @foreach($sucursales as $sucursal)<option value="{{ $sucursal['id'] }}" @selected(old('sucursal_id', $usuario['sucursal_id'] ?? null) == $sucursal['id'])>{{ $sucursal['nombre'] }}</option>@endforeach
                             </select>
-                            <p class="mt-2 text-xs text-slate-500">Es obligatoria para el personal de cocina.</p>
+                            <p class="mt-2 text-xs text-slate-500">Es obligatoria para cocina y repartidores.</p>
                         </div>
                     </div>
                 </div>
