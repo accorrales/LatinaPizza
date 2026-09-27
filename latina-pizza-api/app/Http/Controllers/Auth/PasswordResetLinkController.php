@@ -3,31 +3,31 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendPasswordRecoveryCode;
+use App\Services\PasswordRecovery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
-use Throwable;
 
 class PasswordResetLinkController extends Controller
 {
-    /**
-     * Handle an incoming password reset link request without revealing whether
-     * the submitted email belongs to an account.
-     */
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
-            'email' => ['required', 'email'],
-        ]);
+        $request->validate(['email' => ['required', 'string', 'email', 'max:255']]);
 
-        try {
-            Password::sendResetLink($request->only('email'));
-        } catch (Throwable $exception) {
-            report($exception);
+        abort_if(app()->isProduction() && in_array(config('queue.default'), ['sync', 'null'], true), 503);
+        abort_if(app()->isProduction() && in_array(config('mail.default'), ['log', 'array'], true), 503);
+
+        $email = strtolower(trim($request->input('email')));
+
+        // Local development should work without requiring a separate queue worker.
+        // Production remains asynchronous so account lookup/SMTP timing cannot
+        // disclose whether an address belongs to an existing account.
+        if (app()->isLocal()) {
+            SendPasswordRecoveryCode::dispatchSync($email, now()->timestamp);
+        } else {
+            SendPasswordRecoveryCode::dispatch($email, now()->timestamp);
         }
 
-        return response()->json([
-            'status' => __('If an account exists for that email address, we have sent a password reset link.'),
-        ]);
+        return response()->json(['status' => PasswordRecovery::STATUS]);
     }
 }

@@ -1,4 +1,5 @@
 import './bootstrap';
+import { initPasswordRecovery } from './pages/password-recovery';
 import { initTracking } from './pages/tracking';
 import { initLiveTracking } from './pages/live-tracking';
 import { initDeliveryTracking } from './pages/delivery-tracking';
@@ -30,6 +31,7 @@ async function loadCspAlpine() {
 }
 
 async function bootApplication() {
+    initPasswordRecovery();
     initTracking();
     initLiveTracking();
     initDeliveryTracking();

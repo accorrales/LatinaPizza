@@ -58,6 +58,8 @@ Abra `http://127.0.0.1:8000`. Mantenga ambas terminales abiertas.
 
 El registro exige verificar el correo antes de comprar. Con `MAIL_MAILER=log`, el enlace de verificación queda en `latina-pizza-web/storage/logs/laravel.log`; en producción configure un proveedor SMTP real.
 
+La recuperación de contraseña usa un código enviado por el **API**. Inicie también, desde `latina-pizza-api`, `php artisan queue:work --queue=password-recovery --timeout=30`. Configure SMTP en el API para entregar los correos. Con `MAIL_MAILER=log`, el código se escribe solo en el log local del API. Consulte [la arquitectura, configuración y verificación de recuperación](docs/PASSWORD_RECOVERY.md).
+
 ## Actualizar una base existente
 
 Antes de actualizar, haga un respaldo de PostgreSQL. Después de traer la rama o versión nueva:

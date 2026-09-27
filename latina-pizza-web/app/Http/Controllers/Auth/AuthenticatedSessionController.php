@@ -58,6 +58,7 @@ class AuthenticatedSessionController extends Controller
         }
 
         Session::put('token', $response->json('token'));
+        $request->session()->put('password_hash_web', Auth::guard('web')->hashPasswordForCookie($request->user()->getAuthPassword()));
 
         if (! $request->user()->hasVerifiedEmail()) {
             return redirect()->route('verification.notice');
