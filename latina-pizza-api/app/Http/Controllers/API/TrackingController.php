@@ -4,11 +4,16 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pedido;
+use App\Services\DeliveryRoutePlanner;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class TrackingController extends Controller
 {
+    public function __construct(private readonly DeliveryRoutePlanner $routePlanner)
+    {
+    }
+
     public function show(Request $request, Pedido $pedido)
     {
         $user = $request->user();
@@ -17,12 +22,45 @@ class TrackingController extends Controller
             || ($user->role === 'delivery' && (int) $pedido->delivery_user_id === (int) $user->id);
         abort_unless($allowed, 403);
 
-        return response()->json(['data' => [
+        $data = [
             'id' => $pedido->id,
             'estado' => $pedido->estado,
             'tipo' => $pedido->tipo_entrega ?? $pedido->tipo_pedido,
             'location' => $pedido->liveLocation(),
-        ]])->header('Cache-Control', 'no-store, private');
+            'route' => null,
+        ];
+
+        if ($pedido->estado === Pedido::EN_CAMINO && $pedido->delivery_user_id) {
+            $plan = $this->routePlanner->planForDriver((int) $pedido->delivery_user_id);
+            $stop = collect($plan['stops'] ?? [])->first(fn (array $item) => (int) $item['order_id'] === (int) $pedido->id);
+            if ($stop) {
+                $staff = in_array($user->role, ['admin', 'cocina', 'delivery'], true);
+                $data['route'] = [
+                    'eta_at' => $stop['eta_at'],
+                    'eta_seconds' => $stop['eta_seconds'],
+                    'stops_before' => max(0, (int) $stop['sequence'] - 1),
+                    'total_stops' => count($plan['stops']),
+                    'destination' => [
+                        'latitude' => $stop['latitude'],
+                        'longitude' => $stop['longitude'],
+                    ],
+                    'provider' => $plan['provider'],
+                    'approximate' => $plan['approximate'],
+                    'traffic_aware' => $plan['traffic_aware'],
+                    'distance_meters' => $plan['distance_meters'],
+                    'total_seconds' => $plan['total_seconds'],
+                ];
+
+                // Customers only see their own destination. Staff assigned to the route may inspect the full route.
+                if ($staff) {
+                    $data['route']['stops'] = $plan['stops'];
+                    $data['route']['geometry'] = $plan['geometry'];
+                    $data['route']['origin'] = $plan['origin'];
+                }
+            }
+        }
+
+        return response()->json(['data' => $data])->header('Cache-Control', 'no-store, private');
     }
 
     public function index(Request $request)
