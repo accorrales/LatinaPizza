@@ -1,7 +1,7 @@
 export function validLocation(location) {
-    return location && typeof location.latitude === 'number' && Number.isFinite(location.latitude)
-        && Math.abs(location.latitude) <= 90 && typeof location.longitude === 'number'
-        && Number.isFinite(location.longitude) && Math.abs(location.longitude) <= 180;
+    return location && typeof Number(location.latitude) === 'number' && Number.isFinite(Number(location.latitude))
+        && Math.abs(Number(location.latitude)) <= 90 && Number.isFinite(Number(location.longitude))
+        && Math.abs(Number(location.longitude)) <= 180;
 }
 
 export function isStale(location, now = Date.now()) {
@@ -19,18 +19,29 @@ export function createLiveMap(container, maplibre, onError) {
     map.addControl(new maplibre.NavigationControl(), 'top-right');
     map.on('error', onError);
     let marker;
+    let destinationMarker;
+    let fittedDestination = false;
     return {
-        update(location) {
+        update(location, destination = null) {
             if (!validLocation(location)) return;
-            const coordinates = [location.longitude, location.latitude];
-            if (!marker) {
-                marker = new maplibre.Marker({ color: '#2563eb' }).setLngLat(coordinates).addTo(map);
+            const coordinates = [Number(location.longitude), Number(location.latitude)];
+            if (!marker) marker = new maplibre.Marker({ color: '#2563eb' }).setLngLat(coordinates).addTo(map);
+            else marker.setLngLat(coordinates);
+
+            if (validLocation(destination)) {
+                const destinationCoordinates = [Number(destination.longitude), Number(destination.latitude)];
+                if (!destinationMarker) destinationMarker = new maplibre.Marker({ color: '#dc2626' }).setLngLat(destinationCoordinates).addTo(map);
+                else destinationMarker.setLngLat(destinationCoordinates);
+                if (!fittedDestination) {
+                    const bounds = new maplibre.LngLatBounds().extend(coordinates).extend(destinationCoordinates);
+                    map.fitBounds(bounds, { padding: 65, maxZoom: 15, duration: 350 });
+                    fittedDestination = true;
+                }
+            } else if (!fittedDestination) {
                 map.jumpTo({ center: coordinates, zoom: 15 });
-            } else {
-                marker.setLngLat(coordinates);
             }
             map.resize();
         },
-        destroy() { marker?.remove(); map.remove(); },
+        destroy() { marker?.remove(); destinationMarker?.remove(); map.remove(); },
     };
 }
