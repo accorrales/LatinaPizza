@@ -11,9 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class DeliveryLocationController extends Controller
 {
-    public function __construct(private readonly DeliveryRoutePlanner $routePlanner)
-    {
-    }
+    public function __construct(private readonly DeliveryRoutePlanner $routePlanner) {}
 
     public function orders(Request $request)
     {
