@@ -81,6 +81,8 @@ Route::middleware(['auth', 'verified', CheckRole::class.':admin,cocina'])->group
 Route::middleware(['auth', 'verified', CheckRole::class.':delivery'])->group(function () {
     Route::get('/repartos', [TrackingController::class, 'delivery'])->name('tracking.delivery');
     Route::get('/repartos/pedidos', [TrackingController::class, 'deliveryOrders'])->name('tracking.delivery.orders');
+    Route::get('/repartos/ruta', [TrackingController::class, 'deliveryRoute'])->name('tracking.delivery.route');
+    Route::post('/repartos/ubicacion', [TrackingController::class, 'sendLocationAll'])->name('tracking.delivery.location_all');
     Route::post('/repartos/{id}/ubicacion', [TrackingController::class, 'sendLocation'])->whereNumber('id')->name('tracking.delivery.location');
 });
 
