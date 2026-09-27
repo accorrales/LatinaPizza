@@ -10,9 +10,7 @@ use Illuminate\Http\Request;
 
 class TrackingController extends Controller
 {
-    public function __construct(private readonly DeliveryRoutePlanner $routePlanner)
-    {
-    }
+    public function __construct(private readonly DeliveryRoutePlanner $routePlanner) {}
 
     public function show(Request $request, Pedido $pedido)
     {
