@@ -75,6 +75,7 @@
                         <option value="">Todos los tipos</option>
                         <option value="pickup">Pickup</option>
                         <option value="express">Express</option>
+                        <option value="salon">Salón</option>
                     </select>
 
                     <div class="relative">
@@ -110,8 +111,8 @@
                                 <p class="mt-1 truncate text-sm font-semibold text-slate-700" x-text="o.cliente"></p>
                             </div>
                             <span class="rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide"
-                                  :class="o.tipo_pedido === 'express' ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-red-200 bg-red-50 text-red-700'"
-                                  x-text="o.tipo_pedido === 'express' ? 'Express' : 'Pickup'"></span>
+                                  :class="o.tipo_pedido === 'express' ? 'border-blue-200 bg-blue-50 text-blue-700' : (o.tipo_pedido === 'salon' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700')"
+                                  x-text="o.tipo_pedido === 'express' ? 'Express' : (o.tipo_pedido === 'salon' ? 'Salón' : 'Pickup')"></span>
                         </div>
 
                         <div class="mt-4 grid grid-cols-3 gap-2 text-center">

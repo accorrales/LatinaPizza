@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -64,7 +65,14 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('verification.notice');
         }
 
-        return redirect()->intended(route('home', absolute: false));
+        $destination = match ($request->user()->role) {
+            User::ROLE_MESERO, User::ROLE_GERENTE => route('salon.index', absolute: false),
+            User::ROLE_COCINA => route('kitchen.index', absolute: false),
+            User::ROLE_DELIVERY => route('tracking.delivery', absolute: false),
+            default => route('home', absolute: false),
+        };
+
+        return redirect()->intended($destination);
     }
 
     /**

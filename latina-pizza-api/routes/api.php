@@ -20,6 +20,9 @@ use App\Http\Controllers\API\ProductoController;
 use App\Http\Controllers\API\PromocionController;
 use App\Http\Controllers\API\ResenaController;
 use App\Http\Controllers\API\SaborController;
+use App\Http\Controllers\API\SalonCatalogController;
+use App\Http\Controllers\API\SalonController;
+use App\Http\Controllers\API\SalonOrderController;
 use App\Http\Controllers\API\StripeWebhookController;
 use App\Http\Controllers\API\SucursalController;
 use App\Http\Controllers\API\TamanoController;
@@ -92,6 +95,33 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::delete('/resenas/{id}', [ResenaController::class, 'destroy'])->middleware('throttle:10,1');
     Route::get('/resenas/verificar-compra/{saborId}', [ResenaController::class, 'verificarCompra']);
 });
+
+Route::middleware(['auth:sanctum', 'verified', CheckRole::class.':admin,gerente,mesero,cajero'])
+    ->prefix('salon')
+    ->group(function () {
+        Route::get('/catalogo', [SalonCatalogController::class, 'index']);
+        Route::get('/mesas', [SalonController::class, 'index']);
+        Route::get('/sesiones/{session}', [SalonOrderController::class, 'show']);
+        Route::post('/sesiones/{session}/cerrar', [SalonController::class, 'closeSession']);
+
+        Route::middleware([CheckRole::class.':admin,gerente,mesero'])->group(function () {
+            Route::post('/mesas/{mesa}/abrir', [SalonController::class, 'openMesa']);
+            Route::post('/sesiones/{session}/rondas', [SalonOrderController::class, 'storeRound'])
+                ->middleware('throttle:30,1');
+            Route::post('/pedidos/{pedido}/servir', [SalonOrderController::class, 'serve']);
+        });
+
+        Route::middleware([CheckRole::class.':admin,gerente,cajero'])->group(function () {
+            Route::post('/sesiones/{session}/pagar', [SalonOrderController::class, 'pay'])
+                ->middleware('throttle:10,1');
+        });
+
+        Route::middleware([CheckRole::class.':admin,gerente'])->group(function () {
+            Route::post('/mesas', [SalonController::class, 'storeMesa']);
+            Route::put('/mesas/{mesa}', [SalonController::class, 'updateMesa']);
+            Route::post('/pedidos/{pedido}/cancelar', [SalonOrderController::class, 'cancel']);
+        });
+    });
 
 Route::middleware(['auth:sanctum', 'verified', CheckRole::class.':admin'])->group(function () {
     Route::apiResource('categorias', CategoriaController::class)->except(['index', 'show']);

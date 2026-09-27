@@ -11,6 +11,16 @@ class Pedido extends Model
 
     public const EN_CAMINO = 'en_camino';
 
+    public const CANAL_WEB = 'web';
+
+    public const CANAL_SALON = 'salon';
+
+    public const CANAL_MOSTRADOR = 'mostrador';
+
+    public const CANAL_TELEFONO = 'telefono';
+
+    public const CANAL_WHATSAPP = 'whatsapp';
+
     // GPS is exposed only by the authorized tracking endpoints, never generic serialization.
     protected $hidden = ['delivery_latitude', 'delivery_longitude', 'delivery_accuracy', 'delivery_recorded_at', 'delivery_received_at'];
 
@@ -43,7 +53,7 @@ class Pedido extends Model
         'sucursal_id',
 
         // Totales / logística
-        'tipo_entrega',              // pickup | express
+        'tipo_entrega',              // pickup | express | salon
         'direccion_usuario_id',
         'subtotal',
         'delivery_fee',
@@ -51,9 +61,12 @@ class Pedido extends Model
         'delivery_distance_km',
         'total',
 
-        // Estado comercial
-        'estado',                    // pagado | pendiente | cancelado ...
-        'tipo_pedido',               // alias de tipo_entrega si lo usas
+        // Estado comercial y origen de la venta
+        'estado',
+        'tipo_pedido',               // alias histórico de tipo_entrega
+        'canal_venta',               // web | salon | mostrador | telefono | whatsapp
+        'mesa_sesion_id',
+        'created_by_user_id',
 
         // Pago
         'metodo_pago',               // efectivo | datafono | stripe
@@ -82,27 +95,22 @@ class Pedido extends Model
         'delivery_accuracy' => 'float',
         'delivery_recorded_at' => 'datetime',
         'delivery_received_at' => 'datetime',
-        // tiempos
         'paid_at' => 'datetime',
         'promised_at' => 'datetime',
         'ready_at' => 'datetime',
-
-        // flags y números
         'priority' => 'boolean',
         'subtotal' => 'float',
         'total' => 'float',
         'delivery_fee' => 'float',
         'delivery_distance_km' => 'float',
-
-        // snapshot
         'detalle_json' => 'array',
         'delivery_address_json' => 'array',
     ];
 
-    // Defaults útiles (opcional)
     protected $attributes = [
         'kitchen_status' => 'nuevo',
         'priority' => false,
+        'canal_venta' => self::CANAL_WEB,
     ];
 
     /* ----------------- Helpers de pago ----------------- */
@@ -137,12 +145,21 @@ class Pedido extends Model
         return $this->belongsTo(Sucursal::class);
     }
 
+    public function mesaSesion()
+    {
+        return $this->belongsTo(MesaSesion::class, 'mesa_sesion_id');
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
     public function takenBy()
     {
         return $this->belongsTo(User::class, 'taken_by_user_id');
     }
 
-    // Detalles del pedido (si los usas)
     public function detalles()
     {
         return $this->hasMany(DetallePedido::class);
@@ -166,7 +183,7 @@ class Pedido extends Model
         ]);
     }
 
-    /* ----------------- Scopes para cocina ----------------- */
+    /* ----------------- Scopes ----------------- */
     public function scopeKitchenOpen($q)
     {
         return $q->whereIn('kitchen_status', ['nuevo', 'preparacion', 'listo']);
@@ -177,12 +194,16 @@ class Pedido extends Model
         return $q->where('kitchen_status', $status);
     }
 
+    public function scopeBySalesChannel($q, string $channel)
+    {
+        return $q->where('canal_venta', $channel);
+    }
+
     /* ----------------- Helpers de cocina ----------------- */
     public function markKitchenStatus(string $status): void
     {
         $this->update(['kitchen_status' => $status]);
 
-        // opcional: guardar en historial automáticamente
         if (method_exists($this, 'guardarHistorial')) {
             $this->guardarHistorial($status);
         }
@@ -199,7 +220,7 @@ class Pedido extends Model
             return null;
         }
 
-        return now()->diffInMinutes($this->promised_at, false); // negativo si ya se pasó
+        return now()->diffInMinutes($this->promised_at, false);
     }
 
     public function productos()
