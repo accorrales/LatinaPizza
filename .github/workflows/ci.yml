@@ -24,7 +24,7 @@ jobs:
       run:
         working-directory: latina-pizza-api
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.3"
@@ -54,7 +54,7 @@ jobs:
       run:
         working-directory: latina-pizza-web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.3"
