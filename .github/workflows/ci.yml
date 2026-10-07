@@ -30,7 +30,7 @@ jobs:
           php-version: "8.3"
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
           coverage: none
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
         with:
           working-directory: latina-pizza-api
       - run: composer audit --locked --no-interaction
@@ -65,7 +65,7 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: latina-pizza-web/package-lock.json
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
         with:
           working-directory: latina-pizza-web
       - run: composer audit --locked --no-interaction
